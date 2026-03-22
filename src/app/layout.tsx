@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pick Marketplace - Find Top Service Providers",
-  description: "Connect with verified professionals for any service you need. From web design to consulting, find trusted experts ready to help your business grow.",
+  title: "Pick - Never Overpay for Anything Online",
+  description: "Pick instantly finds the same product at lower prices across the web. Shop smarter, save money, and always get the best deal possible.",
 };
 
 export default function RootLayout({

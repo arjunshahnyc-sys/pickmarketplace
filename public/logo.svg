@@ -1,0 +1,38 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shopping bag body -->
+  <path
+    d="M8 14L11 42C11 43.1046 11.8954 44 13 44H35C36.1046 44 37 43.1046 37 42L40 14H8Z"
+    fill="white"
+    stroke="black"
+    stroke-width="2.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Bag top opening -->
+  <path
+    d="M8 14C8 12.8954 8.89543 12 10 12H38C39.1046 12 40 12.8954 40 14"
+    stroke="black"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Handle -->
+  <path
+    d="M17 12V9C17 5.68629 19.6863 3 23 3H25C28.3137 3 31 5.68629 31 9V12"
+    fill="none"
+    stroke="black"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Letter P -->
+  <text
+    x="24"
+    y="33"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="18"
+    font-weight="700"
+    fill="black"
+    text-anchor="middle"
+  >P</text>
+</svg>
