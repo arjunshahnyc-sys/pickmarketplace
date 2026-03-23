@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pick</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+        <span>pick</span>
+      </div>
+    </header>
+
+    <main id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Scanning for deals...</p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value" id="total-saved">$0</span>
+          <span class="stat-label">Total Saved</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="deals-found">0</span>
+          <span class="stat-label">Deals Found</span>
+        </div>
+      </div>
+      <a href="https://pickdeals.vercel.app" target="_blank" class="settings-link">
+        Search more products →
+      </a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

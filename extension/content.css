@@ -1,0 +1,181 @@
+/* Pick Widget Styles - Light Theme */
+#pick-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  background: #FAFAF8;
+  border: 1px solid #E5E5E3;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 2147483647;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s ease;
+}
+
+#pick-widget.pick-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+#pick-widget.pick-hidden {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.pick-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 1px solid #E5E5E3;
+}
+
+.pick-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1A1A1A;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.pick-logo svg {
+  color: #2A9D8F;
+}
+
+.pick-close {
+  background: none;
+  border: none;
+  color: #6B6B6B;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.pick-close:hover {
+  color: #1A1A1A;
+}
+
+.pick-current {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.pick-label {
+  color: #6B6B6B;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pick-current-price {
+  color: #6B6B6B;
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.pick-alternatives {
+  padding: 8px;
+  background: #FAFAF8;
+}
+
+.pick-alt {
+  display: block;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fff;
+  border: 1px solid #E5E5E3;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.pick-alt:first-child {
+  border-color: #2A9D8F;
+  background: rgba(42, 157, 143, 0.04);
+}
+
+.pick-alt:last-child {
+  margin-bottom: 0;
+}
+
+.pick-alt:hover {
+  border-color: #2A9D8F;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.pick-alt-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.pick-alt-site {
+  color: #1A1A1A;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.pick-alt-price {
+  color: #2A9D8F;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.pick-alt-savings {
+  color: #2A9D8F;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pick-alt-percent {
+  color: #fff;
+  background: #2A9D8F;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-size: 11px;
+}
+
+.pick-footer {
+  padding: 12px 16px;
+  text-align: center;
+  background: #fff;
+  border-top: 1px solid #E5E5E3;
+}
+
+.pick-footer a {
+  color: #6B6B6B;
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pick-footer a:hover {
+  color: #2A9D8F;
+}
+
+/* Best deal badge */
+.pick-best-badge {
+  display: inline-block;
+  background: #2A9D8F;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
