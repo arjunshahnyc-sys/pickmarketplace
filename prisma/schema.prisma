@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Search {
+  id        String    @id @default(cuid())
+  query     String
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  imageUrl    String?
+  search      Search   @relation(fields: [searchId], references: [id])
+  searchId    String
+  createdAt   DateTime @default(now())
+  prices      Price[]
+}
+
+model Price {
+  id        String   @id @default(cuid())
+  amount    Float
+  retailer  String
+  url       String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  createdAt DateTime @default(now())
+}
