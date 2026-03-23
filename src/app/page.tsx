@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, ArrowRight } from 'lucide-react';
 import { SearchBar } from '@/components/SearchBar';
 import { ProductGrid } from '@/components/ProductGrid';
 import type { ProductResult, SearchResponse } from '@/lib/types';
@@ -30,166 +30,226 @@ export default function Home() {
   };
 
   return (
-    <div className="relative z-10">
+    <div className="relative z-10 texture-bg min-h-screen">
       {/* Header */}
-      <header className="border-b border-[var(--border)]">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
+      <header className="border-b border-[var(--border)] bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2.5 group">
             <ShoppingBag size={22} strokeWidth={1.5} className="text-[var(--accent)]" />
             <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               pick
             </span>
           </a>
-          <nav className="flex items-center gap-6">
-            <a href="#how-it-works" className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+          <nav className="flex items-center gap-8">
+            <a
+              href="#how-it-works"
+              className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+            >
               How it works
             </a>
             <a
-              href="#"
-              className="text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] transition-colors"
+              href="#extension"
+              className="text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white transition-all"
               style={{ borderRadius: '6px' }}
             >
-              Get the extension
+              Get extension
             </a>
           </nav>
         </div>
       </header>
 
-      {/* Hero Section */}
       <main>
-        <section className="max-w-6xl mx-auto px-6 pt-20 pb-16">
-          <div className="max-w-2xl mx-auto text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-semibold mb-4 tracking-tight">
-              Stop overpaying.
+        {/* Hero Section */}
+        <section className="max-w-5xl mx-auto px-6 pt-24 pb-16">
+          <div className="max-w-xl mb-12">
+            <h1 className="text-5xl md:text-6xl font-semibold mb-5 tracking-tight leading-[1.1]">
+              Stop overpaying<br />
+              <span className="text-[var(--muted)]">for the same product.</span>
             </h1>
-            <p className="text-lg text-[var(--muted)] leading-relaxed">
+            <p className="text-lg text-[var(--muted)] leading-relaxed max-w-md">
               Search any product. Compare prices across Amazon, Walmart, Best Buy, and Target in seconds.
             </p>
           </div>
 
           <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-        </section>
 
-        {/* Popular searches hint - only show before first search */}
-        {!hasSearched && (
-          <section className="max-w-6xl mx-auto px-6 pb-12">
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <span className="text-[var(--muted)]">Try:</span>
-              {['headphones', 'laptop', 'keyboard', 'monitor'].map((term) => (
+          {/* Quick search hints */}
+          {!hasSearched && (
+            <div className="mt-8 flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-[var(--muted)]">Popular:</span>
+              {['Sony headphones', 'MacBook Air', 'mechanical keyboard', '4K monitor'].map((term) => (
                 <button
                   key={term}
                   onClick={() => handleSearch(term)}
-                  className="px-3 py-1.5 text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--border)] hover:border-[var(--foreground)] transition-colors"
-                  style={{ borderRadius: '4px' }}
+                  className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
                 >
                   {term}
                 </button>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* Results */}
         {hasSearched && (
-          <section className="max-w-6xl mx-auto px-6 pb-20">
+          <section className="max-w-5xl mx-auto px-6 pb-24">
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
+              <div className="flex items-center justify-center py-24">
                 <div className="flex items-center gap-3 text-[var(--muted)]">
-                  <div className="w-5 h-5 border-2 border-[var(--border)] border-t-[var(--accent)] rounded-full animate-spin" />
-                  <span>Searching across retailers...</span>
+                  <div className="w-5 h-5 border-2 border-[var(--border)] border-t-[var(--accent)] rounded-full spinner" />
+                  <span className="text-sm">Checking prices across retailers...</span>
                 </div>
               </div>
             ) : (
-              <ProductGrid products={results} query={query} />
+              <div className="fade-in">
+                <ProductGrid products={results} query={query} />
+              </div>
             )}
           </section>
         )}
 
-        {/* Hand-drawn divider */}
-        <div className="max-w-6xl mx-auto px-6">
-          <svg viewBox="0 0 800 20" className="w-full h-5 text-[var(--border)]" preserveAspectRatio="none">
-            <path
-              d="M0,10 Q100,5 200,10 T400,10 T600,10 T800,10"
-              stroke="currentColor"
-              strokeWidth="1"
-              fill="none"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        {/* How it works - asymmetric layout */}
-        <section id="how-it-works" className="max-w-6xl mx-auto px-6 py-20">
-          <h2 className="text-2xl font-semibold mb-12">How it works</h2>
-
-          <div className="grid md:grid-cols-12 gap-8">
-            <div className="md:col-span-5">
-              <div className="mb-8">
-                <span className="inline-block text-xs font-medium text-[var(--accent)] mb-2">01</span>
-                <h3 className="text-lg font-medium mb-2">Search for any product</h3>
-                <p className="text-[var(--muted)] text-sm leading-relaxed">
-                  Type in what you&apos;re looking for. We support electronics, home goods, clothing, and more.
-                </p>
-              </div>
-              <div>
-                <span className="inline-block text-xs font-medium text-[var(--accent)] mb-2">02</span>
-                <h3 className="text-lg font-medium mb-2">We check the major retailers</h3>
-                <p className="text-[var(--muted)] text-sm leading-relaxed">
-                  Our system queries Amazon, Walmart, Best Buy, and Target simultaneously to find current prices.
-                </p>
-              </div>
+        {/* Divider */}
+        {!hasSearched && (
+          <>
+            <div className="max-w-5xl mx-auto px-6 py-8">
+              <div className="h-px bg-[var(--border)]" />
             </div>
 
-            <div className="md:col-span-2" />
-
-            <div className="md:col-span-5 md:pt-16">
-              <div className="mb-8">
-                <span className="inline-block text-xs font-medium text-[var(--accent)] mb-2">03</span>
-                <h3 className="text-lg font-medium mb-2">Compare and save</h3>
-                <p className="text-[var(--muted)] text-sm leading-relaxed">
-                  See prices side by side, sorted from lowest to highest. Click through to purchase from whichever retailer you prefer.
-                </p>
+            {/* Stats section - subtle social proof */}
+            <section className="max-w-5xl mx-auto px-6 py-12">
+              <div className="grid grid-cols-3 gap-8 max-w-2xl">
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">4</p>
+                  <p className="text-sm text-[var(--muted)] mt-1">Major retailers</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">~15%</p>
+                  <p className="text-sm text-[var(--muted)] mt-1">Avg. savings found</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">&lt;2s</p>
+                  <p className="text-sm text-[var(--muted)] mt-1">Search time</p>
+                </div>
               </div>
-              <div className="p-4 bg-white border border-[var(--border)]" style={{ borderRadius: '6px' }}>
-                <p className="text-sm text-[var(--muted)]">
-                  <span className="text-[var(--foreground)] font-medium">Pro tip:</span> Install our browser extension to automatically see price comparisons while you shop.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        {/* Simple CTA */}
-        <section className="max-w-6xl mx-auto px-6 pb-20">
-          <div className="border border-[var(--border)] p-8 md:p-12 text-center bg-white" style={{ borderRadius: '8px' }}>
-            <h2 className="text-2xl font-semibold mb-3">
-              Never miss a deal again
-            </h2>
-            <p className="text-[var(--muted)] mb-6 max-w-md mx-auto">
-              Get our free browser extension and see price comparisons automatically on any product page.
-            </p>
-            <a
-              href="#"
-              className="inline-block px-6 py-3 bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-hover)] transition-colors"
-              style={{ borderRadius: '6px' }}
-            >
-              Add to Chrome — It&apos;s free
-            </a>
-          </div>
-        </section>
+            {/* How it works - clean asymmetric layout */}
+            <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20">
+              <div className="grid md:grid-cols-2 gap-16">
+                <div>
+                  <h2 className="text-3xl font-semibold mb-4 tracking-tight">
+                    How it works
+                  </h2>
+                  <p className="text-[var(--muted)] mb-12 max-w-sm">
+                    We do the comparison shopping so you don&apos;t have to open 10 browser tabs.
+                  </p>
+
+                  <div className="space-y-10">
+                    <div className="flex gap-4">
+                      <span className="text-sm font-medium text-[var(--accent)] mt-0.5">01</span>
+                      <div>
+                        <h3 className="font-medium mb-1.5">Enter what you&apos;re looking for</h3>
+                        <p className="text-sm text-[var(--muted)] leading-relaxed">
+                          Type a product name, brand, or category. Be as specific or general as you like.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <span className="text-sm font-medium text-[var(--accent)] mt-0.5">02</span>
+                      <div>
+                        <h3 className="font-medium mb-1.5">We query the retailers</h3>
+                        <p className="text-sm text-[var(--muted)] leading-relaxed">
+                          Pick checks Amazon, Walmart, Best Buy, and Target simultaneously to find current prices.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <span className="text-sm font-medium text-[var(--accent)] mt-0.5">03</span>
+                      <div>
+                        <h3 className="font-medium mb-1.5">See every price, sorted</h3>
+                        <p className="text-sm text-[var(--muted)] leading-relaxed">
+                          Compare prices side by side. Click through to buy from whichever retailer has the best deal.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-end">
+                  <div className="w-full p-6 border border-[var(--border)] bg-white" style={{ borderRadius: '8px' }}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-[var(--subtle-warm)] flex items-center justify-center">
+                        <ShoppingBag size={18} className="text-[var(--accent)]" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">Sony WH-1000XM5</p>
+                        <p className="text-xs text-[var(--muted)]">Same product, different prices</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                        <span className="text-sm text-[var(--muted)]">Amazon</span>
+                        <span className="text-sm font-medium text-[var(--accent)]">$328.00</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                        <span className="text-sm text-[var(--muted)]">Walmart</span>
+                        <span className="text-sm font-medium">$348.00</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                        <span className="text-sm text-[var(--muted)]">Best Buy</span>
+                        <span className="text-sm font-medium">$349.99</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-[var(--accent)] mt-4 font-medium">
+                      Save $21.99 buying from Amazon
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Extension CTA */}
+            <section id="extension" className="max-w-5xl mx-auto px-6 py-20">
+              <div className="border border-[var(--border)] bg-white p-10 md:p-14" style={{ borderRadius: '8px' }}>
+                <div className="max-w-lg">
+                  <h2 className="text-2xl md:text-3xl font-semibold mb-4 tracking-tight">
+                    See price comparisons while you shop
+                  </h2>
+                  <p className="text-[var(--muted)] mb-8 leading-relaxed">
+                    Install our browser extension. When you visit a product page on Amazon, Walmart, or any supported retailer, Pick automatically shows you if it&apos;s cheaper somewhere else.
+                  </p>
+                  <a
+                    href="#"
+                    className="btn-primary inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-hover)]"
+                    style={{ borderRadius: '6px' }}
+                  >
+                    <span>Add to Chrome</span>
+                    <ArrowRight size={16} />
+                  </a>
+                  <p className="text-xs text-[var(--muted)] mt-4">
+                    Free forever. No account required.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <span className="text-sm text-[var(--muted)]">
-              &copy; {new Date().getFullYear()} Pick Marketplace
-            </span>
+      <footer className="border-t border-[var(--border)] bg-white mt-auto">
+        <div className="max-w-5xl mx-auto px-6 py-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <ShoppingBag size={18} strokeWidth={1.5} className="text-[var(--accent)]" />
+              <span className="text-sm font-medium">pick</span>
+            </div>
             <div className="flex items-center gap-6 text-sm text-[var(--muted)]">
               <a href="#" className="hover:text-[var(--foreground)] transition-colors">Privacy</a>
               <a href="#" className="hover:text-[var(--foreground)] transition-colors">Terms</a>
-              <a href="#" className="hover:text-[var(--foreground)] transition-colors">Contact</a>
+              <span>&copy; {new Date().getFullYear()}</span>
             </div>
           </div>
         </div>

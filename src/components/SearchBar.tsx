@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { Search } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -19,29 +19,30 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="w-full max-w-xl">
       <div className="relative">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search for any product..."
-          className="w-full px-4 py-3.5 pr-32 text-base border border-[var(--border)] rounded-md bg-white placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors"
+          placeholder="Search any product..."
+          className="w-full px-5 py-4 pr-36 text-base border border-[var(--border)] bg-white placeholder:text-[#A3A3A3] transition-all"
+          style={{ borderRadius: '8px' }}
           disabled={isLoading}
         />
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
-          className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2 bg-[var(--accent)] text-white text-sm font-medium rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          className="btn-primary absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
           style={{ borderRadius: '6px' }}
         >
-          <Search size={16} strokeWidth={2} />
-          <span>{isLoading ? 'Searching...' : 'Search'}</span>
+          <span>{isLoading ? 'Searching' : 'Compare prices'}</span>
+          {!isLoading && <ArrowRight size={14} />}
+          {isLoading && (
+            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full spinner" />
+          )}
         </button>
       </div>
-      <p className="mt-3 text-sm text-[var(--muted)] text-center">
-        Compare prices across Amazon, Walmart, Best Buy, and Target
-      </p>
     </form>
   );
 }

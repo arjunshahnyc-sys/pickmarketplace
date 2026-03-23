@@ -9,32 +9,53 @@ interface ProductGridProps {
 export function ProductGrid({ products, query }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="text-[var(--muted)]">
-          No results found for &ldquo;{query}&rdquo;
+      <div className="text-center py-20">
+        <p className="text-lg mb-2">
+          No results for &ldquo;{query}&rdquo;
         </p>
-        <p className="text-sm text-[var(--muted)] mt-2">
-          Try a different search term
+        <p className="text-sm text-[var(--muted)]">
+          Try searching for a different product or check your spelling
         </p>
       </div>
     );
   }
 
+  const totalSavings = products.reduce((acc, p) => {
+    const maxSave = p.highestPrice - p.lowestPrice;
+    return acc + maxSave;
+  }, 0);
+
   return (
     <section className="w-full">
-      <div className="flex items-baseline justify-between mb-6 pb-4 border-b border-[var(--border)]">
-        <p className="text-sm text-[var(--muted)]">
-          Showing <span className="text-[var(--foreground)] font-medium">{products.length}</span> results for &ldquo;{query}&rdquo;
-        </p>
+      {/* Results header */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">
+            {products.length} {products.length === 1 ? 'result' : 'results'} for &ldquo;{query}&rdquo;
+          </h2>
+          {totalSavings > 0 && (
+            <p className="text-sm text-[var(--muted)]">
+              Up to <span className="text-[var(--accent)] font-medium">${totalSavings.toFixed(2)}</span> in potential savings
+            </p>
+          )}
+        </div>
         <p className="text-xs text-[var(--muted)]">
-          Prices updated moments ago
+          Prices checked just now
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {/* Product grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
+      </div>
+
+      {/* Bottom hint */}
+      <div className="mt-12 text-center">
+        <p className="text-sm text-[var(--muted)]">
+          Prices and availability are subject to change. Always verify at the retailer.
+        </p>
       </div>
     </section>
   );

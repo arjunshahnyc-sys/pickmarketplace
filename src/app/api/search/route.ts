@@ -20,7 +20,7 @@ function getSearchUrl(retailer: string, productName: string): string {
   return urls[retailer] || `https://www.google.com/search?q=${query}+${retailer}`;
 }
 
-// Mock product data - in production this would query real retailer APIs
+// Mock product database
 const mockProducts: Record<string, ProductResult[]> = {
   headphones: [
     {
@@ -28,10 +28,10 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'Sony WH-1000XM5 Wireless Noise Canceling Headphones',
       imageUrl: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 328.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 349.99, url: 'https://bestbuy.com' },
-        { retailer: 'Walmart', amount: 348.00, url: 'https://walmart.com' },
-        { retailer: 'Target', amount: 349.99, url: 'https://target.com' },
+        { retailer: 'Amazon', amount: 328.00, url: '' },
+        { retailer: 'Best Buy', amount: 349.99, url: '' },
+        { retailer: 'Walmart', amount: 348.00, url: '' },
+        { retailer: 'Target', amount: 349.99, url: '' },
       ],
       lowestPrice: 328.00,
       highestPrice: 349.99,
@@ -41,9 +41,9 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'Apple AirPods Max',
       imageUrl: 'https://images.unsplash.com/photo-1625245488600-f03fef636a3c?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 479.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 499.00, url: 'https://bestbuy.com' },
-        { retailer: 'Target', amount: 549.00, url: 'https://target.com' },
+        { retailer: 'Amazon', amount: 479.00, url: '' },
+        { retailer: 'Best Buy', amount: 499.00, url: '' },
+        { retailer: 'Target', amount: 549.00, url: '' },
       ],
       lowestPrice: 479.00,
       highestPrice: 549.00,
@@ -53,23 +53,12 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'Bose QuietComfort Ultra Headphones',
       imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 379.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 429.00, url: 'https://bestbuy.com' },
-        { retailer: 'Walmart', amount: 399.00, url: 'https://walmart.com' },
+        { retailer: 'Amazon', amount: 379.00, url: '' },
+        { retailer: 'Best Buy', amount: 429.00, url: '' },
+        { retailer: 'Walmart', amount: 399.00, url: '' },
       ],
       lowestPrice: 379.00,
       highestPrice: 429.00,
-    },
-    {
-      id: '4',
-      name: 'Sennheiser Momentum 4 Wireless',
-      imageUrl: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400&q=80',
-      prices: [
-        { retailer: 'Amazon', amount: 299.95, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 349.95, url: 'https://bestbuy.com' },
-      ],
-      lowestPrice: 299.95,
-      highestPrice: 349.95,
     },
   ],
   laptop: [
@@ -78,9 +67,9 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'MacBook Air 15" M3 (2024)',
       imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 1249.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 1299.00, url: 'https://bestbuy.com' },
-        { retailer: 'Walmart', amount: 1299.00, url: 'https://walmart.com' },
+        { retailer: 'Amazon', amount: 1249.00, url: '' },
+        { retailer: 'Best Buy', amount: 1299.00, url: '' },
+        { retailer: 'Walmart', amount: 1299.00, url: '' },
       ],
       lowestPrice: 1249.00,
       highestPrice: 1299.00,
@@ -90,9 +79,9 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'Dell XPS 15 (2024)',
       imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 1399.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 1499.99, url: 'https://bestbuy.com' },
-        { retailer: 'Walmart', amount: 1449.00, url: 'https://walmart.com' },
+        { retailer: 'Amazon', amount: 1399.00, url: '' },
+        { retailer: 'Best Buy', amount: 1499.99, url: '' },
+        { retailer: 'Walmart', amount: 1449.00, url: '' },
       ],
       lowestPrice: 1399.00,
       highestPrice: 1499.99,
@@ -102,8 +91,8 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'Lenovo ThinkPad X1 Carbon Gen 11',
       imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 1329.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 1449.99, url: 'https://bestbuy.com' },
+        { retailer: 'Amazon', amount: 1329.00, url: '' },
+        { retailer: 'Best Buy', amount: 1449.99, url: '' },
       ],
       lowestPrice: 1329.00,
       highestPrice: 1449.99,
@@ -115,23 +104,35 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'Keychron Q1 Pro Mechanical Keyboard',
       imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 169.00, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 199.00, url: 'https://bestbuy.com' },
+        { retailer: 'Amazon', amount: 169.00, url: '' },
+        { retailer: 'Best Buy', amount: 199.00, url: '' },
       ],
       lowestPrice: 169.00,
       highestPrice: 199.00,
     },
     {
       id: '9',
-      name: 'Logitech MX Keys S',
+      name: 'Logitech MX Keys S Wireless Keyboard',
       imageUrl: 'https://images.unsplash.com/photo-1561241142-e3c8c25c8e01?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 99.99, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 109.99, url: 'https://bestbuy.com' },
-        { retailer: 'Target', amount: 109.99, url: 'https://target.com' },
+        { retailer: 'Amazon', amount: 99.99, url: '' },
+        { retailer: 'Best Buy', amount: 109.99, url: '' },
+        { retailer: 'Target', amount: 109.99, url: '' },
       ],
       lowestPrice: 99.99,
       highestPrice: 109.99,
+    },
+    {
+      id: '13',
+      name: 'Apple Magic Keyboard with Touch ID',
+      imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&q=80',
+      prices: [
+        { retailer: 'Amazon', amount: 179.00, url: '' },
+        { retailer: 'Best Buy', amount: 199.00, url: '' },
+        { retailer: 'Target', amount: 199.00, url: '' },
+      ],
+      lowestPrice: 179.00,
+      highestPrice: 199.00,
     },
   ],
   monitor: [
@@ -140,46 +141,75 @@ const mockProducts: Record<string, ProductResult[]> = {
       name: 'LG UltraGear 27" 4K 144Hz Gaming Monitor',
       imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 699.99, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 799.99, url: 'https://bestbuy.com' },
-        { retailer: 'Walmart', amount: 749.00, url: 'https://walmart.com' },
+        { retailer: 'Amazon', amount: 699.99, url: '' },
+        { retailer: 'Best Buy', amount: 799.99, url: '' },
+        { retailer: 'Walmart', amount: 749.00, url: '' },
       ],
       lowestPrice: 699.99,
       highestPrice: 799.99,
     },
     {
       id: '11',
-      name: 'Samsung Odyssey G7 32" Curved',
+      name: 'Samsung Odyssey G7 32" Curved Monitor',
       imageUrl: 'https://images.unsplash.com/photo-1585792180666-f7347c490ee2?w=400&q=80',
       prices: [
-        { retailer: 'Amazon', amount: 549.99, url: 'https://amazon.com' },
-        { retailer: 'Best Buy', amount: 599.99, url: 'https://bestbuy.com' },
+        { retailer: 'Amazon', amount: 549.99, url: '' },
+        { retailer: 'Best Buy', amount: 599.99, url: '' },
       ],
       lowestPrice: 549.99,
       highestPrice: 599.99,
     },
+    {
+      id: '12',
+      name: 'Dell UltraSharp 27" 4K USB-C Hub Monitor',
+      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&q=80',
+      prices: [
+        { retailer: 'Amazon', amount: 579.99, url: '' },
+        { retailer: 'Best Buy', amount: 649.99, url: '' },
+        { retailer: 'Walmart', amount: 599.00, url: '' },
+      ],
+      lowestPrice: 579.99,
+      highestPrice: 649.99,
+    },
   ],
 };
 
-// Generate results based on query matching
+// Search products by query
 function searchProducts(query: string): ProductResult[] {
   const normalizedQuery = query.toLowerCase();
   const results: ProductResult[] = [];
+  const addedIds = new Set<string>();
 
+  // Check category matches
   for (const [category, products] of Object.entries(mockProducts)) {
-    if (category.includes(normalizedQuery) || normalizedQuery.includes(category)) {
-      results.push(...products);
-    } else {
-      // Also check product names
+    if (normalizedQuery.includes(category) || category.includes(normalizedQuery)) {
       for (const product of products) {
-        if (product.name.toLowerCase().includes(normalizedQuery)) {
+        if (!addedIds.has(product.id)) {
           results.push(product);
+          addedIds.add(product.id);
         }
       }
     }
   }
 
-  // If no specific matches, return a sample of products
+  // Check product name matches
+  for (const products of Object.values(mockProducts)) {
+    for (const product of products) {
+      if (!addedIds.has(product.id)) {
+        const productNameLower = product.name.toLowerCase();
+        const queryWords = normalizedQuery.split(' ');
+        const hasMatch = queryWords.some(word =>
+          word.length > 2 && productNameLower.includes(word)
+        );
+        if (hasMatch) {
+          results.push(product);
+          addedIds.add(product.id);
+        }
+      }
+    }
+  }
+
+  // If still no results, return sample products
   if (results.length === 0) {
     const allProducts = Object.values(mockProducts).flat();
     return allProducts.slice(0, 4);
@@ -204,12 +234,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  // Simulate network delay (reduced for better UX)
+  await new Promise((resolve) => setTimeout(resolve, 300));
 
   const results = searchProducts(query);
 
-  // Update URLs to be proper search URLs
+  // Generate proper URLs for each price
   const resultsWithUrls = results.map(product => ({
     ...product,
     prices: product.prices.map(price => ({
