@@ -148,17 +148,37 @@
     }
   }
 
+  // Get proper search URL for each retailer
+  function getSearchUrl(site, query) {
+    const encodedQuery = encodeURIComponent(query);
+    const urls = {
+      'Amazon': `https://www.amazon.com/s?k=${encodedQuery}`,
+      'Walmart': `https://www.walmart.com/search?q=${encodedQuery}`,
+      'Target': `https://www.target.com/s?searchTerm=${encodedQuery}`,
+      'Best Buy': `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedQuery}`
+    };
+    return urls[site] || `https://www.google.com/search?q=${encodedQuery}+${site}`;
+  }
+
   // Fallback mock data generator
   function generateMockAlternatives(product) {
     const retailers = ['Amazon', 'Walmart', 'Target', 'Best Buy'];
     const currentSite = product.site;
+
+    // Extract clean search terms from product name
+    const searchTerms = product.name
+      .replace(/[^\w\s]/g, ' ')
+      .split(' ')
+      .filter(word => word.length > 2)
+      .slice(0, 5)
+      .join(' ');
 
     return retailers
       .filter(r => r !== currentSite)
       .map(site => ({
         site,
         price: product.price * (0.85 + Math.random() * 0.1), // 5-15% cheaper
-        url: `https://www.${site.toLowerCase().replace(' ', '')}.com/search?q=${encodeURIComponent(product.name)}`
+        url: getSearchUrl(site, searchTerms)
       }))
       .filter(alt => alt.price < product.price)
       .sort((a, b) => a.price - b.price)

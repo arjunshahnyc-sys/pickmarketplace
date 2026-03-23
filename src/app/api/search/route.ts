@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { SearchResponse, ProductResult } from '@/lib/types';
 
+// CORS headers for extension access
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// Helper to generate proper search URLs
+function getSearchUrl(retailer: string, productName: string): string {
+  const query = encodeURIComponent(productName);
+  const urls: Record<string, string> = {
+    'Amazon': `https://www.amazon.com/s?k=${query}`,
+    'Walmart': `https://www.walmart.com/search?q=${query}`,
+    'Target': `https://www.target.com/s?searchTerm=${query}`,
+    'Best Buy': `https://www.bestbuy.com/site/searchpage.jsp?st=${query}`,
+  };
+  return urls[retailer] || `https://www.google.com/search?q=${query}+${retailer}`;
+}
+
 // Mock product data - in production this would query real retailer APIs
 const mockProducts: Record<string, ProductResult[]> = {
   headphones: [
@@ -169,6 +188,11 @@ function searchProducts(query: string): ProductResult[] {
   return results;
 }
 
+// Handle CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
@@ -176,7 +200,7 @@ export async function GET(request: NextRequest) {
   if (!query) {
     return NextResponse.json(
       { error: 'Query parameter "q" is required' },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -185,11 +209,20 @@ export async function GET(request: NextRequest) {
 
   const results = searchProducts(query);
 
+  // Update URLs to be proper search URLs
+  const resultsWithUrls = results.map(product => ({
+    ...product,
+    prices: product.prices.map(price => ({
+      ...price,
+      url: getSearchUrl(price.retailer, product.name)
+    }))
+  }));
+
   const response: SearchResponse = {
     query,
-    results,
-    totalResults: results.length,
+    results: resultsWithUrls,
+    totalResults: resultsWithUrls.length,
   };
 
-  return NextResponse.json(response);
+  return NextResponse.json(response, { headers: corsHeaders });
 }
