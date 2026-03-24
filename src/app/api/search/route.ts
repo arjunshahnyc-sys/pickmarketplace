@@ -705,31 +705,30 @@ export async function GET(request: NextRequest) {
 
     // Use live search API
     try {
-      try {
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : 'http://localhost:3000';
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000';
 
-        const liveSearchUrl = `${baseUrl}/api/search-live?q=${encodeURIComponent(query)}`;
-        const liveResponse = await fetch(liveSearchUrl);
+      const liveSearchUrl = `${baseUrl}/api/search-live?q=${encodeURIComponent(query)}`;
+      const liveResponse = await fetch(liveSearchUrl);
 
-        if (liveResponse.ok) {
-          const liveData = await liveResponse.json();
+      if (liveResponse.ok) {
+        const liveData = await liveResponse.json();
 
-          // Transform live search results to match the expected format
-          allResults = liveData.results.map((product: any) => ({
-            id: product.id,
-            name: product.name,
-            imageUrl: product.imageUrl,
-            prices: [{
-              retailer: product.retailer,
-              amount: product.price,
-              url: product.url
-            }],
-            lowestPrice: product.price,
-            highestPrice: product.price,
-          }));
-        }
+        // Transform live search results to match the expected format
+        allResults = liveData.results.map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          imageUrl: product.imageUrl,
+          prices: [{
+            retailer: product.retailer,
+            amount: product.price,
+            url: product.url
+          }],
+          lowestPrice: product.price,
+          highestPrice: product.price,
+        }));
+      }
     } catch (err) {
       console.error('Live search error:', err);
     }
