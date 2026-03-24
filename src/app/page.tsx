@@ -159,7 +159,7 @@ export default function Home() {
         <section className="max-w-5xl mx-auto px-6 pt-24 pb-16">
           <div className="max-w-2xl mb-12">
             <h1 className="text-8xl md:text-9xl font-bold mb-6 tracking-tighter leading-[0.95]">
-              PAY LESS
+              FIND SIMILAR. PAY LESS.
             </h1>
             <p className="text-base text-[var(--muted)] leading-relaxed max-w-lg mb-8" style={{ opacity: 0.7 }}>
               We don't just find your product cheaper—we find similar products with comparable reviews at better prices that others miss.
@@ -403,8 +403,8 @@ export default function Home() {
               <span className="text-sm font-medium">pick</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[var(--muted)]">
-              <a href="#" className="hover:text-[var(--foreground)] transition-colors">Privacy</a>
-              <a href="#" className="hover:text-[var(--foreground)] transition-colors">Terms</a>
+              <a href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacy</a>
+              <a href="/terms" className="hover:text-[var(--foreground)] transition-colors">Terms</a>
               <span>&copy; {new Date().getFullYear()}</span>
             </div>
           </div>
