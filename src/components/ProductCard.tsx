@@ -28,6 +28,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
+  // Safe price formatting helper
+  const formatPrice = (price: number | undefined): string => {
+    return price && typeof price === 'number' && !isNaN(price) ? price.toFixed(2) : '0.00';
+  };
+
   const savingsPercent = product.originalPrice && product.price
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
@@ -52,7 +57,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <article
       className="group bg-white dark:bg-black border border-black/10 dark:border-white/10 overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:border-[#2A9D8F]"
       style={{ borderRadius: '6px' }}
-      aria-label={`${product.name} - $${product.price.toFixed(2)} at ${product.retailer}`}
+      aria-label={`${product.name} - $${formatPrice(product.price)} at ${product.retailer}`}
     >
       {/* Image */}
       <div className="aspect-[4/3] bg-white dark:bg-black relative overflow-hidden flex items-center justify-center" role="img" aria-label={product.name}>
@@ -162,7 +167,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="mb-4">
           <div className="flex items-baseline gap-2 mb-3">
             <span className="text-2xl font-semibold text-[#2A9D8F]">
-              ${product.price.toFixed(2)}
+              ${formatPrice(product.price)}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-sm text-black/40 dark:text-white/40 line-through">
@@ -178,7 +183,7 @@ export function ProductCard({ product }: ProductCardProps) {
             rel="noopener noreferrer"
             className="btn-view-product inline-flex items-center gap-2 px-4 py-2.5 bg-[#2A9D8F] text-white text-sm font-medium w-full justify-center hover:bg-[#238B7E] transition-all"
             style={{ borderRadius: '6px' }}
-            aria-label={`View ${product.name} deal at ${product.retailer} for $${product.price.toFixed(2)}`}
+            aria-label={`View ${product.name} deal at ${product.retailer} for $${formatPrice(product.price)}`}
           >
             <span>View Deal</span>
             <ArrowRight size={14} className="arrow group-hover:translate-x-1 transition-transform" aria-hidden="true" />
@@ -204,14 +209,14 @@ export function ProductCard({ product }: ProductCardProps) {
                     className="flex items-center justify-between py-1.5 px-2 -mx-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group/link text-xs"
                     style={{ borderRadius: '4px' }}
                     role="listitem"
-                    aria-label={`${option.retailer} - $${option.price.toFixed(2)}`}
+                    aria-label={`${option.retailer} - $${formatPrice(option.price)}`}
                   >
                     <span className="text-black/60 dark:text-white/60 group-hover/link:text-black dark:group-hover/link:text-white transition-colors">
                       {option.retailer}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="font-medium">
-                        ${option.price.toFixed(2)}
+                        ${formatPrice(option.price)}
                       </span>
                       {Math.abs(priceDiff) > 0.5 && (
                         <span className={`text-[10px] ${isHigher ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>

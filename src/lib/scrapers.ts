@@ -279,10 +279,25 @@ export async function searchAllRetailers(query: string): Promise<Product[]> {
   // Deduplicate by similar names
   allProducts = deduplicateProducts(allProducts);
 
-  // Filter out products with no images or broken placeholder images
-  allProducts = allProducts.filter(
-    (p) => p.imageUrl && p.imageUrl.startsWith('http') && !p.imageUrl.includes('placehold.co')
-  );
+  // CRITICAL: Filter out products with invalid data
+  allProducts = allProducts.filter((p) => {
+    // Must have valid price
+    if (!p.price || typeof p.price !== 'number' || isNaN(p.price) || p.price <= 0) {
+      console.log(`[Filter] Removing product with invalid price: ${p.name}`);
+      return false;
+    }
+    // Must have valid name
+    if (!p.name || p.name.trim() === '') {
+      console.log(`[Filter] Removing product with no name`);
+      return false;
+    }
+    // Must have valid image (optional but if present, must be valid)
+    if (p.imageUrl && (!p.imageUrl.startsWith('http') || p.imageUrl.includes('placehold.co'))) {
+      console.log(`[Filter] Removing product with invalid image: ${p.name}`);
+      return false;
+    }
+    return true;
+  });
 
   // Ensure all products have valid URLs
   allProducts = allProducts.map((p) => ({
