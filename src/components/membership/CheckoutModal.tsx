@@ -75,7 +75,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       <>
         {showConfetti && <ConfettiCelebration />}
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
-          <div className="bg-white dark:bg-black rounded-xl shadow-2xl max-w-md w-full p-8 text-center">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center">
             <div className="w-20 h-20 bg-[#2A9D8F] rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
                 className="w-10 h-10 text-white"
@@ -103,7 +103,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
-      <div className="bg-white dark:bg-black rounded-xl shadow-2xl max-w-md w-full p-6">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-black/900">Upgrade to Premium</h2>
           <button

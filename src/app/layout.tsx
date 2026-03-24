@@ -4,7 +4,6 @@ import { ChatWidget } from '@/components/ChatWidget';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Footer } from '@/components/Footer';
 import { SkipToContent } from '@/components/SkipToContent';
-import { ThemeProvider } from '@/components/ThemeProvider';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
 
 export const metadata: Metadata = {
@@ -69,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ colorScheme: 'light' }}>
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icon" />
@@ -92,17 +91,15 @@ export default function RootLayout({
           description="Never overpay again. AI-powered shopping assistant that finds better prices across 50+ retailers."
         />
       </head>
-      <body className="min-h-screen flex flex-col bg-white text-black dark:bg-black dark:text-white">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <SkipToContent />
-          <AuthProvider>
-            <main id="main-content" className="flex-1" tabIndex={-1}>
-              {children}
-            </main>
-            <Footer />
-            <ChatWidget />
-          </AuthProvider>
-        </ThemeProvider>
+      <body className="min-h-screen flex flex-col bg-white text-black">
+        <SkipToContent />
+        <AuthProvider>
+          <main id="main-content" className="flex-1" tabIndex={-1}>
+            {children}
+          </main>
+          <Footer />
+          <ChatWidget />
+        </AuthProvider>
       </body>
     </html>
   );

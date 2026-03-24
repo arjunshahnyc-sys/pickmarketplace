@@ -44,7 +44,7 @@ export function WhyPick() {
   ];
 
   return (
-    <section className="py-24 bg-white dark:bg-black">
+    <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -57,10 +57,10 @@ export function WhyPick() {
             <Shield className="w-4 h-4" aria-hidden="true" />
             Why Choose Pick
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-black mb-4">
             Why Pick, Not Honey?
           </h2>
-          <p className="text-xl text-black/60 dark:text-white/60 max-w-3xl mx-auto">
+          <p className="text-xl text-black/60 max-w-3xl mx-auto">
             We're building the shopping assistant you deserve: transparent, fast, and truly on your side.
           </p>
         </motion.div>
@@ -77,17 +77,17 @@ export function WhyPick() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="relative group"
               >
-                <div className="h-full bg-white dark:bg-black rounded-2xl p-8 border border-black/10 dark:border-white/10 hover:border-[#2A9D8F] transition-all hover:shadow-xl">
+                <div className="h-full bg-white rounded-2xl p-8 border border-black/10 hover:border-[#2A9D8F] transition-all hover:shadow-xl">
                   {/* Icon */}
                   <div className="w-14 h-14 bg-[#2A9D8F] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Icon className="w-7 h-7 text-white" strokeWidth={2} aria-hidden="true" />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-semibold text-black dark:text-white mb-3">
+                  <h3 className="text-xl font-semibold text-black mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-black/60 dark:text-white/60 mb-4 leading-relaxed">
+                  <p className="text-black/60 mb-4 leading-relaxed">
                     {feature.description}
                   </p>
 
@@ -110,84 +110,84 @@ export function WhyPick() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-20"
         >
-          <div className="bg-white dark:bg-black rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden shadow-lg">
+          <div className="bg-white rounded-2xl border border-black/10 overflow-hidden shadow-lg">
             <table className="w-full">
               <thead>
-                <tr className="bg-black/5 dark:bg-white/5">
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-black dark:text-white">
+                <tr className="bg-black/5">
+                  <th className="py-4 px-6 text-left text-sm font-semibold text-black">
                     Feature
                   </th>
                   <th className="py-4 px-6 text-center text-sm font-semibold text-[#2A9D8F]">
                     Pick
                   </th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-black/60 dark:text-white/60">
+                  <th className="py-4 px-6 text-center text-sm font-semibold text-black/60">
                     Others
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/10 dark:divide-white/10">
+              <tbody className="divide-y divide-black/10">
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black dark:text-white">Transparent pricing</td>
+                  <td className="py-4 px-6 text-sm text-black">Transparent pricing</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 dark:bg-white/5 rounded-full">
-                      <span className="text-black/40 dark:text-white/40 font-bold">✗</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 rounded-full">
+                      <span className="text-black/40 font-bold">✗</span>
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black dark:text-white">Real-time price updates</td>
+                  <td className="py-4 px-6 text-sm text-black">Real-time price updates</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 dark:bg-white/5 rounded-full">
-                      <span className="text-black/40 dark:text-white/40 font-bold">~</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 rounded-full">
+                      <span className="text-black/40 font-bold">~</span>
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black dark:text-white">No data tracking</td>
+                  <td className="py-4 px-6 text-sm text-black">No data tracking</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 dark:bg-white/5 rounded-full">
-                      <span className="text-black/40 dark:text-white/40 font-bold">✗</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 rounded-full">
+                      <span className="text-black/40 font-bold">✗</span>
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black dark:text-white">50+ retailers</td>
+                  <td className="py-4 px-6 text-sm text-black">50+ retailers</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 dark:bg-white/5 rounded-full">
-                      <span className="text-black/40 dark:text-white/40 text-sm">Limited</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 rounded-full">
+                      <span className="text-black/40 text-sm">Limited</span>
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black dark:text-white">AI-powered recommendations</td>
+                  <td className="py-4 px-6 text-sm text-black">AI-powered recommendations</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 dark:bg-white/5 rounded-full">
-                      <span className="text-black/40 dark:text-white/40 font-bold">✗</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-black/5 rounded-full">
+                      <span className="text-black/40 font-bold">✗</span>
                     </span>
                   </td>
                 </tr>
@@ -211,7 +211,7 @@ export function WhyPick() {
             Try Pick Now, It's Free
             <Search className="w-5 h-5" aria-hidden="true" />
           </a>
-          <p className="text-sm text-black/60 dark:text-white/60 mt-4">
+          <p className="text-sm text-black/60 mt-4">
             Join thousands who switched from Honey to Pick
           </p>
         </motion.div>

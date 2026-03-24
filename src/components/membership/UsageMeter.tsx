@@ -13,14 +13,14 @@ export default function UsageMeter() {
   const percentage = typeof limit === 'number' ? (used / limit) * 100 : 0;
 
   return (
-    <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg p-4 shadow-sm">
+    <div className="bg-white border border-black/10 rounded-lg p-4 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-black dark:text-white">Daily Searches</span>
-        <span className="text-sm text-black/60 dark:text-white/60">
+        <span className="text-sm font-medium text-black">Daily Searches</span>
+        <span className="text-sm text-black/60">
           {searchesRemaining} / {limit} remaining
         </span>
       </div>
-      <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 mb-3">
+      <div className="w-full bg-black/10 rounded-full h-2 mb-3">
         <div
           className={`h-2 rounded-full transition-all ${
             percentage > 80 ? 'bg-[#EF4444]' : percentage > 50 ? 'bg-[#F59E0B]' : 'bg-[#10B981]'

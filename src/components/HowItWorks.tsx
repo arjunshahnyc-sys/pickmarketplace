@@ -26,7 +26,7 @@ export function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-20 bg-white dark:bg-black">
+    <section id="how-it-works" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -35,10 +35,10 @@ export function HowItWorks() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-bold text-black dark:text-white mb-4">
+          <h2 className="text-4xl font-bold text-black mb-4">
             How It Works
           </h2>
-          <p className="text-lg text-black/60 dark:text-white/60 max-w-2xl mx-auto">
+          <p className="text-lg text-black/60 max-w-2xl mx-auto">
             Save money in three simple steps. No sign-up required to start searching.
           </p>
         </motion.div>
@@ -60,7 +60,7 @@ export function HowItWorks() {
                   <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-[#2A9D8F] to-transparent opacity-30" />
                 )}
 
-                <div className="bg-white dark:bg-black rounded-2xl p-8 shadow-sm border border-black/10 dark:border-white/10 hover:shadow-lg transition-shadow relative z-10">
+                <div className="bg-white rounded-2xl p-8 shadow-sm border border-black/10 hover:shadow-lg transition-shadow relative z-10">
                   {/* Number badge */}
                   <div
                     className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-[#2A9D8F] text-white flex items-center justify-center text-xl font-bold shadow-lg"
@@ -76,10 +76,10 @@ export function HowItWorks() {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-semibold text-black dark:text-white mb-3">
+                  <h3 className="text-xl font-semibold text-black mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-black/60 dark:text-white/60 leading-relaxed">
+                  <p className="text-black/60 leading-relaxed">
                     {step.description}
                   </p>
                 </div>
@@ -103,7 +103,7 @@ export function HowItWorks() {
             Start Saving Now
             <Search className="w-5 h-5" aria-hidden="true" />
           </a>
-          <p className="text-sm text-black/60 dark:text-white/60 mt-4">
+          <p className="text-sm text-black/60 mt-4">
             No credit card required • Always free to search
           </p>
         </motion.div>

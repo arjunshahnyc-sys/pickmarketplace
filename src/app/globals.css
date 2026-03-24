@@ -1,37 +1,21 @@
 @import "tailwindcss";
 
-/* CRITICAL: Only 3 colors per mode
-   Light: white backgrounds, black text, teal accents
-   Dark: black backgrounds, white text, teal accents
-   That's it. No grays, no CSS variables for colors.
-*/
+/* CRITICAL: Light mode only - white backgrounds, black text, teal accents */
+
+html {
+  color-scheme: light;
+}
 
 :root {
-  /* Only keep font variables */
+  /* Font variables */
   --font-heading: 'DM Sans', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
 
-  /* Keep legacy color variables ONLY for backwards compatibility with existing code */
-  /* These map to Tailwind classes: bg-white text-black border-black/10 */
+  /* Color variables */
   --background: #FFFFFF;
   --foreground: #000000;
   --border: rgba(0, 0, 0, 0.1);
   --muted: rgba(0, 0, 0, 0.6);
-  --accent: #2A9D8F;
-  --accent-hover: #238B7E;
-
-  /* Semantic colors */
-  --success: #10B981;
-  --warning: #F59E0B;
-  --error: #EF4444;
-}
-
-/* Dark mode - map to Tailwind classes: dark:bg-black dark:text-white dark:border-white/10 */
-.dark {
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.1);
-  --muted: rgba(255, 255, 255, 0.6);
   --accent: #2A9D8F;
   --accent-hover: #238B7E;
 
@@ -64,16 +48,6 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Dark mode base - black background, white text */
-.dark html {
-  background-color: #000000;
-}
-
-.dark body {
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -313,31 +287,6 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   background: var(--text-tertiary);
 }
 
-.dark ::-webkit-scrollbar {
-  width: 6px;
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: #000000;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.dark ::selection {
-  background: rgba(42, 157, 143, 0.4);
-  color: #FFFFFF;
-}
-
-.dark *:focus-visible {
-  outline-color: #2A9D8F;
-}
 
 /* Loading spinner */
 @keyframes spin {

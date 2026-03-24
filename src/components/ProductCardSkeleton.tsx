@@ -1,32 +1,32 @@
 export function ProductCardSkeleton() {
   return (
     <div
-      className="bg-white dark:bg-black border border-black/10 dark:border-white/10 overflow-hidden animate-pulse"
+      className="bg-white border border-black/10 overflow-hidden animate-pulse"
       style={{ borderRadius: '6px' }}
       role="status"
       aria-label="Loading product"
     >
       {/* Image skeleton */}
-      <div className="aspect-[4/3] bg-black/10 dark:bg-white/10" />
+      <div className="aspect-[4/3] bg-black/10" />
 
       {/* Content skeleton */}
       <div className="p-4">
         {/* Title skeleton */}
         <div className="space-y-2 mb-3">
-          <div className="h-4 bg-black/10 dark:bg-white/10 rounded w-full" />
-          <div className="h-4 bg-black/10 dark:bg-white/10 rounded w-3/4" />
+          <div className="h-4 bg-black/10 rounded w-full" />
+          <div className="h-4 bg-black/10 rounded w-3/4" />
         </div>
 
         {/* Price skeleton */}
         <div className="mb-4">
-          <div className="h-8 bg-black/10 dark:bg-white/10 rounded w-1/3 mb-3" />
-          <div className="h-10 bg-black/10 dark:bg-white/10 rounded w-full" />
+          <div className="h-8 bg-black/10 rounded w-1/3 mb-3" />
+          <div className="h-10 bg-black/10 rounded w-full" />
         </div>
 
         {/* Tags skeleton */}
-        <div className="flex gap-2 pt-3 border-t border-black/10 dark:border-white/10">
-          <div className="h-6 bg-black/10 dark:bg-white/10 rounded w-16" />
-          <div className="h-6 bg-black/10 dark:bg-white/10 rounded w-20" />
+        <div className="flex gap-2 pt-3 border-t border-black/10">
+          <div className="h-6 bg-black/10 rounded w-16" />
+          <div className="h-6 bg-black/10 rounded w-20" />
         </div>
       </div>
     </div>

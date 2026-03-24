@@ -4,8 +4,8 @@ import { retailerLogos } from './RetailerLogos';
 
 export function TrustedBy() {
   return (
-    <section className="py-8 border-y border-black/10 dark:border-white/10 bg-white/50 dark:bg-black/50">
-      <p className="text-center text-xs text-black/40 dark:text-white/40 uppercase tracking-[0.2em] mb-6 font-medium">
+    <section className="py-8 border-y border-black/10 bg-white/50">
+      <p className="text-center text-xs text-black/40 uppercase tracking-[0.2em] mb-6 font-medium">
         Searching prices across 50+ retailers
       </p>
       <div className="flex justify-center items-center gap-10 flex-wrap max-w-4xl mx-auto opacity-40 grayscale hover:opacity-60 transition-opacity">

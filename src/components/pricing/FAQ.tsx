@@ -37,10 +37,10 @@ export function FAQ() {
 
   return (
     <section className="max-w-3xl mx-auto px-4 py-16">
-      <h2 className="text-3xl font-heading font-bold text-center text-black dark:text-white mb-3">
+      <h2 className="text-3xl font-heading font-bold text-center text-black mb-3">
         Frequently Asked Questions
       </h2>
-      <p className="text-center text-black/60 dark:text-white/60 mb-10">
+      <p className="text-center text-black/60 mb-10">
         Everything you need to know about Pick
       </p>
 
@@ -48,18 +48,18 @@ export function FAQ() {
         {faqData.map((item, index) => (
           <div
             key={index}
-            className="border border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-black"
+            className="border border-black/10 rounded-lg overflow-hidden bg-white"
           >
             <button
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-black/5 transition-colors"
             >
-              <span className="font-semibold text-black dark:text-white">{item.question}</span>
+              <span className="font-semibold text-black">{item.question}</span>
               <motion.div
                 animate={{ rotate: openIndex === index ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <ChevronDown className="w-5 h-5 text-black/40 dark:text-white/40" />
+                <ChevronDown className="w-5 h-5 text-black/40" />
               </motion.div>
             </button>
 
@@ -71,7 +71,7 @@ export function FAQ() {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="px-6 pb-4 text-black/60 dark:text-white/60 text-sm leading-relaxed">
+                  <div className="px-6 pb-4 text-black/60 text-sm leading-relaxed">
                     {item.answer}
                   </div>
                 </motion.div>

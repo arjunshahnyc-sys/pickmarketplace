@@ -39,10 +39,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-[#EF4444]" aria-hidden="true" />
             </div>
-            <h2 className="text-2xl font-bold text-black dark:text-white mb-2">
+            <h2 className="text-2xl font-bold text-black mb-2">
               Something went wrong
             </h2>
-            <p className="text-black/60 dark:text-white/60 mb-6">
+            <p className="text-black/60 mb-6">
               We encountered an unexpected error. Please try refreshing the page.
             </p>
             <button

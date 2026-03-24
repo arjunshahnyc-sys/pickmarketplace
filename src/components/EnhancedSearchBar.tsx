@@ -98,7 +98,7 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/60 dark:text-white/60 pointer-events-none"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/60 pointer-events-none"
             aria-hidden="true"
           />
           <input
@@ -108,7 +108,7 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
-            className="w-full pl-12 pr-24 py-4 text-base border-2 border-black/10 dark:border-white/10 rounded-xl focus:outline-none focus:border-[#2A9D8F] focus:ring-4 focus:ring-[#2A9D8F]/10 transition-all bg-white dark:bg-black"
+            className="w-full pl-12 pr-24 py-4 text-base border-2 border-black/10 rounded-xl focus:outline-none focus:border-[#2A9D8F] focus:ring-4 focus:ring-[#2A9D8F]/10 transition-all bg-white"
             aria-label="Search for products"
             autoComplete="off"
           />
@@ -116,7 +116,7 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute right-20 top-1/2 -translate-y-1/2 p-1 text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+              className="absolute right-20 top-1/2 -translate-y-1/2 p-1 text-black/60 hover:text-black transition-colors"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" aria-hidden="true" />
@@ -135,18 +135,18 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
 
       {/* Suggestions Dropdown */}
       {showSuggestions && (
-        <div className="absolute top-full mt-2 w-full bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full mt-2 w-full bg-white border border-black/10 rounded-xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto">
           {/* Recent Searches */}
           {recentSearches.length > 0 && (
-            <div className="p-4 border-b border-black/10 dark:border-white/10">
+            <div className="p-4 border-b border-black/10">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-black/60 dark:text-white/60" aria-hidden="true" />
-                  <span className="text-sm font-medium text-black/60 dark:text-white/60">Recent Searches</span>
+                  <Clock className="w-4 h-4 text-black/60" aria-hidden="true" />
+                  <span className="text-sm font-medium text-black/60">Recent Searches</span>
                 </div>
                 <button
                   onClick={clearRecentSearches}
-                  className="text-xs text-black/60 dark:text-white/60 hover:text-[#2A9D8F] transition-colors"
+                  className="text-xs text-black/60 hover:text-[#2A9D8F] transition-colors"
                 >
                   Clear
                 </button>
@@ -156,7 +156,7 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
                   <button
                     key={`recent-${index}`}
                     onClick={() => handleSuggestionClick(search)}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm text-black dark:text-white"
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-black/5 transition-colors text-sm text-black"
                   >
                     {search}
                   </button>
@@ -169,14 +169,14 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
           <div className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-[#2A9D8F]" aria-hidden="true" />
-              <span className="text-sm font-medium text-black/60 dark:text-white/60">Trending Searches</span>
+              <span className="text-sm font-medium text-black/60">Trending Searches</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {TRENDING_SEARCHES.map((search, index) => (
                 <button
                   key={`trending-${index}`}
                   onClick={() => handleSuggestionClick(search)}
-                  className="text-left px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm text-black dark:text-white border border-black/10 dark:border-white/10"
+                  className="text-left px-3 py-2 rounded-lg hover:bg-black/5 transition-colors text-sm text-black border border-black/10"
                 >
                   {search}
                 </button>

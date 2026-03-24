@@ -12,7 +12,7 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
     return (
       <Link
         href="/pricing"
-        className="inline-flex items-center gap-1 text-xs text-black/60 dark:text-white/60 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F]"
+        className="inline-flex items-center gap-1 text-xs text-black/60 hover:text-[#2A9D8F][#2A9D8F]"
       >
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -27,7 +27,7 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
   }
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-white dark:bg-black rounded-lg border border-black/10 dark:border-white/10">
+    <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-black/10">
       <div className="w-8 h-8 bg-[#2A9D8F] rounded-full flex items-center justify-center flex-shrink-0">
         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -38,7 +38,7 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
         </svg>
       </div>
       <div className="flex-1">
-        <p className="text-sm text-black dark:text-white">
+        <p className="text-sm text-black">
           <span className="font-medium">{featureName}</span> is a Premium feature
         </p>
       </div>

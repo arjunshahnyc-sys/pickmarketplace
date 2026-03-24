@@ -146,23 +146,23 @@ export default function SignupPage() {
       </div>
 
       {/* Right Side: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-white dark:bg-black">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2 mb-4">
               <ShoppingBag className="w-8 h-8 text-[#2A9D8F]" />
-              <span className="text-2xl font-heading font-bold text-black dark:text-white">Pick</span>
+              <span className="text-2xl font-heading font-bold text-black">Pick</span>
             </Link>
-            <h2 className="text-2xl font-heading font-bold text-black dark:text-white mt-4">
+            <h2 className="text-2xl font-heading font-bold text-black mt-4">
               Create your account
             </h2>
-            <p className="text-sm text-black/60 dark:text-white/60 dark:text-white/70 mt-1">
+            <p className="text-sm text-black/60 mt-1">
               Free forever. No credit card required.
             </p>
           </div>
 
           {errors.general && (
-            <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {errors.general}
             </div>
           )}
@@ -170,14 +170,14 @@ export default function SignupPage() {
           {/* Social Login Buttons */}
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 dark:border-white/10 dark:border-white/10 rounded-xl hover:bg-black/5 dark:bg-white/5 dark:hover:bg-white/5 transition mb-3 dark:text-white"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-3"
           >
             <GoogleIcon />
             <span className="text-sm font-medium">Continue with Google</span>
           </button>
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 dark:border-white/10 dark:border-white/10 rounded-xl hover:bg-black/5 dark:bg-white/5 dark:hover:bg-white/5 transition mb-6 dark:text-white"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-6"
           >
             <AppleIcon />
             <span className="text-sm font-medium">Continue with Apple</span>
@@ -185,9 +185,9 @@ export default function SignupPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-black/10 dark:bg-white/10 dark:bg-white/10" />
-            <span className="text-xs text-black/40 dark:text-white/40 uppercase">or continue with email</span>
-            <div className="flex-1 h-px bg-black/10 dark:bg-white/10 dark:bg-white/10" />
+            <div className="flex-1 h-px bg-black/10" />
+            <span className="text-xs text-black/40 uppercase">or continue with email</span>
+            <div className="flex-1 h-px bg-black/10" />
           </div>
 
           {/* Form */}
@@ -195,7 +195,7 @@ export default function SignupPage() {
             <div className="space-y-4">
               {/* Name Field */}
               <div>
-                <label className="text-sm font-medium text-black dark:text-white dark:text-white/70 mb-1 block">
+                <label className="text-sm font-medium text-black mb-1 block">
                   Full name
                 </label>
                 <div className="relative">
@@ -207,22 +207,22 @@ export default function SignupPage() {
                     onBlur={() => handleBlur('name')}
                     className={`w-full px-4 py-3 rounded-xl border ${
                       errors.name
-                        ? 'border-red-500 dark:border-red-500'
+                        ? 'border-red-500'
                         : touched.name && isFieldValid('name')
-                        ? 'border-green-500 dark:border-green-500'
-                        : 'border-black/10 dark:border-white/10 dark:border-white/10'
-                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-black dark:text-white`}
+                        ? 'border-green-500'
+                        : 'border-black/10'
+                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white`}
                   />
                   {isFieldValid('name') && (
                     <Check className="absolute right-3 top-3 w-5 h-5 text-green-500" />
                   )}
                 </div>
-                {errors.name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name}</p>}
+                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
 
               {/* Email Field */}
               <div>
-                <label className="text-sm font-medium text-black dark:text-white dark:text-white/70 mb-1 block">
+                <label className="text-sm font-medium text-black mb-1 block">
                   Email
                 </label>
                 <div className="relative">
@@ -234,22 +234,22 @@ export default function SignupPage() {
                     onBlur={() => handleBlur('email')}
                     className={`w-full px-4 py-3 rounded-xl border ${
                       errors.email
-                        ? 'border-red-500 dark:border-red-500'
+                        ? 'border-red-500'
                         : touched.email && isFieldValid('email')
-                        ? 'border-green-500 dark:border-green-500'
-                        : 'border-black/10 dark:border-white/10 dark:border-white/10'
-                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-black dark:text-white`}
+                        ? 'border-green-500'
+                        : 'border-black/10'
+                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white`}
                   />
                   {isFieldValid('email') && (
                     <Check className="absolute right-3 top-3 w-5 h-5 text-green-500" />
                   )}
                 </div>
-                {errors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email}</p>}
+                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
               </div>
 
               {/* Password Field */}
               <div>
-                <label className="text-sm font-medium text-black dark:text-white dark:text-white/70 mb-1 block">
+                <label className="text-sm font-medium text-black mb-1 block">
                   Password
                 </label>
                 <div className="relative">
@@ -261,22 +261,22 @@ export default function SignupPage() {
                     onBlur={() => handleBlur('password')}
                     className={`w-full px-4 py-3 pr-10 rounded-xl border ${
                       errors.password
-                        ? 'border-red-500 dark:border-red-500'
+                        ? 'border-red-500'
                         : touched.password && isFieldValid('password')
-                        ? 'border-green-500 dark:border-green-500'
-                        : 'border-black/10 dark:border-white/10 dark:border-white/10'
-                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-black dark:text-white`}
+                        ? 'border-green-500'
+                        : 'border-black/10'
+                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-black/40 dark:text-white/40 hover:text-black/60 dark:text-white/60 dark:hover:text-white"
+                    className="absolute right-3 top-3 text-black/40 hover:text-black/60"
                     aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password}</p>}
+                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
                 <PasswordStrength password={password} />
               </div>
             </div>
@@ -290,17 +290,17 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <p className="text-xs text-black/40 dark:text-white/40 dark:text-white/70 text-center mt-4">
+          <p className="text-xs text-black/40 text-center mt-4">
             By signing up, you agree to our{' '}
-            <Link href="/terms" className="underline hover:text-black/60 dark:text-white/60 dark:hover:text-white">
+            <Link href="/terms" className="underline hover:text-black/60">
               Terms
             </Link>{' '}
             and{' '}
-            <Link href="/privacy" className="underline hover:text-black/60 dark:text-white/60 dark:hover:text-white">
+            <Link href="/privacy" className="underline hover:text-black/60">
               Privacy Policy
             </Link>
           </p>
-          <p className="text-sm text-center mt-6 text-black/60 dark:text-white/60 dark:text-white/70">
+          <p className="text-sm text-center mt-6 text-black/60">
             Already have an account?{' '}
             <Link href="/login" className="text-[#2A9D8F] font-medium hover:underline">
               Log in
