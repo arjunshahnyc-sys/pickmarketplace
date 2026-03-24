@@ -50,7 +50,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article
-      className="group bg-white dark:bg-black border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:border-[var(--accent)]"
+      className="group bg-white dark:bg-black border border-black/10 dark:border-white/10 overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:border-[#2A9D8F]"
       style={{ borderRadius: '6px' }}
       aria-label={`${product.name} - $${product.price.toFixed(2)} at ${product.retailer}`}
     >
@@ -79,13 +79,13 @@ export function ProductCard({ product }: ProductCardProps) {
         {product.savings && product.savings > 0 && savingsPercent >= 5 && (
           <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
             <span
-              className="px-2.5 py-1 text-xs font-medium bg-[var(--accent)] text-white shadow-md"
+              className="px-2.5 py-1 text-xs font-medium bg-[#2A9D8F] text-white shadow-md"
               style={{ borderRadius: '4px' }}
             >
               SAVE ${product.savings.toFixed(2)}
             </span>
             <span
-              className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-black text-[var(--accent)] border border-[var(--accent)]"
+              className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-black text-[#2A9D8F] border border-[#2A9D8F]"
               style={{ borderRadius: '4px' }}
             >
               {savingsPercent}% OFF
@@ -115,10 +115,10 @@ export function ProductCard({ product }: ProductCardProps) {
           </span>
           {product.rating && product.rating > 0 && (
             <span className="text-xs bg-white/90 dark:bg-black/90 px-2 py-1 rounded flex items-center gap-1">
-              <span className="text-yellow-500">★</span>
-              <span className="font-medium">{product.rating.toFixed(1)}</span>
+              <span className="text-[#F59E0B]">★</span>
+              <span className="font-medium text-black dark:text-white">{product.rating.toFixed(1)}</span>
               {product.reviewCount && product.reviewCount > 0 && (
-                <span className="text-gray-400">({product.reviewCount.toLocaleString()})</span>
+                <span className="text-black/40 dark:text-white/40">({product.reviewCount.toLocaleString()})</span>
               )}
             </span>
           )}
@@ -132,7 +132,7 @@ export function ProductCard({ product }: ProductCardProps) {
           title={isBookmarked ? 'Remove from saved' : 'Save for later'}
         >
           <Bookmark
-            className={`w-4 h-4 transition-colors ${isBookmarked ? 'fill-[var(--accent)] text-[var(--accent)]' : 'text-[var(--muted)]'}`}
+            className={`w-4 h-4 transition-colors ${isBookmarked ? 'fill-[#2A9D8F] text-[#2A9D8F]' : 'text-black/60 dark:text-white/60'}`}
             aria-hidden="true"
           />
         </button>
@@ -142,10 +142,10 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="p-4">
         {/* Urgency signal */}
         {savingsPercent >= 10 && (
-          <div className="flex items-center gap-1.5 mb-2 text-xs text-[var(--muted)]">
-            <Eye className="w-3.5 h-3.5 text-[var(--accent-secondary)]" aria-hidden="true" />
+          <div className="flex items-center gap-1.5 mb-2 text-xs text-black/60 dark:text-white/60">
+            <Eye className="w-3.5 h-3.5 text-[#2A9D8F]" aria-hidden="true" />
             <span>
-              <span className="font-medium text-[var(--accent-secondary)]">{viewCount}</span> people viewed in the last hour
+              <span className="font-medium text-[#2A9D8F]">{viewCount}</span> people viewed in the last hour
             </span>
           </div>
         )}
@@ -157,11 +157,11 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Price display */}
         <div className="mb-4">
           <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-2xl font-semibold text-[var(--accent)]">
+            <span className="text-2xl font-semibold text-[#2A9D8F]">
               ${product.price.toFixed(2)}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
-              <span className="text-sm text-gray-400 line-through">
+              <span className="text-sm text-black/40 dark:text-white/40 line-through">
                 ${product.originalPrice.toFixed(2)}
               </span>
             )}
@@ -172,7 +172,7 @@ export function ProductCard({ product }: ProductCardProps) {
             href={product.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-view-product inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--accent)] text-white text-sm font-medium w-full justify-center hover:bg-[var(--accent-hover)] transition-all"
+            className="btn-view-product inline-flex items-center gap-2 px-4 py-2.5 bg-[#2A9D8F] text-white text-sm font-medium w-full justify-center hover:bg-[#238B7E] transition-all"
             style={{ borderRadius: '6px' }}
             aria-label={`View ${product.name} deal at ${product.retailer} for $${product.price.toFixed(2)}`}
           >
@@ -183,8 +183,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Also available at - Enhanced with price comparison */}
         {product.alsoAvailableAt && product.alsoAvailableAt.length > 0 && (
-          <div className="pt-4 border-t border-[var(--border)]">
-            <p className="text-xs text-[var(--muted)] mb-2 font-medium" id={`also-available-${product.id}`}>
+          <div className="pt-4 border-t border-black/10 dark:border-white/10">
+            <p className="text-xs text-black/60 dark:text-white/60 mb-2 font-medium" id={`also-available-${product.id}`}>
               Compare {product.alsoAvailableAt.length} {product.alsoAvailableAt.length === 1 ? 'retailer' : 'retailers'}:
             </p>
             <div className="space-y-1" role="list" aria-labelledby={`also-available-${product.id}`}>
@@ -197,12 +197,12 @@ export function ProductCard({ product }: ProductCardProps) {
                     href={option.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between py-1.5 px-2 -mx-1 hover:bg-[var(--background)] transition-colors group/link text-xs"
+                    className="flex items-center justify-between py-1.5 px-2 -mx-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group/link text-xs"
                     style={{ borderRadius: '4px' }}
                     role="listitem"
                     aria-label={`${option.retailer} - $${option.price.toFixed(2)}`}
                   >
-                    <span className="text-[var(--muted)] group-hover/link:text-[var(--foreground)] transition-colors">
+                    <span className="text-black/60 dark:text-white/60 group-hover/link:text-black dark:group-hover/link:text-white transition-colors">
                       {option.retailer}
                     </span>
                     <span className="flex items-center gap-1.5">
@@ -210,13 +210,13 @@ export function ProductCard({ product }: ProductCardProps) {
                         ${option.price.toFixed(2)}
                       </span>
                       {Math.abs(priceDiff) > 0.5 && (
-                        <span className={`text-[10px] ${isHigher ? 'text-[var(--error)]' : 'text-[var(--success)]'}`}>
+                        <span className={`text-[10px] ${isHigher ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>
                           {isHigher ? `+$${priceDiff.toFixed(2)}` : `-$${Math.abs(priceDiff).toFixed(2)}`}
                         </span>
                       )}
                       <ArrowUpRight
                         size={12}
-                        className="text-[var(--muted)] opacity-0 group-hover/link:opacity-100 transition-opacity"
+                        className="text-black/60 dark:text-white/60 opacity-0 group-hover/link:opacity-100 transition-opacity"
                         aria-hidden="true"
                       />
                     </span>
@@ -229,14 +229,14 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Brand & category tags */}
         {(product.brand || product.category) && (
-          <div className="mt-3 pt-3 border-t border-[var(--border)] flex gap-2 flex-wrap">
+          <div className="mt-3 pt-3 border-t border-black/10 dark:border-white/10 flex gap-2 flex-wrap">
             {product.brand && (
-              <span className="text-xs px-2 py-1 bg-[var(--background)] text-[var(--muted)] rounded">
+              <span className="text-xs px-2 py-1 bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 rounded">
                 {product.brand}
               </span>
             )}
             {product.category && (
-              <span className="text-xs px-2 py-1 bg-[var(--background)] text-[var(--muted)] rounded">
+              <span className="text-xs px-2 py-1 bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 rounded">
                 {product.category}
               </span>
             )}

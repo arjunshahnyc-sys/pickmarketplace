@@ -27,27 +27,27 @@ export default function AccountPage() {
   const resultsLimit = getFeatureLimit('resultsPerSearch');
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-black">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
+        <h1 className="text-3xl font-bold text-black dark:text-white mb-8">Account Settings</h1>
 
         {/* Profile Info */}
         <div className="bg-white dark:bg-black rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Information</h2>
+          <h2 className="text-xl font-semibold text-black dark:text-white mb-4">Profile Information</h2>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-gray-600">Name</label>
-              <p className="text-gray-900 font-medium">{user.name}</p>
+              <label className="text-sm text-black/60 dark:text-white/60">Name</label>
+              <p className="text-black dark:text-white font-medium">{user.name}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Email</label>
-              <p className="text-gray-900 font-medium">{user.email}</p>
+              <label className="text-sm text-black/60 dark:text-white/60">Email</label>
+              <p className="text-black dark:text-white font-medium">{user.email}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Member Since</label>
-              <p className="text-gray-900 font-medium">
+              <label className="text-sm text-black/60 dark:text-white/60">Member Since</label>
+              <p className="text-black dark:text-white font-medium">
                 {new Date(user.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -60,7 +60,7 @@ export default function AccountPage() {
 
         {/* Current Plan */}
         <div className="bg-white dark:bg-black rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Plan</h2>
+          <h2 className="text-xl font-semibold text-black dark:text-white mb-4">Current Plan</h2>
 
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -68,12 +68,12 @@ export default function AccountPage() {
                 className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
                   user.plan === 'premium'
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                    : 'bg-gray-200 text-gray-700'
+                    : 'bg-black/10 dark:bg-white/10 text-black dark:text-white'
                 }`}
               >
                 {user.plan === 'premium' ? 'Premium' : 'Pick Basic'}
               </span>
-              <p className="text-gray-600 mt-2">
+              <p className="text-black/60 dark:text-white/60 mt-2">
                 {user.plan === 'premium' ? '$4.99/month' : 'Free forever'}
               </p>
             </div>
@@ -88,7 +88,7 @@ export default function AccountPage() {
             ) : (
               <button
                 onClick={downgradToFree}
-                className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                className="border border-black/20 dark:border-white/20 text-black dark:text-white px-6 py-2 rounded-lg font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel Subscription
               </button>
@@ -96,8 +96,8 @@ export default function AccountPage() {
           </div>
 
           {/* Usage Stats */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Usage Statistics</h3>
+          <div className="border-t border-black/10 dark:border-white/10 pt-6">
+            <h3 className="text-lg font-medium text-black dark:text-white mb-4">Usage Statistics</h3>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-700 mb-1">Searches Today</p>
@@ -130,10 +130,10 @@ export default function AccountPage() {
 
         {/* Features Access */}
         <div className="bg-white dark:bg-black rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Feature Access</h2>
+          <h2 className="text-xl font-semibold text-black dark:text-white mb-4">Feature Access</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-700">Price Comparison</span>
+              <span className="text-black dark:text-white">Price Comparison</span>
               {user.plan === 'premium' ? (
                 <span className="text-green-600 flex items-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -146,11 +146,11 @@ export default function AccountPage() {
                   Active
                 </span>
               ) : (
-                <span className="text-gray-400">Premium Only</span>
+                <span className="text-black/40 dark:text-white/40">Premium Only</span>
               )}
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-700">Price History & Alerts</span>
+              <span className="text-black dark:text-white">Price History & Alerts</span>
               {user.plan === 'premium' ? (
                 <span className="text-green-600 flex items-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -163,11 +163,11 @@ export default function AccountPage() {
                   Active
                 </span>
               ) : (
-                <span className="text-gray-400">Premium Only</span>
+                <span className="text-black/40 dark:text-white/40">Premium Only</span>
               )}
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-700">Similar Products</span>
+              <span className="text-black dark:text-white">Similar Products</span>
               {user.plan === 'premium' ? (
                 <span className="text-green-600 flex items-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -180,11 +180,11 @@ export default function AccountPage() {
                   Active
                 </span>
               ) : (
-                <span className="text-gray-400">Premium Only</span>
+                <span className="text-black/40 dark:text-white/40">Premium Only</span>
               )}
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-700">Full AI Chatbot</span>
+              <span className="text-black dark:text-white">Full AI Chatbot</span>
               {user.plan === 'premium' ? (
                 <span className="text-green-600 flex items-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -205,7 +205,7 @@ export default function AccountPage() {
 
         {/* Logout */}
         <div className="bg-white dark:bg-black rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Actions</h2>
+          <h2 className="text-xl font-semibold text-black dark:text-white mb-4">Account Actions</h2>
           <button
             onClick={() => {
               logout();

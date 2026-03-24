@@ -12,7 +12,7 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
     return (
       <Link
         href="/pricing"
-        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-purple-600"
+        className="inline-flex items-center gap-1 text-xs text-black/60 dark:text-white/60 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F]"
       >
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -27,8 +27,8 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
   }
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200">
-      <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+    <div className="flex items-center gap-2 p-3 bg-white dark:bg-black rounded-lg border border-black/10 dark:border-white/10">
+      <div className="w-8 h-8 bg-[#2A9D8F] rounded-full flex items-center justify-center flex-shrink-0">
         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
@@ -38,13 +38,13 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
         </svg>
       </div>
       <div className="flex-1">
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-black dark:text-white">
           <span className="font-medium">{featureName}</span> is a Premium feature
         </p>
       </div>
       <Link
         href="/pricing"
-        className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+        className="text-sm text-[#2A9D8F] hover:text-[#238B7E] font-medium"
       >
         Upgrade
       </Link>

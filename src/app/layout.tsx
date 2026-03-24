@@ -92,7 +92,7 @@ export default function RootLayout({
           description="Never overpay again. AI-powered shopping assistant that finds better prices across 50+ retailers."
         />
       </head>
-      <body className="min-h-screen texture-overlay flex flex-col dark:bg-black">
+      <body className="min-h-screen flex flex-col bg-white text-black dark:bg-black dark:text-white">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <SkipToContent />
           <AuthProvider>

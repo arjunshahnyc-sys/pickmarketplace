@@ -10,26 +10,23 @@ export function HowItWorks() {
       number: '1',
       title: 'Search Any Product',
       description: 'Type in what you\'re looking for, from headphones to laptops, and we\'ll find it across 50+ retailers.',
-      color: 'from-blue-500 to-cyan-500',
     },
     {
       icon: Zap,
       number: '2',
       title: 'AI Scans in Real-Time',
       description: 'Our AI instantly compares prices, ratings, and availability from Amazon, Target, Best Buy, and more.',
-      color: 'from-purple-500 to-pink-500',
     },
     {
       icon: TrendingDown,
       number: '3',
       title: 'Pick the Best Deal',
       description: 'See all options ranked by price with direct links. Save money on every purchase, guaranteed.',
-      color: 'from-orange-500 to-red-500',
     },
   ];
 
   return (
-    <section id="how-it-works" className="py-20 bg-gradient-to-b from-white to-[var(--subtle-warm)]">
+    <section id="how-it-works" className="py-20 bg-white dark:bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -38,10 +35,10 @@ export function HowItWorks() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-bold text-[var(--foreground)] mb-4">
+          <h2 className="text-4xl font-bold text-black dark:text-white mb-4">
             How It Works
           </h2>
-          <p className="text-lg text-[var(--muted)] max-w-2xl mx-auto">
+          <p className="text-lg text-black/60 dark:text-white/60 max-w-2xl mx-auto">
             Save money in three simple steps. No sign-up required to start searching.
           </p>
         </motion.div>
@@ -60,29 +57,29 @@ export function HowItWorks() {
               >
                 {/* Connecting line (desktop only) */}
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-[var(--accent)] to-transparent opacity-30" />
+                  <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-[#2A9D8F] to-transparent opacity-30" />
                 )}
 
-                <div className="bg-white dark:bg-black rounded-2xl p-8 shadow-sm border border-[var(--border)] hover:shadow-lg transition-shadow relative z-10">
+                <div className="bg-white dark:bg-black rounded-2xl p-8 shadow-sm border border-black/10 dark:border-white/10 hover:shadow-lg transition-shadow relative z-10">
                   {/* Number badge */}
                   <div
-                    className={`absolute -top-4 -right-4 w-12 h-12 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center text-xl font-bold shadow-lg`}
+                    className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-[#2A9D8F] text-white flex items-center justify-center text-xl font-bold shadow-lg"
                   >
                     {step.number}
                   </div>
 
                   {/* Icon */}
                   <div className="mb-6">
-                    <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center`}>
+                    <div className="w-16 h-16 rounded-xl bg-[#2A9D8F] flex items-center justify-center">
                       <Icon className="w-8 h-8 text-white" strokeWidth={2} aria-hidden="true" />
                     </div>
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-semibold text-[var(--foreground)] mb-3">
+                  <h3 className="text-xl font-semibold text-black dark:text-white mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-[var(--muted)] leading-relaxed">
+                  <p className="text-black/60 dark:text-white/60 leading-relaxed">
                     {step.description}
                   </p>
                 </div>
@@ -101,12 +98,12 @@ export function HowItWorks() {
         >
           <a
             href="#search"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent)] text-white text-lg font-semibold rounded-xl hover:bg-[var(--accent-hover)] transition-all hover:scale-105 shadow-lg"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-[#2A9D8F] text-white text-lg font-semibold rounded-xl hover:bg-[#238B7E] transition-all hover:scale-105 shadow-lg"
           >
             Start Saving Now
             <Search className="w-5 h-5" aria-hidden="true" />
           </a>
-          <p className="text-sm text-[var(--muted)] mt-4">
+          <p className="text-sm text-black/60 dark:text-white/60 mt-4">
             No credit card required • Always free to search
           </p>
         </motion.div>

@@ -36,18 +36,18 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       return (
         <div className="min-h-[400px] flex items-center justify-center p-8">
           <div className="max-w-md text-center">
-            <div className="w-16 h-16 bg-[var(--error)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-[var(--error)]" aria-hidden="true" />
+            <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-[#EF4444]" aria-hidden="true" />
             </div>
-            <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
+            <h2 className="text-2xl font-bold text-black dark:text-white mb-2">
               Something went wrong
             </h2>
-            <p className="text-[var(--muted)] mb-6">
+            <p className="text-black/60 dark:text-white/60 mb-6">
               We encountered an unexpected error. Please try refreshing the page.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-[var(--accent)] text-white font-medium rounded-lg hover:bg-[var(--accent-hover)] transition-colors"
+              className="px-6 py-3 bg-[#2A9D8F] text-white font-medium rounded-lg hover:bg-[#238B7E] transition-colors"
             >
               Refresh Page
             </button>

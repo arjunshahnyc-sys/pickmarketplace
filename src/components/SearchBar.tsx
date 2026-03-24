@@ -26,14 +26,14 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search any product..."
-          className="w-full px-5 py-4 pr-36 text-base border border-[var(--border)] bg-white dark:bg-black placeholder:text-[#A3A3A3] transition-all"
+          className="w-full px-5 py-4 pr-36 text-base border border-black/10 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 transition-all"
           style={{ borderRadius: '8px' }}
           disabled={isLoading}
         />
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
-          className="btn-primary absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
+          className="btn-primary absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 bg-[#2A9D8F] hover:bg-[#238B7E] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 transition-colors"
           style={{ borderRadius: '6px' }}
         >
           <span>{isLoading ? 'Searching' : 'Compare prices'}</span>

@@ -42,7 +42,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   return (
     <div className="mt-2">
-      <div className="h-1 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <div className="h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-300"
           style={{

@@ -1,100 +1,44 @@
 @import "tailwindcss";
 
+/* CRITICAL: Only 3 colors per mode
+   Light: white backgrounds, black text, teal accents
+   Dark: black backgrounds, white text, teal accents
+   That's it. No grays, no CSS variables for colors.
+*/
+
 :root {
-  /* Light mode */
-  --bg-primary: #FAFAF8;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #F5F5F3;
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #F9F9F7;
-  --text-primary: #1A1A1A;
-  --text-secondary: #6B6B6B;
-  --text-tertiary: #9CA3AF;
-  --border-primary: #E5E5E3;
-  --border-secondary: #F0F0EE;
+  /* Only keep font variables */
+  --font-heading: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+
+  /* Keep legacy color variables ONLY for backwards compatibility with existing code */
+  /* These map to Tailwind classes: bg-white text-black border-black/10 */
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --border: rgba(0, 0, 0, 0.1);
+  --muted: rgba(0, 0, 0, 0.6);
   --accent: #2A9D8F;
   --accent-hover: #238B7E;
-  --accent-light: #E6F5F3;
-  --surface-overlay: rgba(0, 0, 0, 0.5);
 
-  /* Legacy variables for backwards compatibility */
-  --background: #FAFAF8;
-  --foreground: #1A1A1A;
-  --border: #E5E5E3;
-  --muted: #6B6B6B;
-  --subtle-warm: #F5F5F3;
-  --accent-secondary: #FF6B35;
-  --accent-secondary-hover: #E85A2A;
-
-  /* Semantic Colors */
+  /* Semantic colors */
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
-  --info: #3B82F6;
-
-  /* Shadows */
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --button-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
 }
 
-/* Dark mode - Pure black, white, and teal ONLY */
+/* Dark mode - map to Tailwind classes: dark:bg-black dark:text-white dark:border-white/10 */
 .dark {
-  --bg-primary: #000000;        /* Pure black for all backgrounds */
-  --bg-secondary: #000000;      /* Pure black */
-  --bg-tertiary: #000000;       /* Pure black */
-  --bg-card: #000000;           /* Pure black */
-  --bg-card-hover: #000000;     /* Pure black */
-  --text-primary: #FFFFFF;      /* Pure white for all text */
-  --text-secondary: #FFFFFF;    /* Pure white */
-  --text-tertiary: #FFFFFF;     /* Pure white */
-  --border-primary: rgba(255, 255, 255, 0.1);    /* White with 10% opacity */
-  --border-secondary: rgba(255, 255, 255, 0.1);  /* White with 10% opacity */
-  --accent: #2A9D8F;            /* Pick teal - the ONLY color */
-  --accent-hover: rgba(42, 157, 143, 0.8);  /* Teal at 80% */
-  --accent-light: rgba(42, 157, 143, 0.1);  /* Teal at 10% for badges */
-  --surface-overlay: rgba(0, 0, 0, 0.8);
-
-  /* Legacy variables for backwards compatibility */
   --background: #000000;
   --foreground: #FFFFFF;
   --border: rgba(255, 255, 255, 0.1);
-  --muted: #FFFFFF;
-  --subtle-warm: #000000;
-  --accent-secondary: #2A9D8F;
-  --accent-secondary-hover: rgba(42, 157, 143, 0.8);
+  --muted: rgba(255, 255, 255, 0.6);
+  --accent: #2A9D8F;
+  --accent-hover: #238B7E;
 
-  /* No shadows in dark mode */
-  --card-shadow: none;
-  --card-shadow-hover: none;
-  --button-shadow: none;
-
-  /* Semantic colors stay vibrant */
+  /* Semantic colors */
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
-  --info: #3B82F6;
-}
-
-@theme inline {
-  --color-bg-primary: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-tertiary: var(--bg-tertiary);
-  --color-bg-card: var(--bg-card);
-  --color-bg-card-hover: var(--bg-card-hover);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
-  --color-border-primary: var(--border-primary);
-  --color-border-secondary: var(--border-secondary);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-light: var(--accent-light);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-error: var(--error);
-  --font-heading: 'DM Sans', system-ui, sans-serif;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
 }
 
 /* Font display optimization */
@@ -112,22 +56,24 @@
   box-sizing: border-box;
 }
 
+/* Light mode base - white background, black text */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: #FFFFFF;
+  color: #000000;
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark mode base - black background, white text */
 .dark html {
   background-color: #000000;
 }
 
 .dark body {
   background-color: #000000 !important;
-  color: #FFFFFF;
+  color: #FFFFFF !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -28,15 +28,15 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
 
   return (
     <header
-      className={`bg-white/80 dark:bg-black/80 backdrop-blur-sm border-b border-[var(--border)] z-50 ${sticky ? 'sticky top-0' : ''}`}
+      className={`bg-white/80 dark:bg-black/80 backdrop-blur-sm border-b border-black/5 dark:border-white/10 z-50 ${sticky ? 'sticky top-0' : ''}`}
       role="banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group" aria-label="Pick Marketplace Home">
-            <ShoppingBag size={22} strokeWidth={1.5} className="text-[var(--accent)] group-hover:scale-110 transition-transform" aria-hidden="true" />
-            <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <ShoppingBag size={22} strokeWidth={1.5} className="text-[#2A9D8F] group-hover:scale-110 transition-transform" aria-hidden="true" />
+            <span className="text-xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: 'var(--font-heading)' }}>
               pick
             </span>
           </Link>
@@ -50,17 +50,17 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for products..."
-                  className="w-full px-4 py-2.5 pl-10 border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-all"
+                  className="w-full px-4 py-2.5 pl-10 bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:border-[#2A9D8F] focus:ring-2 focus:ring-[#2A9D8F]/20 transition-all placeholder:text-black/40 dark:placeholder:text-white/40"
                   aria-label="Search for products"
                 />
                 <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/60 dark:text-white/60"
                   aria-hidden="true"
                 />
                 {searchQuery && (
                   <button
                     type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[var(--accent)] text-white text-sm font-medium rounded hover:bg-[var(--accent-hover)] transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#2A9D8F] text-white text-sm font-medium rounded hover:bg-[#238B7E] transition-colors"
                     aria-label="Search"
                   >
                     Search
@@ -75,25 +75,25 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
             <ThemeToggle />
             <Link
               href="#how-it-works"
-              className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+              className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white transition-colors link-underline"
             >
               How it works
             </Link>
             <Link
               href="/pricing"
-              className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+              className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white transition-colors link-underline"
             >
               Pricing
             </Link>
             {isAuthenticated ? (
               <>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-[var(--muted)]">{user?.name}</span>
+                  <span className="text-sm text-black/60 dark:text-white/60">{user?.name}</span>
                   <span
                     className={`px-2.5 py-1 text-xs font-medium ${
                       user?.plan === 'premium'
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                        : 'bg-[var(--background)] text-[var(--muted)]'
+                        ? 'bg-[#2A9D8F] text-white'
+                        : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60'
                     }`}
                     style={{ borderRadius: '4px' }}
                     aria-label={`Current plan: ${user?.plan === 'premium' ? 'Premium' : 'Basic'}`}
@@ -111,13 +111,13 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                 )}
                 <Link
                   href="/account"
-                  className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+                  className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white transition-colors link-underline"
                 >
                   Account
                 </Link>
                 <button
                   onClick={logout}
-                  className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors btn"
+                  className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white transition-colors btn"
                   aria-label="Logout"
                 >
                   Logout
@@ -127,7 +127,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
               <>
                 <Link
                   href="/login"
-                  className="text-sm text-gray-600 dark:text-white/70 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] font-medium transition-colors"
+                  className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white font-medium transition-colors"
                 >
                   Log In
                 </Link>
@@ -142,7 +142,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
             {onInstallClick && (
               <button
                 onClick={onInstallClick}
-                className="btn-secondary text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white cursor-pointer"
+                className="btn-secondary text-sm px-4 py-2 border border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black cursor-pointer"
                 style={{ borderRadius: '6px' }}
               >
                 Get extension
@@ -153,7 +153,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+            className="md:hidden p-2 text-black/60 dark:text-white/60 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] transition-colors"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
           >
@@ -168,7 +168,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div
-            className="md:hidden py-4 border-t border-[var(--border)]"
+            className="md:hidden py-4 border-t border-black/10 dark:border-white/10"
             role="navigation"
             aria-label="Mobile navigation"
           >
@@ -181,17 +181,17 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search for products..."
-                    className="w-full px-4 py-2.5 pl-10 border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                    className="w-full px-4 py-2.5 pl-10 bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:border-[#2A9D8F] focus:ring-2 focus:ring-[#2A9D8F]/20 placeholder:text-black/40 dark:placeholder:text-white/40"
                     aria-label="Search for products"
                   />
                   <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)]"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/60 dark:text-white/60"
                     aria-hidden="true"
                   />
                   {searchQuery && (
                     <button
                       type="submit"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[var(--accent)] text-white text-sm font-medium rounded hover:bg-[var(--accent-hover)]"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#2A9D8F] text-white text-sm font-medium rounded hover:bg-[#238B7E]"
                       aria-label="Search"
                     >
                       Go
@@ -204,19 +204,19 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
             {/* Mobile Navigation Links */}
             <nav className="space-y-3">
               <div className="flex items-center gap-2 py-2">
-                <span className="text-sm text-[var(--muted)]">Theme:</span>
+                <span className="text-sm text-black/60 dark:text-white/60">Theme:</span>
                 <ThemeToggle />
               </div>
               <Link
                 href="#how-it-works"
-                className="block py-2 text-base font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                className="block py-2 text-base font-medium text-black dark:text-white hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 How it works
               </Link>
               <Link
                 href="/pricing"
-                className="block py-2 text-base font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                className="block py-2 text-base font-medium text-black dark:text-white hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
@@ -224,13 +224,13 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center gap-2 py-2">
-                    <User className="w-5 h-5 text-[var(--muted)]" aria-hidden="true" />
-                    <span className="text-base font-medium">{user?.name}</span>
+                    <User className="w-5 h-5 text-black/60 dark:text-white/60" aria-hidden="true" />
+                    <span className="text-base font-medium text-black dark:text-white">{user?.name}</span>
                     <span
                       className={`px-2 py-0.5 text-xs font-medium ${
                         user?.plan === 'premium'
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                          : 'bg-[var(--background)] text-[var(--muted)]'
+                          ? 'bg-[#2A9D8F] text-white'
+                          : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60'
                       }`}
                       style={{ borderRadius: '4px' }}
                     >
@@ -239,7 +239,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                   </div>
                   <Link
                     href="/account"
-                    className="block py-2 text-base font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                    className="block py-2 text-base font-medium text-black dark:text-white hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Account
@@ -249,7 +249,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                       logout();
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-2 py-2 text-base font-medium text-[var(--error)] hover:text-[var(--error)]/80 transition-colors w-full text-left"
+                    className="flex items-center gap-2 py-2 text-base font-medium text-[#EF4444] hover:text-[#EF4444]/80 transition-colors w-full text-left"
                   >
                     <LogOut className="w-5 h-5" aria-hidden="true" />
                     Logout
@@ -259,14 +259,14 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                 <>
                   <Link
                     href="/login"
-                    className="block py-2 text-base font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                    className="block py-2 text-base font-medium text-black dark:text-white hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Login
                   </Link>
                   <Link
                     href="/signup"
-                    className="block py-2 px-4 bg-[var(--accent)] text-white text-base font-medium rounded-lg hover:bg-[var(--accent-hover)] transition-colors text-center"
+                    className="block py-2 px-4 bg-[#2A9D8F] text-white text-base font-medium rounded-lg hover:bg-[#238B7E] transition-colors text-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign up free
@@ -279,7 +279,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                     onInstallClick();
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full py-2 px-4 bg-[var(--foreground)] text-white text-base font-medium rounded-lg hover:bg-[var(--foreground)]/90 transition-colors text-center"
+                  className="block w-full py-2 px-4 bg-black dark:bg-white text-white dark:text-black text-base font-medium rounded-lg hover:bg-black/90 dark:hover:bg-white/90 transition-colors text-center"
                 >
                   Get extension
                 </button>
