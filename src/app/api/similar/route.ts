@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,29 +20,29 @@ export async function GET(request: NextRequest) {
       .filter(term => term.length > 2)
       .slice(0, 5);
 
-    // Search for similar products in the database
-    // This searches product names that contain any of the search terms
-    const products = await prisma.product.findMany({
-      where: {
-        OR: searchTerms.map(term => ({
-          name: {
-            contains: term,
-            mode: 'insensitive' as const
-          }
-        }))
-      },
-      include: {
-        prices: true
-      },
-      take: 12 // Return up to 12 similar products
-    });
+    // Call internal search API to get products
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+
+    const searchUrl = `${baseUrl}/api/search?q=${encodeURIComponent(query)}`;
+    const response = await fetch(searchUrl);
+
+    if (!response.ok) {
+      throw new Error('Search failed');
+    }
+
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      return NextResponse.json({
+        similar: [],
+        count: 0
+      });
+    }
 
     // Transform products into similar products format
-    const similar = products.map(product => {
-      // Get the lowest price for this product
-      const sortedPrices = product.prices.sort((a, b) => a.amount - b.amount);
-      const lowestPrice = sortedPrices[0];
-
+    const similar = data.results.slice(0, 12).map((product: any) => {
       // Calculate similarity score based on how many search terms match
       const nameLower = product.name.toLowerCase();
       const matchedTerms = searchTerms.filter(term => nameLower.includes(term));
@@ -52,13 +51,13 @@ export async function GET(request: NextRequest) {
       return {
         id: product.id,
         name: product.name,
-        price: lowestPrice.amount,
-        retailer: lowestPrice.retailer,
-        url: lowestPrice.url,
+        price: product.lowestPrice,
+        retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
+        url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
         image: product.imageUrl,
         similarityScore: Math.round(similarityScore * 100)
       };
-    });
+    }) as Array<{ id: string; name: string; price: number; retailer: string; url: string; image: string | null; similarityScore: number }>;
 
     // Sort by similarity score (highest first)
     similar.sort((a, b) => b.similarityScore - a.similarityScore);

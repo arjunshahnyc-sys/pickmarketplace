@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,27 +42,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Search for products matching the extracted terms
-    const products = await prisma.product.findMany({
-      where: {
-        OR: searchTerms.map(term => ({
-          name: {
-            contains: term,
-            mode: 'insensitive' as const
-          }
-        }))
-      },
-      include: {
-        prices: true
-      },
-      take: 12
-    });
+    // Call internal search API to get products
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+
+    const searchUrl = `${baseUrl}/api/search?q=${encodeURIComponent(query)}`;
+    const response = await fetch(searchUrl);
+
+    if (!response.ok) {
+      throw new Error('Search failed');
+    }
+
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      return NextResponse.json({
+        products: [],
+        searchTerms,
+        count: 0,
+        message: 'Could not find any products matching your request.'
+      });
+    }
 
     // Transform products into response format
-    const matchedProducts = products.map(product => {
-      const sortedPrices = product.prices.sort((a, b) => a.amount - b.amount);
-      const lowestPrice = sortedPrices[0];
-
+    const matchedProducts = data.results.slice(0, 12).map((product: any) => {
       // Calculate match confidence
       const nameLower = product.name.toLowerCase();
       const matchedTerms = searchTerms.filter(term => nameLower.includes(term));
@@ -72,14 +75,14 @@ export async function POST(request: NextRequest) {
       return {
         id: product.id,
         name: product.name,
-        price: lowestPrice.amount,
-        retailer: lowestPrice.retailer,
-        url: lowestPrice.url,
+        price: product.lowestPrice,
+        retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
+        url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
         image: product.imageUrl,
         matchReason: `${confidence}% match - ${matchedTerms.join(', ')}`,
         confidence
       };
-    });
+    }) as Array<{ id: string; name: string; price: number; retailer: string; url: string; image: string | null; matchReason: string; confidence: number }>;
 
     // Sort by confidence (highest first)
     matchedProducts.sort((a, b) => b.confidence - a.confidence);

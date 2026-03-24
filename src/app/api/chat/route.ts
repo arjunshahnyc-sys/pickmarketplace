@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -34,19 +33,10 @@ export async function POST(request: NextRequest) {
 
     switch (intent.type) {
       case 'product_search':
-        response = await handleProductSearch(intent.query);
-        break;
-
       case 'price_comparison':
-        response = await handlePriceComparison(intent.query);
-        break;
-
       case 'recommendations':
-        response = await handleRecommendations(intent.query, intent.priceRange);
-        break;
-
       case 'similar_products':
-        response = await handleSimilarProducts(intent.query);
+        response = await handleProductSearch(intent.query, intent.type, intent.priceRange);
         break;
 
       case 'general_question':
@@ -64,8 +54,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(
-      { error: 'Failed to process message' },
-      { status: 500 }
+      { message: "Sorry, I'm having trouble right now. Please try the search bar above or ask me something else!" },
+      { status: 200 }
     );
   }
 }
@@ -165,137 +155,91 @@ function extractProductQuery(message: string): string {
   return query || message;
 }
 
-// Handle product search
-async function handleProductSearch(query: string) {
-  const searchTerms = query
-    .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(/\s+/)
-    .filter(term => term.length > 2)
-    .slice(0, 5);
+// Handle product search by calling the search API
+async function handleProductSearch(
+  query: string,
+  type: string,
+  priceRange?: { max?: number }
+) {
+  try {
+    // Call internal search API
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
 
-  const products = await prisma.product.findMany({
-    where: {
-      OR: searchTerms.map(term => ({
-        name: {
-          contains: term,
-          mode: 'insensitive' as const
-        }
-      }))
-    },
-    include: {
-      prices: true
-    },
-    take: 5
-  });
+    const searchUrl = `${baseUrl}/api/search?q=${encodeURIComponent(query)}`;
+    const response = await fetch(searchUrl);
 
-  if (products.length === 0) {
-    return {
-      message: `I couldn't find exact matches for "${query}", but I can help you search across Amazon, Walmart, Target, Best Buy, Costco, eBay, and Nordstrom. Try being more specific or use our search bar above!`
-    };
-  }
+    if (!response.ok) {
+      throw new Error('Search failed');
+    }
 
-  const formattedProducts = products.map(product => {
-    const sortedPrices = product.prices.sort((a, b) => a.amount - b.amount);
-    const lowestPrice = sortedPrices[0];
+    const data = await response.json();
 
-    return {
+    if (!data.results || data.results.length === 0) {
+      return {
+        message: `I couldn't find exact matches for "${query}", but I can help you search across Amazon, Walmart, Target, Best Buy, Costco, eBay, and Nordstrom. Try being more specific or use our search bar above!`
+      };
+    }
+
+    // Filter by price range if specified
+    let products = data.results;
+    if (priceRange?.max) {
+      products = products.filter((p: any) => p.lowestPrice <= priceRange.max!);
+    }
+
+    if (products.length === 0) {
+      return {
+        message: `I couldn't find products matching "${query}" under $${priceRange?.max}. Try increasing your budget or searching for similar items!`
+      };
+    }
+
+    // Format products for chat response
+    const formattedProducts = products.slice(0, 5).map((product: any) => ({
       name: product.name,
-      price: lowestPrice.amount,
-      retailer: lowestPrice.retailer,
-      url: lowestPrice.url,
+      price: product.lowestPrice,
+      retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
+      url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
       image: product.imageUrl
-    };
-  });
+    }));
 
-  return {
-    message: `I found ${products.length} ${products.length === 1 ? 'product' : 'products'} for you! Here are the best deals:`,
-    products: formattedProducts
-  };
-}
+    // Generate appropriate message based on intent type
+    let message = '';
+    const count = formattedProducts.length;
+    const priceInfo = priceRange?.max ? ` under $${priceRange.max}` : '';
 
-// Handle price comparison
-async function handlePriceComparison(query: string) {
-  const result = await handleProductSearch(query);
+    switch (type) {
+      case 'price_comparison':
+        const prices = formattedProducts.map((p: any) => p.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const savings = (maxPrice - minPrice).toFixed(2);
+        message = `I compared prices across retailers. The best price is $${minPrice.toFixed(2)}, saving you $${savings} compared to the highest price! Check these options:`;
+        break;
 
-  if (result.products && result.products.length > 0) {
-    const prices = result.products.map(p => p.price);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const savings = maxPrice - minPrice;
+      case 'recommendations':
+        message = `Based on your criteria${priceInfo}, I recommend these ${count} options. They offer the best value:`;
+        break;
 
-    return {
-      message: `I compared prices across retailers. The best price is $${minPrice.toFixed(2)}, saving you $${savings.toFixed(2)} compared to the highest price! Check these options:`,
-      products: result.products
-    };
-  }
+      case 'similar_products':
+        message = `Here are similar products to "${query}" with great reviews and competitive prices:`;
+        break;
 
-  return result;
-}
-
-// Handle recommendations
-async function handleRecommendations(query: string, priceRange?: { max?: number }) {
-  let products = await prisma.product.findMany({
-    where: {
-      name: {
-        contains: query,
-        mode: 'insensitive' as const
-      }
-    },
-    include: {
-      prices: true
-    },
-    take: 5
-  });
-
-  // Filter by price range if specified
-  if (priceRange?.max) {
-    products = products.filter(product => {
-      const minPrice = Math.min(...product.prices.map(p => p.amount));
-      return minPrice <= priceRange.max!;
-    });
-  }
-
-  if (products.length === 0) {
-    return {
-      message: priceRange?.max
-        ? `I couldn't find products matching "${query}" under $${priceRange.max}. Try increasing your budget or searching for similar items!`
-        : `I couldn't find matches for "${query}". Try describing what you're looking for differently!`
-    };
-  }
-
-  const formattedProducts = products.map(product => {
-    const sortedPrices = product.prices.sort((a, b) => a.amount - b.amount);
-    const lowestPrice = sortedPrices[0];
+      default:
+        message = `I found ${count} ${count === 1 ? 'product' : 'products'} for you! Here are the best deals:`;
+    }
 
     return {
-      name: product.name,
-      price: lowestPrice.amount,
-      retailer: lowestPrice.retailer,
-      url: lowestPrice.url,
-      image: product.imageUrl
+      message,
+      products: formattedProducts
     };
-  });
 
-  const priceInfo = priceRange?.max ? ` under $${priceRange.max}` : '';
-  return {
-    message: `Based on your criteria${priceInfo}, I recommend these ${products.length} options. They offer the best value:`,
-    products: formattedProducts
-  };
-}
-
-// Handle similar products
-async function handleSimilarProducts(query: string) {
-  const result = await handleProductSearch(query);
-
-  if (result.products) {
+  } catch (error) {
+    console.error('Product search error:', error);
     return {
-      message: `Here are similar products to "${query}" with great reviews and competitive prices:`,
-      products: result.products
+      message: "I'm having trouble searching right now. Please try using the search bar above!"
     };
   }
-
-  return result;
 }
 
 // Handle general questions
