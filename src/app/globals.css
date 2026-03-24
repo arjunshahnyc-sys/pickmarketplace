@@ -1,18 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  /* Primary Colors */
+  /* Light mode */
+  --bg-primary: #FAFAF8;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F5F5F3;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F9F9F7;
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #9CA3AF;
+  --border-primary: #E5E5E3;
+  --border-secondary: #F0F0EE;
+  --accent: #2A9D8F;
+  --accent-hover: #238B7E;
+  --accent-light: #E6F5F3;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Legacy variables for backwards compatibility */
   --background: #FAFAF8;
   --foreground: #1A1A1A;
-  --accent: #2A9D8F; /* Teal - primary brand */
-  --accent-hover: #238579;
-  --accent-secondary: #FF6B35; /* Orange - CTAs and urgency */
-  --accent-secondary-hover: #E85A2A;
-
-  /* Neutrals */
   --border: #E5E5E3;
-  --muted: #737373;
-  --subtle-warm: #F8F6F3;
+  --muted: #6B6B6B;
+  --subtle-warm: #F5F5F3;
+  --accent-secondary: #FF6B35;
+  --accent-secondary-hover: #E85A2A;
 
   /* Semantic Colors */
   --success: #10B981;
@@ -26,20 +38,38 @@
   --button-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
 }
 
-/* Dark mode colors */
+/* Dark mode - inspired by Linear/Spotify */
 .dark {
-  --background: #0F1419;
-  --foreground: #E8E8E6;
-  --accent: #3DB8A8;
-  --accent-hover: #4DCABB;
+  --bg-primary: #09090B;        /* Near black, not grey - like Linear */
+  --bg-secondary: #111113;      /* Slightly lighter for sections */
+  --bg-tertiary: #18181B;       /* Cards and elevated surfaces */
+  --bg-card: #18181B;           /* Card background */
+  --bg-card-hover: #1F1F23;     /* Card hover state */
+  --text-primary: #FAFAFA;      /* Almost white, not pure white */
+  --text-secondary: #A1A1AA;    /* Muted text - zinc-400 */
+  --text-tertiary: #71717A;     /* Even more muted - zinc-500 */
+  --border-primary: #27272A;    /* Subtle borders - zinc-800 */
+  --border-secondary: #1F1F23;  /* Even subtler borders */
+  --accent: #2DD4A8;            /* Brighter teal that pops on dark backgrounds */
+  --accent-hover: #34E0B4;      /* Lighter on hover */
+  --accent-light: rgba(45, 212, 168, 0.1); /* Teal glow for badges */
+  --surface-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Legacy variables for backwards compatibility */
+  --background: #09090B;
+  --foreground: #FAFAFA;
+  --border: #27272A;
+  --muted: #A1A1AA;
+  --subtle-warm: #18181B;
   --accent-secondary: #FF8A5B;
   --accent-secondary-hover: #FF9D70;
-  --border: #2A2F36;
-  --muted: #9CA3AF;
-  --subtle-warm: #1A1F26;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --button-shadow: 0 4px 12px rgba(61, 184, 168, 0.3);
+
+  /* Shadows - deeper in dark mode */
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --button-shadow: 0 4px 12px rgba(45, 212, 168, 0.3);
+
+  /* Semantic colors stay vibrant */
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
@@ -47,13 +77,19 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card-hover: var(--bg-card-hover);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
-  --color-accent-secondary: var(--accent-secondary);
-  --color-border: var(--border);
-  --color-muted: var(--muted);
+  --color-accent-light: var(--accent-light);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
@@ -314,12 +350,20 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #C5C5C3;
+  background: var(--text-tertiary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-secondary);
 }
 
 /* Loading spinner */

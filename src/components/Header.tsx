@@ -101,6 +101,14 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
                     {user?.plan === 'premium' ? 'Premium' : 'Basic'}
                   </span>
                 </div>
+                {user?.plan === 'free' && (
+                  <Link
+                    href="/pricing"
+                    className="text-sm px-4 py-2 border-2 border-[#2A9D8F] text-[#2A9D8F] rounded-lg font-medium hover:bg-[#2A9D8F] hover:text-white transition-all"
+                  >
+                    ⭐ Upgrade
+                  </Link>
+                )}
                 <Link
                   href="/account"
                   className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
@@ -119,16 +127,15 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
               <>
                 <Link
                   href="/login"
-                  className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] font-medium transition-colors"
                 >
-                  Login
+                  Log In
                 </Link>
                 <Link
                   href="/signup"
-                  className="btn-secondary text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
-                  style={{ borderRadius: '6px' }}
+                  className="text-sm px-5 py-2 bg-[#2A9D8F] text-white rounded-lg font-medium hover:bg-[#238B7E] transition-all hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
                 >
-                  Sign up
+                  Sign Up
                 </Link>
               </>
             )}

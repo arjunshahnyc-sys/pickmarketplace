@@ -10,6 +10,9 @@ import { getTrendingProducts } from '@/lib/scrapers';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import RetailerMarquee from '@/components/RetailerMarquee';
+import { TrustedBy } from '@/components/TrustedBy';
+import { HowItWorks } from '@/components/HowItWorks';
+import { StatsSection } from '@/components/StatsSection';
 
 // Animation variants for staggered product grid
 const gridVariants = {
@@ -294,8 +297,17 @@ export default function Home() {
           )}
         </section>
 
+        {/* Trusted By Section */}
+        {!hasSearched && <TrustedBy />}
+
         {/* Retailer Marquee */}
         {!hasSearched && <RetailerMarquee />}
+
+        {/* How It Works Section */}
+        {!hasSearched && <HowItWorks />}
+
+        {/* Stats Section */}
+        {!hasSearched && <StatsSection />}
 
         {/* Trending Now Section */}
         {!hasSearched && trendingProducts.length > 0 && (

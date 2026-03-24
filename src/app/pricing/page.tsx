@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import CheckoutModal from '@/components/membership/CheckoutModal';
+import { PricingToggle } from '@/components/pricing/PricingToggle';
+import { FAQ } from '@/components/pricing/FAQ';
+import { TrustedBy } from '@/components/TrustedBy';
 
 export default function PricingPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
 
   const handleGetStarted = () => {
     if (!isAuthenticated) {
@@ -30,7 +34,7 @@ export default function PricingPage() {
       <Header />
 
       <div className="max-w-6xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
+        <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Choose Your Plan
           </h1>
@@ -38,6 +42,8 @@ export default function PricingPage() {
             Start free, upgrade anytime
           </p>
         </div>
+
+        <PricingToggle billingPeriod={billingPeriod} onChange={setBillingPeriod} />
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Free Tier */}
@@ -106,9 +112,9 @@ export default function PricingPage() {
           </div>
 
           {/* Premium Tier */}
-          <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-2xl p-8 border-2 border-purple-600 relative">
+          <div className="bg-gradient-to-br from-[#2A9D8F] to-[#1A7A6F] rounded-xl shadow-2xl p-8 border-2 border-[#2A9D8F] relative">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="bg-yellow-400 text-yellow-900 px-4 py-1 rounded-full text-sm font-bold">
+              <span className="bg-white text-[#2A9D8F] px-4 py-1 rounded-full text-sm font-bold">
                 MOST POPULAR
               </span>
             </div>
@@ -116,10 +122,15 @@ export default function PricingPage() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Premium</h2>
               <div className="flex items-baseline mb-4">
-                <span className="text-4xl font-bold text-white">$4.99</span>
-                <span className="text-purple-100 ml-2">/month</span>
+                <span className="text-4xl font-bold text-white">
+                  ${billingPeriod === 'monthly' ? '4.99' : '3.33'}
+                </span>
+                <span className="text-white/80 ml-2">/month</span>
               </div>
-              <p className="text-purple-100">Everything you need</p>
+              {billingPeriod === 'annual' && (
+                <p className="text-white/70 text-sm mb-2">Billed annually at $39.99</p>
+              )}
+              <p className="text-white/80">Everything you need</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -170,13 +181,16 @@ export default function PricingPage() {
             <button
               onClick={handleUpgrade}
               disabled={isAuthenticated && user?.plan === 'premium'}
-              className="w-full bg-white text-purple-600 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-white text-[#2A9D8F] py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAuthenticated && user?.plan === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
             </button>
           </div>
         </div>
       </div>
+
+      <TrustedBy />
+      <FAQ />
 
       <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} />
     </div>
