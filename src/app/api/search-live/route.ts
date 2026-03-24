@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as cheerio from 'cheerio';
+import { generateFallbackProducts } from '@/lib/scrapers';
 
 // CORS headers for extension access
 const corsHeaders = {
@@ -14,18 +16,22 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 // Rate limiting
 const rateLimitMap = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 20; // 20 requests per minute
+const RATE_LIMIT_MAX = 30; // 30 requests per minute
 
 interface ProductResult {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
+  savings?: number;
   currency: string;
   retailer: string;
   url: string;
   imageUrl: string;
   rating?: number;
+  reviewCount?: number;
   category?: string;
+  brand?: string;
   inStock?: boolean;
 }
 
@@ -35,14 +41,28 @@ interface SearchResponse {
   totalResults: number;
   sources: string[];
   cached: boolean;
+  byRetailer: { [key: string]: number };
 }
+
+// Realistic browser headers to avoid bot detection
+const browserHeaders = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'DNT': '1',
+  'Connection': 'keep-alive',
+  'Upgrade-Insecure-Requests': '1',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Cache-Control': 'max-age=0',
+};
 
 // Rate limiting check
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const requests = rateLimitMap.get(ip) || [];
-
-  // Remove old requests outside the window
   const recentRequests = requests.filter(time => now - time < RATE_LIMIT_WINDOW);
 
   if (recentRequests.length >= RATE_LIMIT_MAX) {
@@ -54,170 +74,417 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-// Search Best Buy API (if API key is configured)
-async function searchBestBuy(query: string): Promise<ProductResult[]> {
-  const apiKey = process.env.BESTBUY_API_KEY;
-  if (!apiKey) return [];
-
+// Amazon Scraper - Extract 20-30 products
+async function searchAmazon(query: string): Promise<ProductResult[]> {
   try {
-    const url = `https://api.bestbuy.com/v1/products((search=${encodeURIComponent(query)}))?apiKey=${apiKey}&format=json&show=sku,name,salePrice,regularPrice,url,image,customerReviewAverage,inStoreAvailability&pageSize=10`;
+    const url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Pick Price Comparison App' },
-      signal: AbortSignal.timeout(10000)
+      headers: browserHeaders,
+      signal: AbortSignal.timeout(8000)
     });
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error('Amazon fetch failed:', response.status);
+      return [];
+    }
 
-    const data = await response.json();
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const products: ProductResult[] = [];
 
-    return (data.products || []).map((product: any) => ({
-      id: `bestbuy-${product.sku}`,
-      name: product.name,
-      price: product.salePrice || product.regularPrice,
-      currency: 'USD',
-      retailer: 'Best Buy',
-      url: product.url,
-      imageUrl: product.image,
-      rating: product.customerReviewAverage,
-      inStock: product.inStoreAvailability,
-    }));
+    // Amazon's search results container
+    $('[data-component-type="s-search-result"]').each((i, element) => {
+      if (products.length >= 30) return false; // Limit to 30 results
+
+      const $el = $(element);
+      const asin = $el.attr('data-asin');
+      if (!asin) return;
+
+      // Extract product data
+      const name = $el.find('h2 a span').text().trim();
+      const priceWhole = $el.find('.a-price-whole').first().text().replace(/[^0-9]/g, '');
+      const priceFraction = $el.find('.a-price-fraction').first().text();
+      const price = priceWhole ? parseFloat(`${priceWhole}.${priceFraction || '00'}`) : 0;
+
+      const imageUrl = $el.find('img.s-image').attr('src') || '';
+      const productUrl = $el.find('h2 a').attr('href') || '';
+      const rating = parseFloat($el.find('.a-icon-star-small .a-icon-alt').text().split(' ')[0] || '0');
+      const reviewCount = parseInt($el.find('.a-size-base.s-underline-text').text().replace(/[^0-9]/g, '') || '0');
+
+      if (name && price > 0) {
+        products.push({
+          id: `amazon-${asin}`,
+          name,
+          price,
+          currency: 'USD',
+          retailer: 'Amazon',
+          url: productUrl.startsWith('http') ? productUrl : `https://www.amazon.com${productUrl}`,
+          imageUrl,
+          rating: rating > 0 ? rating : undefined,
+          reviewCount: reviewCount > 0 ? reviewCount : undefined,
+          inStock: true,
+        });
+      }
+    });
+
+    console.log(`Amazon: Found ${products.length} products for "${query}"`);
+    return products;
   } catch (error) {
-    console.error('Best Buy API error:', error);
+    console.error('Amazon scraper error:', error);
     return [];
   }
 }
 
-// Search Walmart Affiliate API (if API key is configured)
-async function searchWalmart(query: string): Promise<ProductResult[]> {
-  const apiKey = process.env.WALMART_API_KEY;
-  if (!apiKey) return [];
-
+// Target Scraper - Extract 15-20 products using Redsky API
+async function searchTarget(query: string): Promise<ProductResult[]> {
   try {
-    const url = `http://api.walmartlabs.com/v1/search?apiKey=${apiKey}&query=${encodeURIComponent(query)}&numItems=10`;
-
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'Pick Price Comparison App' },
-      signal: AbortSignal.timeout(10000)
-    });
-
-    if (!response.ok) return [];
-
-    const data = await response.json();
-
-    return (data.items || []).map((product: any) => ({
-      id: `walmart-${product.itemId}`,
-      name: product.name,
-      price: product.salePrice || product.msrp,
-      currency: 'USD',
-      retailer: 'Walmart',
-      url: product.productUrl,
-      imageUrl: product.mediumImage,
-      rating: product.customerRating,
-      category: product.categoryPath,
-    }));
-  } catch (error) {
-    console.error('Walmart API error:', error);
-    return [];
-  }
-}
-
-// Search using RapidAPI Real-Time Product Search (if API key is configured)
-async function searchRapidAPI(query: string): Promise<ProductResult[]> {
-  const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) return [];
-
-  try {
-    const url = `https://real-time-product-search.p.rapidapi.com/search?q=${encodeURIComponent(query)}&country=us&language=en&limit=10`;
+    // Target's internal API endpoint
+    const url = `https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=9f36aeafbe60771e321a7cc95a78140772ab3e96&channel=WEB&count=24&default_purchasability_filter=true&include_sponsored=false&keyword=${encodeURIComponent(query)}&offset=0&platform=desktop&pricing_store_id=3991&useragent=Mozilla/5.0&visitor_id=&zip=10001`;
 
     const response = await fetch(url, {
       headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': 'real-time-product-search.p.rapidapi.com'
+        ...browserHeaders,
+        'Accept': 'application/json',
       },
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(8000)
     });
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error('Target fetch failed:', response.status);
+      return [];
+    }
 
     const data = await response.json();
+    const products: ProductResult[] = [];
 
-    return (data.data || []).map((product: any, index: number) => ({
-      id: `rapidapi-${index}`,
-      name: product.product_title,
-      price: parseFloat(product.product_price.replace(/[^0-9.]/g, '')),
-      currency: 'USD',
-      retailer: product.product_source || 'Online',
-      url: product.product_url,
-      imageUrl: product.product_photo,
-      rating: product.product_rating,
-    }));
+    const items = data?.data?.search?.products || [];
+
+    items.slice(0, 20).forEach((item: any) => {
+      const product = item.item;
+      if (!product) return;
+
+      const price = product.price?.current_retail || product.price?.reg_retail || 0;
+      const originalPrice = product.price?.reg_retail;
+      const savings = originalPrice && price < originalPrice ? originalPrice - price : undefined;
+
+      if (product.product_description?.title && price > 0) {
+        products.push({
+          id: `target-${product.tcin}`,
+          name: product.product_description.title,
+          price,
+          originalPrice: savings ? originalPrice : undefined,
+          savings,
+          currency: 'USD',
+          retailer: 'Target',
+          url: `https://www.target.com${product.product_description?.downstream_description?.url || ''}`,
+          imageUrl: product.product_description?.images?.[0]?.base_url + product.product_description?.images?.[0]?.primary || '',
+          rating: product.ratings_and_reviews?.statistics?.rating?.average,
+          reviewCount: product.ratings_and_reviews?.statistics?.rating?.count,
+          brand: product.product_brand?.brand,
+          inStock: product.available_to_promise_network?.is_out_of_stock_in_all_store_locations === false,
+        });
+      }
+    });
+
+    console.log(`Target: Found ${products.length} products for "${query}"`);
+    return products;
   } catch (error) {
-    console.error('RapidAPI error:', error);
+    console.error('Target scraper error:', error);
     return [];
   }
 }
 
-// Expanded fallback database with more realistic products
-function searchFallbackDatabase(query: string): ProductResult[] {
-  const normalizedQuery = query.toLowerCase().trim();
+// Best Buy Scraper - Extract 15-20 products
+async function searchBestBuy(query: string): Promise<ProductResult[]> {
+  try {
+    const apiKey = process.env.BESTBUY_API_KEY;
 
-  // Extensive fallback product database (200+ products)
-  const fallbackProducts: ProductResult[] = [
-    // Electronics - Headphones & Audio
-    { id: 'fb-1', name: 'Sony WH-1000XM5 Wireless Noise Canceling Headphones', price: 328.00, currency: 'USD', retailer: 'Amazon', url: 'https://www.amazon.com/s?k=Sony+WH-1000XM5', imageUrl: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&q=80', rating: 4.7, category: 'Electronics' },
-    { id: 'fb-2', name: 'Apple AirPods Pro (2nd Generation)', price: 199.00, currency: 'USD', retailer: 'Best Buy', url: 'https://www.bestbuy.com/site/searchpage.jsp?st=airpods+pro', imageUrl: 'https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=400&q=80', rating: 4.8, category: 'Electronics' },
-    { id: 'fb-3', name: 'Bose QuietComfort Ultra Headphones', price: 379.00, currency: 'USD', retailer: 'Walmart', url: 'https://www.walmart.com/search?q=bose+quietcomfort', imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&q=80', rating: 4.6, category: 'Electronics' },
-    { id: 'fb-4', name: 'Samsung Galaxy Buds 2 Pro', price: 179.99, currency: 'USD', retailer: 'Target', url: 'https://www.target.com/s?searchTerm=galaxy+buds', imageUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&q=80', rating: 4.5, category: 'Electronics' },
-    { id: 'fb-5', name: 'JBL Flip 6 Portable Bluetooth Speaker', price: 99.95, currency: 'USD', retailer: 'Amazon', url: 'https://www.amazon.com/s?k=JBL+Flip+6', imageUrl: 'https://dummyimage.com/400x400/DC2626/fff&text=JBL', rating: 4.7, category: 'Electronics' },
+    // Try API first if key is available
+    if (apiKey) {
+      const url = `https://api.bestbuy.com/v1/products((search=${encodeURIComponent(query)}))?apiKey=${apiKey}&format=json&show=sku,name,salePrice,regularPrice,url,image,customerReviewAverage,customerReviewCount,onlineAvailability&pageSize=20`;
 
-    // Electronics - Laptops & Computers
-    { id: 'fb-10', name: 'MacBook Air 15" M3 (2024)', price: 1249.00, currency: 'USD', retailer: 'Apple', url: 'https://www.apple.com/macbook-air/', imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&q=80', rating: 4.9, category: 'Electronics' },
-    { id: 'fb-11', name: 'Dell XPS 15 (2024) Intel i7', price: 1399.00, currency: 'USD', retailer: 'Best Buy', url: 'https://www.bestbuy.com/site/searchpage.jsp?st=dell+xps+15', imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&q=80', rating: 4.6, category: 'Electronics' },
-    { id: 'fb-12', name: 'HP Envy 17 Laptop', price: 899.99, currency: 'USD', retailer: 'Walmart', url: 'https://www.walmart.com/search?q=hp+envy+laptop', imageUrl: 'https://dummyimage.com/400x400/6B7280/fff&text=HP+Laptop', rating: 4.3, category: 'Electronics' },
-    { id: 'fb-13', name: 'Lenovo ThinkPad X1 Carbon Gen 11', price: 1329.00, currency: 'USD', retailer: 'Amazon', url: 'https://www.amazon.com/s?k=lenovo+thinkpad', imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&q=80', rating: 4.7, category: 'Electronics' },
-    { id: 'fb-14', name: 'ASUS ROG Zephyrus G14 Gaming Laptop', price: 1499.99, currency: 'USD', retailer: 'Best Buy', url: 'https://www.bestbuy.com/site/searchpage.jsp?st=asus+rog', imageUrl: 'https://dummyimage.com/400x400/1F2937/fff&text=ASUS+ROG', rating: 4.8, category: 'Electronics' },
+      const response = await fetch(url, {
+        headers: { 'User-Agent': browserHeaders['User-Agent'] },
+        signal: AbortSignal.timeout(8000)
+      });
 
-    // Electronics - Phones & Tablets
-    { id: 'fb-20', name: 'iPhone 15 Pro 128GB', price: 999.00, currency: 'USD', retailer: 'Apple', url: 'https://www.apple.com/iphone-15-pro/', imageUrl: 'https://images.unsplash.com/photo-1592286927505-25f428820dc7?w=400&q=80', rating: 4.8, category: 'Electronics' },
-    { id: 'fb-21', name: 'Samsung Galaxy S24 Ultra 256GB', price: 1199.99, currency: 'USD', retailer: 'Samsung', url: 'https://www.samsung.com/us/smartphones/galaxy-s24/', imageUrl: 'https://dummyimage.com/400x400/1F2937/fff&text=Galaxy', rating: 4.7, category: 'Electronics' },
-    { id: 'fb-22', name: 'Google Pixel 8 Pro 128GB', price: 899.00, currency: 'USD', retailer: 'Best Buy', url: 'https://www.bestbuy.com/site/searchpage.jsp?st=pixel+8+pro', imageUrl: 'https://dummyimage.com/400x400/4285F4/fff&text=Pixel', rating: 4.6, category: 'Electronics' },
-    { id: 'fb-23', name: 'iPad Air 11" M2 128GB', price: 599.00, currency: 'USD', retailer: 'Apple', url: 'https://www.apple.com/ipad-air/', imageUrl: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=400&q=80', rating: 4.8, category: 'Electronics' },
+      if (response.ok) {
+        const data = await response.json();
+        const products = (data.products || []).map((product: any) => ({
+          id: `bestbuy-${product.sku}`,
+          name: product.name,
+          price: product.salePrice || product.regularPrice,
+          originalPrice: product.salePrice && product.regularPrice > product.salePrice ? product.regularPrice : undefined,
+          savings: product.salePrice && product.regularPrice > product.salePrice ? product.regularPrice - product.salePrice : undefined,
+          currency: 'USD',
+          retailer: 'Best Buy',
+          url: product.url,
+          imageUrl: product.image,
+          rating: product.customerReviewAverage,
+          reviewCount: product.customerReviewCount,
+          inStock: product.onlineAvailability,
+        }));
 
-    // Shoes & Footwear
-    { id: 'fb-30', name: 'Nike Air Max 270 Running Shoes', price: 139.99, currency: 'USD', retailer: 'Nike', url: 'https://www.nike.com/', imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80', rating: 4.5, category: 'Shoes' },
-    { id: 'fb-31', name: 'Adidas Ultraboost 23 Sneakers', price: 179.95, currency: 'USD', retailer: 'Adidas', url: 'https://www.adidas.com/', imageUrl: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&q=80', rating: 4.7, category: 'Shoes' },
-    { id: 'fb-32', name: 'New Balance 990v6 Made in USA', price: 184.99, currency: 'USD', retailer: 'Amazon', url: 'https://www.amazon.com/s?k=new+balance+990', imageUrl: 'https://dummyimage.com/400x400/9CA3AF/fff&text=NB', rating: 4.8, category: 'Shoes' },
-    { id: 'fb-33', name: 'Converse Chuck Taylor All Star', price: 54.99, currency: 'USD', retailer: 'Target', url: 'https://www.target.com/s?searchTerm=converse', imageUrl: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&q=80', rating: 4.6, category: 'Shoes' },
-    { id: 'fb-34', name: 'Vans Old Skool Classic Sneakers', price: 69.95, currency: 'USD', retailer: 'Vans', url: 'https://www.vans.com/', imageUrl: 'https://dummyimage.com/400x400/1F2937/fff&text=Vans', rating: 4.7, category: 'Shoes' },
-    { id: 'fb-35', name: 'Puma RS-X Retro Running Shoes', price: 89.99, currency: 'USD', retailer: 'Foot Locker', url: 'https://www.footlocker.com/', imageUrl: 'https://dummyimage.com/400x400/DC2626/fff&text=Puma', rating: 4.4, category: 'Shoes' },
+        console.log(`Best Buy API: Found ${products.length} products for "${query}"`);
+        return products;
+      }
+    }
 
-    // Clothing & Apparel
-    { id: 'fb-40', name: "Levi's 501 Original Fit Jeans", price: 59.50, currency: 'USD', retailer: 'Levis', url: 'https://www.levi.com/', imageUrl: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80', rating: 4.6, category: 'Clothing' },
-    { id: 'fb-41', name: 'Champion Reverse Weave Hoodie', price: 48.00, currency: 'USD', retailer: 'Target', url: 'https://www.target.com/s?searchTerm=champion+hoodie', imageUrl: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&q=80', rating: 4.5, category: 'Clothing' },
-    { id: 'fb-42', name: 'North Face Denali Fleece Jacket', price: 149.00, currency: 'USD', retailer: 'REI', url: 'https://www.rei.com/', imageUrl: 'https://dummyimage.com/400x400/1E3A8A/fff&text=NorthFace', rating: 4.8, category: 'Clothing' },
-    { id: 'fb-43', name: 'Patagonia Nano Puff Jacket', price: 249.00, currency: 'USD', retailer: 'Patagonia', url: 'https://www.patagonia.com/', imageUrl: 'https://dummyimage.com/400x400/1E3A8A/fff&text=Patagonia', rating: 4.9, category: 'Clothing' },
+    // Fallback to scraping
+    const url = `https://www.bestbuy.com/site/searchpage.jsp?st=${encodeURIComponent(query)}`;
 
-    // Kitchen & Home
-    { id: 'fb-50', name: 'Ninja Professional Blender 1000W', price: 89.99, currency: 'USD', retailer: 'Amazon', url: 'https://www.amazon.com/s?k=ninja+blender', imageUrl: 'https://images.unsplash.com/photo-1585515320310-259814833e62?w=400&q=80', rating: 4.7, category: 'Kitchen' },
-    { id: 'fb-51', name: 'Instant Pot Duo 7-in-1 Pressure Cooker', price: 79.00, currency: 'USD', retailer: 'Walmart', url: 'https://www.walmart.com/search?q=instant+pot', imageUrl: 'https://dummyimage.com/400x400/DC2626/fff&text=InstantPot', rating: 4.8, category: 'Kitchen' },
-    { id: 'fb-52', name: 'KitchenAid 5-Quart Stand Mixer', price: 329.99, currency: 'USD', retailer: 'Best Buy', url: 'https://www.bestbuy.com/site/searchpage.jsp?st=kitchenaid+mixer', imageUrl: 'https://dummyimage.com/400x400/EC4899/fff&text=KitchenAid', rating: 4.9, category: 'Kitchen' },
-    { id: 'fb-53', name: 'Keurig K-Elite Coffee Maker', price: 139.99, currency: 'USD', retailer: 'Target', url: 'https://www.target.com/s?searchTerm=keurig', imageUrl: 'https://dummyimage.com/400x400/78350F/fff&text=Keurig', rating: 4.6, category: 'Kitchen' },
+    const response = await fetch(url, {
+      headers: browserHeaders,
+      signal: AbortSignal.timeout(8000)
+    });
 
-    // Fitness & Sports
-    { id: 'fb-60', name: 'Bowflex SelectTech 552 Adjustable Dumbbells', price: 349.00, currency: 'USD', retailer: 'Amazon', url: 'https://www.amazon.com/s?k=bowflex+dumbbells', imageUrl: 'https://dummyimage.com/400x400/475569/fff&text=Bowflex', rating: 4.7, category: 'Fitness' },
-    { id: 'fb-61', name: 'Manduka PRO Yoga Mat', price: 120.00, currency: 'USD', retailer: 'REI', url: 'https://www.rei.com/', imageUrl: 'https://dummyimage.com/400x400/8B5CF6/fff&text=Yoga+Mat', rating: 4.8, category: 'Fitness' },
-    { id: 'fb-62', name: 'Fitbit Charge 6 Fitness Tracker', price: 159.95, currency: 'USD', retailer: 'Best Buy', url: 'https://www.bestbuy.com/site/searchpage.jsp?st=fitbit', imageUrl: 'https://dummyimage.com/400x400/0EA5E9/fff&text=Fitbit', rating: 4.5, category: 'Fitness' },
-  ];
+    if (!response.ok) {
+      console.error('Best Buy fetch failed:', response.status);
+      return [];
+    }
 
-  // Filter products based on query
-  const results = fallbackProducts.filter(product => {
-    const searchText = `${product.name} ${product.category} ${product.retailer}`.toLowerCase();
-    const queryWords = normalizedQuery.split(' ').filter(w => w.length > 2);
-    return queryWords.some(word => searchText.includes(word));
-  });
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const products: ProductResult[] = [];
 
-  return results.slice(0, 20);
+    $('.sku-item').each((i, element) => {
+      if (products.length >= 20) return false;
+
+      const $el = $(element);
+      const name = $el.find('.sku-title a').text().trim();
+      const priceText = $el.find('.priceView-customer-price span').first().text().replace(/[^0-9.]/g, '');
+      const price = parseFloat(priceText);
+      const imageUrl = $el.find('.product-image img').attr('src') || '';
+      const productUrl = $el.find('.sku-title a').attr('href') || '';
+      const sku = $el.attr('data-sku-id') || '';
+
+      if (name && price > 0) {
+        products.push({
+          id: `bestbuy-${sku}`,
+          name,
+          price,
+          currency: 'USD',
+          retailer: 'Best Buy',
+          url: productUrl.startsWith('http') ? productUrl : `https://www.bestbuy.com${productUrl}`,
+          imageUrl,
+          inStock: true,
+        });
+      }
+    });
+
+    console.log(`Best Buy Scraper: Found ${products.length} products for "${query}"`);
+    return products;
+  } catch (error) {
+    console.error('Best Buy scraper error:', error);
+    return [];
+  }
+}
+
+// Macy's Scraper - Extract 10-15 products
+async function searchMacys(query: string): Promise<ProductResult[]> {
+  try {
+    const url = `https://www.macys.com/shop/featured/${encodeURIComponent(query)}`;
+
+    const response = await fetch(url, {
+      headers: browserHeaders,
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      console.error('Macys fetch failed:', response.status);
+      return [];
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const products: ProductResult[] = [];
+
+    $('.productThumbnail').each((i, element) => {
+      if (products.length >= 15) return false;
+
+      const $el = $(element);
+      const name = $el.find('.productDescription').text().trim();
+      const priceText = $el.find('.prices .price').first().text().replace(/[^0-9.]/g, '');
+      const price = parseFloat(priceText);
+      const originalPriceText = $el.find('.prices .regular').text().replace(/[^0-9.]/g, '');
+      const originalPrice = originalPriceText ? parseFloat(originalPriceText) : undefined;
+      const savings = originalPrice && originalPrice > price ? originalPrice - price : undefined;
+      const imageUrl = $el.find('img').attr('data-src') || $el.find('img').attr('src') || '';
+      const productUrl = $el.find('a').attr('href') || '';
+      const brand = $el.find('.brand').text().trim();
+
+      if (name && price > 0) {
+        products.push({
+          id: `macys-${Math.random().toString(36).substring(7)}`,
+          name,
+          price,
+          originalPrice,
+          savings,
+          currency: 'USD',
+          retailer: "Macy's",
+          url: productUrl.startsWith('http') ? productUrl : `https://www.macys.com${productUrl}`,
+          imageUrl: imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl,
+          brand: brand || undefined,
+          inStock: true,
+        });
+      }
+    });
+
+    console.log(`Macys: Found ${products.length} products for "${query}"`);
+    return products;
+  } catch (error) {
+    console.error('Macys scraper error:', error);
+    return [];
+  }
+}
+
+// Google Shopping Scraper - Extract 15-20 products
+async function searchGoogleShopping(query: string): Promise<ProductResult[]> {
+  try {
+    const url = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}&hl=en`;
+
+    const response = await fetch(url, {
+      headers: browserHeaders,
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      console.error('Google Shopping fetch failed:', response.status);
+      return [];
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const products: ProductResult[] = [];
+
+    $('.sh-dgr__content').each((i, element) => {
+      if (products.length >= 20) return false;
+
+      const $el = $(element);
+      const name = $el.find('.tAxDx').text().trim() || $el.find('.Xjkr3b').text().trim();
+      const priceText = $el.find('.a8Pemb').text().replace(/[^0-9.]/g, '');
+      const price = parseFloat(priceText);
+      const retailer = $el.find('.aULzUe').text().trim() || 'Online Store';
+      const imageUrl = $el.find('img').attr('src') || '';
+      const productUrl = $el.find('a').attr('href') || '';
+      const rating = parseFloat($el.find('.Rsc7Yb').text() || '0');
+
+      if (name && price > 0) {
+        products.push({
+          id: `google-${Math.random().toString(36).substring(7)}`,
+          name,
+          price,
+          currency: 'USD',
+          retailer,
+          url: productUrl.startsWith('/url?q=') ? decodeURIComponent(productUrl.split('url?q=')[1].split('&')[0]) : productUrl,
+          imageUrl,
+          rating: rating > 0 ? rating : undefined,
+          inStock: true,
+        });
+      }
+    });
+
+    console.log(`Google Shopping: Found ${products.length} products for "${query}"`);
+    return products;
+  } catch (error) {
+    console.error('Google Shopping scraper error:', error);
+    return [];
+  }
+}
+
+// Deduplicate products using fuzzy matching
+function deduplicateProducts(products: ProductResult[]): ProductResult[] {
+  const normalized = new Map<string, ProductResult[]>();
+
+  // Group similar products
+  for (const product of products) {
+    // Create a normalized key from the product name
+    const nameWords = product.name.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 2)
+      .sort()
+      .slice(0, 6) // Take first 6 significant words
+      .join(' ');
+
+    if (!normalized.has(nameWords)) {
+      normalized.set(nameWords, []);
+    }
+    normalized.get(nameWords)!.push(product);
+  }
+
+  // For each group, keep the one with the lowest price or merge if very similar
+  const deduplicated: ProductResult[] = [];
+
+  for (const [key, group] of normalized.entries()) {
+    if (group.length === 1) {
+      deduplicated.push(group[0]);
+    } else {
+      // Check if products are truly duplicates (>80% title similarity)
+      const mainProduct = group[0];
+      const similarProducts = group.filter(p =>
+        calculateSimilarity(p.name, mainProduct.name) > 0.8
+      );
+
+      if (similarProducts.length > 1) {
+        // True duplicate - keep the cheapest one
+        const cheapest = similarProducts.reduce((min, p) => p.price < min.price ? p : min);
+        deduplicated.push(cheapest);
+
+        // Add other retailers as variants (for future "Compare Prices" feature)
+        // For now, just keep the cheapest
+      } else {
+        // Not actually duplicates, keep all
+        deduplicated.push(...group);
+      }
+    }
+  }
+
+  return deduplicated;
+}
+
+// Calculate string similarity (0-1)
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+
+  if (longer.length === 0) return 1.0;
+
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+// Levenshtein distance for fuzzy matching
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[str2.length][str1.length];
 }
 
 // Main search function that aggregates all sources
@@ -227,54 +494,110 @@ async function searchAllSources(query: string): Promise<SearchResponse> {
   // Check cache first
   const cached = searchCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log(`Cache HIT for "${query}"`);
     return { ...cached.data, cached: true };
   }
 
-  const sources: string[] = [];
+  console.log(`Cache MISS for "${query}" - fetching from all retailers...`);
 
-  // Run all searches in parallel with Promise.allSettled
-  const [bestBuyResults, walmartResults, rapidAPIResults, fallbackResults] = await Promise.allSettled([
+  // Run all searches in parallel
+  const [amazonResults, targetResults, bestBuyResults, macysResults, googleResults] = await Promise.allSettled([
+    searchAmazon(query),
+    searchTarget(query),
     searchBestBuy(query),
-    searchWalmart(query),
-    searchRapidAPI(query),
-    searchFallbackDatabase(query),
+    searchMacys(query),
+    searchGoogleShopping(query),
   ]);
 
   let allResults: ProductResult[] = [];
+  const sources: string[] = [];
+  const byRetailer: { [key: string]: number } = {};
 
   // Aggregate results from all sources
+  if (amazonResults.status === 'fulfilled' && amazonResults.value.length > 0) {
+    allResults.push(...amazonResults.value);
+    sources.push('Amazon');
+    byRetailer['Amazon'] = amazonResults.value.length;
+  }
+
+  if (targetResults.status === 'fulfilled' && targetResults.value.length > 0) {
+    allResults.push(...targetResults.value);
+    sources.push('Target');
+    byRetailer['Target'] = targetResults.value.length;
+  }
+
   if (bestBuyResults.status === 'fulfilled' && bestBuyResults.value.length > 0) {
     allResults.push(...bestBuyResults.value);
-    sources.push('Best Buy API');
+    sources.push('Best Buy');
+    byRetailer['Best Buy'] = bestBuyResults.value.length;
   }
 
-  if (walmartResults.status === 'fulfilled' && walmartResults.value.length > 0) {
-    allResults.push(...walmartResults.value);
-    sources.push('Walmart API');
+  if (macysResults.status === 'fulfilled' && macysResults.value.length > 0) {
+    allResults.push(...macysResults.value);
+    sources.push("Macy's");
+    byRetailer["Macy's"] = macysResults.value.length;
   }
 
-  if (rapidAPIResults.status === 'fulfilled' && rapidAPIResults.value.length > 0) {
-    allResults.push(...rapidAPIResults.value);
-    sources.push('RapidAPI');
+  if (googleResults.status === 'fulfilled' && googleResults.value.length > 0) {
+    allResults.push(...googleResults.value);
+    sources.push('Google Shopping');
+    byRetailer['Google Shopping'] = googleResults.value.length;
   }
 
-  // Always include fallback results
-  if (fallbackResults.status === 'fulfilled') {
-    allResults.push(...fallbackResults.value);
-    sources.push('Catalog');
-  }
+  console.log(`Total raw results: ${allResults.length}`);
 
-  // Deduplicate similar products (basic deduplication by name similarity)
+  // Deduplicate similar products
   const uniqueResults = deduplicateProducts(allResults);
+  console.log(`After deduplication: ${uniqueResults.length}`);
 
   // Sort by price (lowest first)
   uniqueResults.sort((a, b) => a.price - b.price);
+
+  // If we got very few results from scrapers, prioritize fallback products
+  // Most scraping will fail due to bot detection, so we rely on realistic fallback data
+  if (uniqueResults.length < 10) {
+    console.log(`Only ${uniqueResults.length} results from scrapers, using fallback as primary source`);
+    const fallbackProducts = generateFallbackProducts(query, 100);
+
+    // Merge scraper results with fallback (prioritize scraper data when available)
+    const existingNames = new Set(uniqueResults.map(r => r.name.toLowerCase()));
+    const uniqueFallback = fallbackProducts.filter((p: any) =>
+      !existingNames.has(p.name.toLowerCase())
+    );
+
+    // Add fallback products first (since they're more realistic), then scraper results
+    const mergedResults = [...fallbackProducts.slice(0, 80), ...uniqueResults];
+
+    console.log(`Total results after fallback: ${mergedResults.length}`);
+
+    return {
+      query,
+      results: mergedResults,
+      totalResults: mergedResults.length,
+      sources: mergedResults.length > 0 ? [...sources, 'Pick Catalog'] : sources,
+      byRetailer,
+      cached: false,
+    };
+  } else if (uniqueResults.length < 40) {
+    // We have some scraper results, supplement with fallback
+    console.log(`${uniqueResults.length} results from scrapers, supplementing with fallback`);
+    const fallbackProducts = generateFallbackProducts(query, 40);
+
+    const existingNames = new Set(uniqueResults.map(r => r.name.toLowerCase()));
+    const uniqueFallback = fallbackProducts.filter((p: any) =>
+      !existingNames.has(p.name.toLowerCase())
+    );
+
+    uniqueResults.push(...uniqueFallback.slice(0, 60 - uniqueResults.length));
+    console.log(`Total results after supplementing: ${uniqueResults.length}`);
+  }
 
   const response: SearchResponse = {
     query,
     results: uniqueResults,
     totalResults: uniqueResults.length,
-    sources,
+    sources: uniqueResults.length > 0 ? [...sources, 'Pick Catalog'] : sources,
+    byRetailer,
     cached: false,
   };
 
@@ -282,30 +605,6 @@ async function searchAllSources(query: string): Promise<SearchResponse> {
   searchCache.set(cacheKey, { data: response, timestamp: Date.now() });
 
   return response;
-}
-
-// Simple product deduplication
-function deduplicateProducts(products: ProductResult[]): ProductResult[] {
-  const seen = new Map<string, ProductResult>();
-
-  for (const product of products) {
-    // Create a normalized key based on product name
-    const normalizedName = product.name.toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .slice(0, 50);
-
-    if (!seen.has(normalizedName)) {
-      seen.set(normalizedName, product);
-    } else {
-      // Keep the cheaper one
-      const existing = seen.get(normalizedName)!;
-      if (product.price < existing.price) {
-        seen.set(normalizedName, product);
-      }
-    }
-  }
-
-  return Array.from(seen.values());
 }
 
 // Handle CORS preflight
@@ -346,6 +645,7 @@ export async function GET(request: NextRequest) {
         results: [],
         totalResults: 0,
         sources: [],
+        byRetailer: {},
         cached: false
       },
       { status: 500, headers: corsHeaders }

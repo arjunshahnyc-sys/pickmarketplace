@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { ShoppingBag, ArrowRight, X, Download, Globe } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-react';
 import { SearchBar } from '@/components/SearchBar';
 import { ProductGrid } from '@/components/ProductGrid';
 import type { ProductResult, SearchResponse } from '@/lib/types';
+import { getTrendingProducts } from '@/lib/scrapers';
 
 export default function Home() {
   const [results, setResults] = useState<ProductResult[]>([]);
@@ -12,6 +13,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
 
   const handleSearch = async (searchQuery: string) => {
     setIsLoading(true);
@@ -29,6 +31,20 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  // Load trending products and check for URL query on mount
+  useEffect(() => {
+    const trending = getTrendingProducts();
+    setTrendingProducts(trending);
+
+    // Check for query parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryParam = urlParams.get('q');
+    if (queryParam) {
+      handleSearch(queryParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const retailers = [
     'Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco', 'eBay',
@@ -168,6 +184,46 @@ export default function Home() {
             </div>
           )}
         </section>
+
+        {/* Trending Now Section */}
+        {!hasSearched && trendingProducts.length > 0 && (
+          <section className="max-w-5xl mx-auto px-6 pb-16">
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp size={20} className="text-[var(--accent)]" />
+              <h2 className="text-xl font-semibold">Trending Now</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {trendingProducts.map((product, idx) => (
+                <a
+                  key={idx}
+                  href={product.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group bg-white border border-[var(--border)] rounded-lg p-4 hover:border-[var(--accent)] transition-all hover:shadow-md"
+                >
+                  <div className="aspect-square mb-3 bg-[var(--background)] rounded flex items-center justify-center overflow-hidden">
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                  <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem]">
+                    {product.name}
+                  </h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-semibold text-[var(--accent)]">
+                      ${product.price.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-[var(--muted)]">
+                      at {product.retailer}
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Results */}
         {hasSearched && (

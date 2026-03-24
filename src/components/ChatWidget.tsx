@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, ShoppingBag } from 'lucide-react';
+import { MessageCircle, X, Send, ShoppingBag, ExternalLink } from 'lucide-react';
+import { getRelatedSearches } from '@/lib/scrapers';
 
 interface Message {
   id: string;
@@ -14,6 +15,9 @@ interface Message {
     url: string;
     image?: string;
   }>;
+  totalCount?: number;
+  searchQuery?: string;
+  relatedSearches?: string[];
   timestamp: Date;
 }
 
@@ -197,7 +201,10 @@ export function ChatWidget() {
                 // Find the best deal
                 const prices = formattedProducts.map((p: any) => p.price);
                 const bestPrice = Math.min(...prices);
-                const message = `✅ Found ${totalCount} ${totalCount === 1 ? 'product' : 'products'}${priceInfo}! Best price: $${bestPrice.toFixed(2)}. Here are the top deals:`;
+                const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}${priceInfo}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:`;
+
+                // Get related searches
+                const relatedSearches = getRelatedSearches(searchQuery);
 
                 // Remove the searching message and add the results
                 setMessages(prev => {
@@ -207,6 +214,9 @@ export function ChatWidget() {
                     role: 'assistant',
                     content: message,
                     products: formattedProducts,
+                    totalCount,
+                    searchQuery,
+                    relatedSearches,
                     timestamp: new Date()
                   }];
                 });
@@ -367,6 +377,101 @@ export function ChatWidget() {
                           </div>
                         </a>
                       ))}
+
+                      {/* See All Results Button */}
+                      {message.totalCount && message.totalCount > message.products.length && message.searchQuery && (
+                        <a
+                          href={`/?q=${encodeURIComponent(message.searchQuery)}`}
+                          className="block mt-3 p-2 text-center bg-[#2A9D8F] text-white rounded-md hover:bg-[#238579] transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                        >
+                          <span>See all {message.totalCount} results</span>
+                          <ExternalLink size={14} />
+                        </a>
+                      )}
+
+                      {/* Related Searches */}
+                      {message.relatedSearches && message.relatedSearches.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-[#E5E5E3]">
+                          <p className="text-xs text-[#6B6B6B] mb-2">You might also like:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {message.relatedSearches.map((relatedSearch, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  // Create a simulated message for the related search
+                                  const userMessage: Message = {
+                                    id: Date.now().toString(),
+                                    role: 'user',
+                                    content: relatedSearch,
+                                    timestamp: new Date()
+                                  };
+                                  setMessages(prev => [...prev, userMessage]);
+                                  setInput('');
+
+                                  // Trigger search for related item
+                                  (async () => {
+                                    setIsLoading(true);
+                                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                                    const searchingMessage: Message = {
+                                      id: (Date.now() + 0.5).toString(),
+                                      role: 'assistant',
+                                      content: `🔍 Searching across retailers for "${relatedSearch}"...`,
+                                      timestamp: new Date()
+                                    };
+                                    setMessages(prev => [...prev, searchingMessage]);
+
+                                    await new Promise(resolve => setTimeout(resolve, 800));
+
+                                    try {
+                                      const response = await fetch(`/api/search?q=${encodeURIComponent(relatedSearch)}`);
+                                      if (response.ok) {
+                                        const data = await response.json();
+                                        if (data.results && data.results.length > 0) {
+                                          const formattedProducts = data.results.slice(0, 5).map((product: any) => ({
+                                            name: product.name,
+                                            price: product.lowestPrice,
+                                            retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
+                                            url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
+                                            image: product.imageUrl
+                                          }));
+
+                                          const totalCount = data.results.length;
+                                          const prices = formattedProducts.map((p: any) => p.price);
+                                          const bestPrice = Math.min(...prices);
+                                          const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:`;
+                                          const relatedSearches = getRelatedSearches(relatedSearch);
+
+                                          setMessages(prev => {
+                                            const withoutSearching = prev.filter(m => !m.content.includes('🔍 Searching'));
+                                            return [...withoutSearching, {
+                                              id: (Date.now() + 1).toString(),
+                                              role: 'assistant',
+                                              content: message,
+                                              products: formattedProducts,
+                                              totalCount,
+                                              searchQuery: relatedSearch,
+                                              relatedSearches,
+                                              timestamp: new Date()
+                                            }];
+                                          });
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error('Related search error:', error);
+                                    } finally {
+                                      setIsLoading(false);
+                                    }
+                                  })();
+                                }}
+                                className="text-xs px-2 py-1 bg-white border border-[#E5E5E3] rounded hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition-colors"
+                              >
+                                {relatedSearch}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
