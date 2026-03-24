@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ChatWidget } from '@/components/ChatWidget';
 
 export const metadata: Metadata = {
   title: 'Pick — Never Overpay',
@@ -23,6 +24,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen texture-overlay">
         {children}
+        <ChatWidget />
       </body>
     </html>
   );
