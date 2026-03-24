@@ -141,32 +141,78 @@ export function ChatWidget() {
       // First, try the client-side chatbot logic
       const localResponse = processMessage(userInput);
 
-      // If it's a product search, call the API
+      // If it's a product search, call the search API directly
       if (localResponse.message.includes('Searching for')) {
         try {
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: userInput,
-              history: messages.slice(-5)
-            })
-          });
+          // Extract the search query from the user input
+          const searchQuery = userInput
+            .toLowerCase()
+            .replace(/^(find|show|search|looking for|i want|i need|get me|recommend|what's the best)/gi, '')
+            .replace(/(please|under \$?\d+|less than \$?\d+|below \$?\d+|me)/gi, '')
+            .trim();
+
+          // Extract max price if mentioned
+          const priceMatch = userInput.match(/under\s+\$?(\d+)|less\s+than\s+\$?(\d+)|below\s+\$?(\d+)/);
+          const maxPrice = priceMatch ? parseInt(priceMatch[1] || priceMatch[2] || priceMatch[3]) : undefined;
+
+          // Call the search API directly
+          const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
 
           if (response.ok) {
             const data = await response.json();
 
-            const assistantMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: data.message || localResponse.message,
-              products: data.products,
-              timestamp: new Date()
-            };
+            if (data.results && data.results.length > 0) {
+              // Filter by price if specified
+              let products = data.results;
+              if (maxPrice) {
+                products = products.filter((p: any) => p.lowestPrice <= maxPrice);
+              }
 
-            setMessages(prev => [...prev, assistantMessage]);
+              if (products.length > 0) {
+                // Format products for display
+                const formattedProducts = products.slice(0, 5).map((product: any) => ({
+                  name: product.name,
+                  price: product.lowestPrice,
+                  retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
+                  url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
+                  image: product.imageUrl
+                }));
+
+                const count = formattedProducts.length;
+                const priceInfo = maxPrice ? ` under $${maxPrice}` : '';
+                const message = `I found ${count} ${count === 1 ? 'product' : 'products'}${priceInfo}! Here are the best deals:`;
+
+                const assistantMessage: Message = {
+                  id: (Date.now() + 1).toString(),
+                  role: 'assistant',
+                  content: message,
+                  products: formattedProducts,
+                  timestamp: new Date()
+                };
+
+                setMessages(prev => [...prev, assistantMessage]);
+              } else {
+                // No products in price range
+                const assistantMessage: Message = {
+                  id: (Date.now() + 1).toString(),
+                  role: 'assistant',
+                  content: `I couldn't find "${searchQuery}" under $${maxPrice}. Try increasing your budget or searching for similar items!`,
+                  timestamp: new Date()
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+              }
+            } else {
+              // No results found
+              const assistantMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `I couldn't find exact matches for "${searchQuery}". Try being more specific or browse using the search bar above! You can search for categories like "headphones", "laptops", "shoes", or "kitchen".`,
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, assistantMessage]);
+            }
           } else {
-            throw new Error('API failed');
+            throw new Error('Search API failed');
           }
         } catch (apiError) {
           // API failed, fall back to friendly message
@@ -174,7 +220,7 @@ export function ChatWidget() {
           const fallbackMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
-            content: "I'd love to help you find products, but I'm having trouble accessing our catalog right now. Try using the search bar at the top of the page, or tell me more about what you're looking for and I'll do my best to help!",
+            content: "I'd love to help you find products! Try using the search bar at the top of the page. You can search for:\n\n• Headphones\n• Laptops\n• Shoes\n• Kitchen appliances\n• And much more!",
             timestamp: new Date()
           };
           setMessages(prev => [...prev, fallbackMessage]);
