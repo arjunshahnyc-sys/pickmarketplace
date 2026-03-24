@@ -17,6 +17,86 @@ interface Message {
   timestamp: Date;
 }
 
+// Client-side chatbot logic - NO external API required
+function processMessage(userInput: string): { message: string; products?: any[] } {
+  const input = userInput.toLowerCase().trim();
+
+  // Basic conversation
+  if (/^(hey|hi|hello|sup|yo)/.test(input)) {
+    return {
+      message: "Hey! How are you doing? 😊 I'm Pick, your shopping assistant. I can help you find products, compare prices, or discover similar items. What are you looking for today?"
+    };
+  }
+
+  if (/how are you|how's it going|what's up/.test(input)) {
+    return {
+      message: "I'm great, thanks for asking! Ready to help you find the best deals. What can I help you shop for?"
+    };
+  }
+
+  if (/thanks|thank you|thx/.test(input)) {
+    return {
+      message: "You're welcome! Happy to help. Let me know if you need anything else! 😊"
+    };
+  }
+
+  if (/bye|goodbye|see you|later/.test(input)) {
+    return {
+      message: "See you later! Happy shopping! 🛍️"
+    };
+  }
+
+  if (/what can you do|help me|what do you do/.test(input)) {
+    return {
+      message: "I can help you:\n\n🔍 Search for any product across retailers\n💰 Compare prices to find the best deal\n👗 Find similar products and dupes\n📸 Analyze photos to find matching items\n📉 Track price history\n\nJust tell me what you're looking for!"
+    };
+  }
+
+  // Extract search intent and query
+  let searchQuery = '';
+  let maxPrice: number | undefined;
+
+  // Extract price limit
+  const priceMatch = input.match(/under\s+\$?(\d+)|less\s+than\s+\$?(\d+)|below\s+\$?(\d+)/);
+  if (priceMatch) {
+    maxPrice = parseInt(priceMatch[1] || priceMatch[2] || priceMatch[3]);
+  }
+
+  // Product search patterns
+  if (/find|looking for|search|show me|i want|i need|get me/.test(input)) {
+    searchQuery = input
+      .replace(/^(find|show|search|looking for|i want|i need|get me|recommend|what's the best)/gi, '')
+      .replace(/(please|under \$?\d+|less than \$?\d+|below \$?\d+)/gi, '')
+      .trim();
+  } else if (/compare|cheapest|best price/.test(input)) {
+    searchQuery = input.replace(/(compare|cheapest|best price|for|prices)/gi, '').trim();
+  } else if (/similar|alternative|like/.test(input)) {
+    searchQuery = input.replace(/(similar|alternative|like|to)/gi, '').trim();
+  } else if (input.length > 2) {
+    // Default: treat as product search
+    searchQuery = input;
+  }
+
+  // If we have a search query, make the API call
+  if (searchQuery && searchQuery.length > 2) {
+    return searchProducts(searchQuery, maxPrice);
+  }
+
+  // Fallback response
+  return {
+    message: "I'm not sure I understood that, but I'd love to help! Try asking me to find a product, compare prices, or describe what you're looking for.\n\nFor example:\n• 'Find me running shoes under $100' 🏃\n• 'Show me wireless headphones'\n• 'What's the cheapest laptop?'"
+  };
+}
+
+// Search products using the API
+function searchProducts(query: string, maxPrice?: number): { message: string; products?: any[] } {
+  // This will be populated by the API response
+  return {
+    message: `Searching for "${query}"${maxPrice ? ` under $${maxPrice}` : ''}...`,
+    products: []
+  };
+}
+
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -42,10 +122,11 @@ export function ChatWidget() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    const userInput = input;
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: userInput,
       timestamp: new Date()
     };
 
@@ -53,36 +134,73 @@ export function ChatWidget() {
     setInput('');
     setIsLoading(true);
 
+    // Brief delay for typing indicator
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: input,
-          history: messages.slice(-5) // Send last 5 messages for context
-        })
-      });
+      // First, try the client-side chatbot logic
+      const localResponse = processMessage(userInput);
 
-      const data = await response.json();
+      // If it's a product search, call the API
+      if (localResponse.message.includes('Searching for')) {
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userInput,
+              history: messages.slice(-5)
+            })
+          });
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.message,
-        products: data.products,
-        timestamp: new Date()
-      };
+          if (response.ok) {
+            const data = await response.json();
 
-      setMessages(prev => [...prev, assistantMessage]);
+            const assistantMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: data.message || localResponse.message,
+              products: data.products,
+              timestamp: new Date()
+            };
+
+            setMessages(prev => [...prev, assistantMessage]);
+          } else {
+            throw new Error('API failed');
+          }
+        } catch (apiError) {
+          // API failed, fall back to friendly message
+          console.error('API error:', apiError);
+          const fallbackMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: "I'd love to help you find products, but I'm having trouble accessing our catalog right now. Try using the search bar at the top of the page, or tell me more about what you're looking for and I'll do my best to help!",
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, fallbackMessage]);
+        }
+      } else {
+        // Use the local chatbot response
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: localResponse.message,
+          products: localResponse.products,
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+      }
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage: Message = {
+      // Never show a generic error - always provide a helpful response
+      const helpfulMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Sorry, I'm having trouble connecting. Please try again.",
+        content: "I'm here to help! Try asking me:\n\n• 'Find me [product name]'\n• 'Show me deals under $50'\n• 'What's the best [product]?'\n\nOr use the search bar at the top to browse our catalog! 🛍️",
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, helpfulMessage]);
     } finally {
       setIsLoading(false);
     }
