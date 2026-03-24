@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pick Marketplace — Find the Best Price',
-  description: 'Search any product. Compare prices across Amazon, Walmart, Best Buy, and Target in seconds.',
+  title: 'Pick — Never Overpay',
+  description: 'Find better prices and discover similar products across 7 major retailers. Smart shopping assistant.',
 };
 
 export default function RootLayout({
