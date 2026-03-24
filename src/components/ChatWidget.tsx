@@ -155,7 +155,19 @@ export function ChatWidget() {
           const priceMatch = userInput.match(/under\s+\$?(\d+)|less\s+than\s+\$?(\d+)|below\s+\$?(\d+)/);
           const maxPrice = priceMatch ? parseInt(priceMatch[1] || priceMatch[2] || priceMatch[3]) : undefined;
 
-          // Call the search API directly
+          // Show searching message
+          const searchingMessage: Message = {
+            id: (Date.now() + 0.5).toString(),
+            role: 'assistant',
+            content: `🔍 Searching across retailers for "${searchQuery}"...`,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, searchingMessage]);
+
+          // Brief delay to show the searching message
+          await new Promise(resolve => setTimeout(resolve, 800));
+
+          // Call the search API directly (now uses live search)
           const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
 
           if (response.ok) {
@@ -180,36 +192,47 @@ export function ChatWidget() {
 
                 const count = formattedProducts.length;
                 const priceInfo = maxPrice ? ` under $${maxPrice}` : '';
-                const message = `I found ${count} ${count === 1 ? 'product' : 'products'}${priceInfo}! Here are the best deals:`;
+                const totalCount = products.length;
 
-                const assistantMessage: Message = {
-                  id: (Date.now() + 1).toString(),
-                  role: 'assistant',
-                  content: message,
-                  products: formattedProducts,
-                  timestamp: new Date()
-                };
+                // Find the best deal
+                const prices = formattedProducts.map((p: any) => p.price);
+                const bestPrice = Math.min(...prices);
+                const message = `✅ Found ${totalCount} ${totalCount === 1 ? 'product' : 'products'}${priceInfo}! Best price: $${bestPrice.toFixed(2)}. Here are the top deals:`;
 
-                setMessages(prev => [...prev, assistantMessage]);
+                // Remove the searching message and add the results
+                setMessages(prev => {
+                  const withoutSearching = prev.filter(m => !m.content.includes('🔍 Searching'));
+                  return [...withoutSearching, {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: message,
+                    products: formattedProducts,
+                    timestamp: new Date()
+                  }];
+                });
               } else {
                 // No products in price range
-                const assistantMessage: Message = {
-                  id: (Date.now() + 1).toString(),
-                  role: 'assistant',
-                  content: `I couldn't find "${searchQuery}" under $${maxPrice}. Try increasing your budget or searching for similar items!`,
-                  timestamp: new Date()
-                };
-                setMessages(prev => [...prev, assistantMessage]);
+                setMessages(prev => {
+                  const withoutSearching = prev.filter(m => !m.content.includes('🔍 Searching'));
+                  return [...withoutSearching, {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: `I couldn't find "${searchQuery}" under $${maxPrice}. Try increasing your budget or searching for similar items!`,
+                    timestamp: new Date()
+                  }];
+                });
               }
             } else {
               // No results found
-              const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: `I couldn't find exact matches for "${searchQuery}". Try being more specific or browse using the search bar above! You can search for categories like "headphones", "laptops", "shoes", or "kitchen".`,
-                timestamp: new Date()
-              };
-              setMessages(prev => [...prev, assistantMessage]);
+              setMessages(prev => {
+                const withoutSearching = prev.filter(m => !m.content.includes('🔍 Searching'));
+                return [...withoutSearching, {
+                  id: (Date.now() + 1).toString(),
+                  role: 'assistant',
+                  content: `I couldn't find exact matches for "${searchQuery}". Try being more specific or browse using the search bar above! You can search for categories like "headphones", "laptops", "shoes", or "kitchen".`,
+                  timestamp: new Date()
+                }];
+              });
             }
           } else {
             throw new Error('Search API failed');
@@ -217,13 +240,15 @@ export function ChatWidget() {
         } catch (apiError) {
           // API failed, fall back to friendly message
           console.error('API error:', apiError);
-          const fallbackMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: "I'd love to help you find products! Try using the search bar at the top of the page. You can search for:\n\n• Headphones\n• Laptops\n• Shoes\n• Kitchen appliances\n• And much more!",
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, fallbackMessage]);
+          setMessages(prev => {
+            const withoutSearching = prev.filter(m => !m.content.includes('🔍 Searching'));
+            return [...withoutSearching, {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: "I'm searching across retailers right now but it's taking longer than usual. In the meantime, try browsing our categories or searching on the main page!",
+              timestamp: new Date()
+            }];
+          });
         }
       } else {
         // Use the local chatbot response

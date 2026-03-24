@@ -16,6 +16,9 @@ function getSearchUrl(retailer: string, productName: string): string {
     'Walmart': `https://www.walmart.com/search?q=${query}`,
     'Target': `https://www.target.com/s?searchTerm=${query}`,
     'Best Buy': `https://www.bestbuy.com/site/searchpage.jsp?st=${query}`,
+    'Costco': `https://www.costco.com/CatalogSearch?keyword=${query}`,
+    'eBay': `https://www.ebay.com/sch/i.html?_nkw=${query}`,
+    'Nordstrom': `https://www.nordstrom.com/sr?keyword=${query}`,
   };
   return urls[retailer] || `https://www.google.com/search?q=${query}+${retailer}`;
 }
@@ -697,25 +700,63 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Simulate network delay (reduced for better UX)
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  try {
+    // Call the live search API internally
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
 
-  const results = searchProducts(query);
+    const liveSearchUrl = `${baseUrl}/api/search-live?q=${encodeURIComponent(query)}`;
+    const liveResponse = await fetch(liveSearchUrl);
 
-  // Generate proper URLs for each price
-  const resultsWithUrls = results.map(product => ({
-    ...product,
-    prices: product.prices.map(price => ({
-      ...price,
-      url: getSearchUrl(price.retailer, product.name)
-    }))
-  }));
+    if (!liveResponse.ok) {
+      throw new Error('Live search failed');
+    }
 
-  const response: SearchResponse = {
-    query,
-    results: resultsWithUrls,
-    totalResults: resultsWithUrls.length,
-  };
+    const liveData = await liveResponse.json();
 
-  return NextResponse.json(response, { headers: corsHeaders });
+    // Transform live search results to match the expected format
+    const results: ProductResult[] = liveData.results.map((product: any) => ({
+      id: product.id,
+      name: product.name,
+      imageUrl: product.imageUrl,
+      prices: [{
+        retailer: product.retailer,
+        amount: product.price,
+        url: product.url
+      }],
+      lowestPrice: product.price,
+      highestPrice: product.price,
+    }));
+
+    const response: SearchResponse = {
+      query,
+      results,
+      totalResults: results.length,
+    };
+
+    return NextResponse.json(response, { headers: corsHeaders });
+  } catch (error) {
+    console.error('Search API error:', error);
+
+    // Fallback to the old mock product search if live search fails
+    const results = searchProducts(query);
+
+    // Generate proper URLs for each price
+    const resultsWithUrls = results.map(product => ({
+      ...product,
+      prices: product.prices.map(price => ({
+        ...price,
+        url: getSearchUrl(price.retailer, product.name)
+      }))
+    }));
+
+    const response: SearchResponse = {
+      query,
+      results: resultsWithUrls,
+      totalResults: resultsWithUrls.length,
+    };
+
+    return NextResponse.json(response, { headers: corsHeaders });
+  }
 }
