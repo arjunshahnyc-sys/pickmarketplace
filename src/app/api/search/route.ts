@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { SearchResponse, ProductResult } from '@/lib/types';
-import { generateFallbackProducts, SEARCH_INTENTS } from '@/lib/scrapers';
 
 // CORS headers for extension access
 const corsHeaders = {
@@ -702,59 +701,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const normalizedQuery = query.toLowerCase().trim();
     let allResults: ProductResult[] = [];
 
-    // Check for intent-based searches
-    let intentMatched = false;
-    for (const [intent, categories] of Object.entries(SEARCH_INTENTS)) {
-      if (normalizedQuery.includes(intent)) {
-        intentMatched = true;
-        console.log(`Intent matched: "${intent}" - searching multiple categories:`, categories);
-
-        // Search each category in parallel
-        const categorySearches = categories.map(async (category) => {
-          try {
-            const baseUrl = process.env.VERCEL_URL
-              ? `https://${process.env.VERCEL_URL}`
-              : 'http://localhost:3000';
-
-            const liveSearchUrl = `${baseUrl}/api/search-live?q=${encodeURIComponent(category)}`;
-            const response = await fetch(liveSearchUrl);
-
-            if (response.ok) {
-              const data = await response.json();
-              return data.results || [];
-            }
-          } catch (err) {
-            console.error(`Category search failed for ${category}:`, err);
-          }
-          return [];
-        });
-
-        const categoryResults = await Promise.all(categorySearches);
-        const combinedResults = categoryResults.flat();
-
-        // Transform and combine results
-        allResults = combinedResults.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          imageUrl: product.imageUrl,
-          prices: [{
-            retailer: product.retailer,
-            amount: product.price,
-            url: product.url
-          }],
-          lowestPrice: product.price,
-          highestPrice: product.price,
-        }));
-
-        break; // Stop after first intent match
-      }
-    }
-
-    // If no intent matched, do regular search
-    if (!intentMatched) {
+    // Use live search API
+    try {
       try {
         const baseUrl = process.env.VERCEL_URL
           ? `https://${process.env.VERCEL_URL}`
@@ -780,34 +730,15 @@ export async function GET(request: NextRequest) {
             highestPrice: product.price,
           }));
         }
-      } catch (err) {
-        console.error('Live search error:', err);
-      }
+    } catch (err) {
+      console.error('Live search error:', err);
     }
 
-    // If we still don't have enough results, use comprehensive fallback
-    if (allResults.length < 20) {
-      console.log(`Only ${allResults.length} results from live search, using fallback products`);
-      const fallbackProducts = generateFallbackProducts(query, 60);
-
-      // Transform fallback products to match the expected format
-      const fallbackResults = fallbackProducts.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        imageUrl: product.imageUrl,
-        prices: [{
-          retailer: product.retailer,
-          amount: product.price,
-          url: product.url
-        }],
-        lowestPrice: product.price,
-        highestPrice: product.price,
-      }));
-
-      // Combine with existing results (if any)
-      const existingIds = new Set(allResults.map(r => r.id));
-      const uniqueFallback = fallbackResults.filter(r => !existingIds.has(r.id));
-      allResults = [...allResults, ...uniqueFallback];
+    // If we don't have enough results, use mock products as fallback
+    if (allResults.length < 5) {
+      console.log(`Only ${allResults.length} results from live search, using fallback`);
+      const mockResults = searchProducts(query);
+      allResults = [...allResults, ...mockResults];
     }
 
     const response: SearchResponse = {
@@ -820,25 +751,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Search API error:', error);
 
-    // Ultimate fallback - always return products
-    const fallbackProducts = generateFallbackProducts(query, 60);
-    const fallbackResults = fallbackProducts.map((product: any) => ({
-      id: product.id,
-      name: product.name,
-      imageUrl: product.imageUrl,
-      prices: [{
-        retailer: product.retailer,
-        amount: product.price,
-        url: product.url
-      }],
-      lowestPrice: product.price,
-      highestPrice: product.price,
-    }));
-
+    // Ultimate fallback - use mock products
+    const mockResults = searchProducts(query);
     const response: SearchResponse = {
       query,
-      results: fallbackResults,
-      totalResults: fallbackResults.length,
+      results: mockResults,
+      totalResults: mockResults.length,
     };
 
     return NextResponse.json(response, { headers: corsHeaders });
