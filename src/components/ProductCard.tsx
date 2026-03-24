@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, ArrowRight } from 'lucide-react';
 import type { ProductResult } from '@/lib/types';
 
 interface ProductCardProps {
@@ -34,6 +34,10 @@ export function ProductCard({ product }: ProductCardProps) {
             Save {savingsPercent}%
           </span>
         )}
+        {/* Retailer badge */}
+        <span className="retailer-badge absolute bottom-3 left-3">
+          {lowestPrice.retailer}
+        </span>
       </div>
 
       {/* Content */}
@@ -43,21 +47,32 @@ export function ProductCard({ product }: ProductCardProps) {
         </h3>
 
         {/* Best price highlight */}
-        <div className="mb-3 pb-3 border-b border-[var(--border)]">
-          <p className="text-xs text-[var(--muted)] mb-1">Best price</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-semibold text-[var(--accent)]">
+        <div className="mb-4 pb-4 border-b border-[var(--border)]">
+          <p className="text-xs text-[var(--muted)] mb-2">Best price</p>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-2xl font-semibold text-[var(--accent)]">
               ${lowestPrice.amount.toFixed(2)}
             </span>
             <span className="text-sm text-[var(--muted)]">
               at {lowestPrice.retailer}
             </span>
           </div>
+          <a
+            href={lowestPrice.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-view-product inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white text-sm font-medium w-full justify-center"
+            style={{ borderRadius: '6px' }}
+          >
+            <span>View Product</span>
+            <ArrowRight size={14} className="arrow" />
+          </a>
         </div>
 
         {/* All prices */}
         <div className="space-y-1.5">
-          {sortedPrices.map((price, index) => (
+          <p className="text-xs text-[var(--muted)] mb-2 font-medium">Also available at:</p>
+          {sortedPrices.slice(1).map((price, index) => (
             <a
               key={`${price.retailer}-${index}`}
               href={price.url}
@@ -70,7 +85,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 {price.retailer}
               </span>
               <span className="flex items-center gap-1.5">
-                <span className={`text-sm font-medium ${index === 0 ? 'text-[var(--accent)]' : ''}`}>
+                <span className="text-sm font-medium">
                   ${price.amount.toFixed(2)}
                 </span>
                 <ArrowUpRight

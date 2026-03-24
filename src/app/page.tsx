@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingBag, ArrowRight, X, Download, Chrome } from 'lucide-react';
+import { ShoppingBag, ArrowRight, X, Download, Globe } from 'lucide-react';
 import { SearchBar } from '@/components/SearchBar';
 import { ProductGrid } from '@/components/ProductGrid';
 import type { ProductResult, SearchResponse } from '@/lib/types';
@@ -30,6 +30,11 @@ export default function Home() {
     }
   };
 
+  const retailers = [
+    'Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco', 'eBay',
+    'Home Depot', "Lowe's", "Macy's", 'Nordstrom', 'Wayfair', 'Kroger'
+  ];
+
   return (
     <div className="relative z-10 texture-bg min-h-screen">
       {/* Install Extension Modal */}
@@ -45,14 +50,14 @@ export default function Home() {
           >
             <button
               onClick={() => setShowInstallModal(false)}
-              className="absolute top-4 right-4 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+              className="absolute top-4 right-4 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors btn"
             >
               <X size={20} />
             </button>
 
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 flex items-center justify-center">
-                <Chrome size={24} className="text-[var(--accent)]" />
+                <Globe size={24} className="text-[var(--accent)]" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Install Pick Extension</h3>
@@ -124,7 +129,7 @@ export default function Home() {
             </a>
             <button
               onClick={() => setShowInstallModal(true)}
-              className="text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white transition-all cursor-pointer"
+              className="btn-secondary text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white cursor-pointer"
               style={{ borderRadius: '6px' }}
             >
               Get extension
@@ -136,13 +141,12 @@ export default function Home() {
       <main>
         {/* Hero Section */}
         <section className="max-w-5xl mx-auto px-6 pt-24 pb-16">
-          <div className="max-w-xl mb-12">
-            <h1 className="text-5xl md:text-6xl font-semibold mb-5 tracking-tight leading-[1.1]">
-              Stop overpaying<br />
-              <span className="text-[var(--muted)]">for the same product.</span>
+          <div className="max-w-2xl mb-12">
+            <h1 className="text-8xl md:text-9xl font-bold mb-6 tracking-tighter leading-[0.95]">
+              PAY LESS
             </h1>
-            <p className="text-lg text-[var(--muted)] leading-relaxed max-w-md">
-              Search any product. Compare prices across Amazon, Walmart, Best Buy, and Target in seconds.
+            <p className="text-base text-[var(--muted)] leading-relaxed max-w-lg mb-8" style={{ opacity: 0.7 }}>
+              We don't just find your product cheaper—we find similar products with comparable reviews at better prices that others miss.
             </p>
           </div>
 
@@ -151,12 +155,12 @@ export default function Home() {
           {/* Quick search hints */}
           {!hasSearched && (
             <div className="mt-8 flex items-center gap-3 flex-wrap">
-              <span className="text-sm text-[var(--muted)]">Popular:</span>
-              {['Sony headphones', 'MacBook Air', 'mechanical keyboard', '4K monitor'].map((term) => (
+              <span className="text-sm text-[var(--muted)]">Try:</span>
+              {['Sony WH-1000XM5', 'MacBook Air M3', 'KitchenAid mixer', 'Dyson vacuum'].map((term) => (
                 <button
                   key={term}
                   onClick={() => handleSearch(term)}
-                  className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+                  className="btn text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
                 >
                   {term}
                 </button>
@@ -172,7 +176,7 @@ export default function Home() {
               <div className="flex items-center justify-center py-24">
                 <div className="flex items-center gap-3 text-[var(--muted)]">
                   <div className="w-5 h-5 border-2 border-[var(--border)] border-t-[var(--accent)] rounded-full spinner" />
-                  <span className="text-sm">Checking prices across retailers...</span>
+                  <span className="text-sm">Checking prices across {retailers.length} retailers...</span>
                 </div>
               </div>
             ) : (
@@ -190,23 +194,40 @@ export default function Home() {
               <div className="h-px bg-[var(--border)]" />
             </div>
 
-            {/* Stats section - subtle social proof */}
-            <section className="max-w-5xl mx-auto px-6 py-12">
-              <div className="grid grid-cols-3 gap-8 max-w-2xl">
-                <div>
-                  <p className="text-3xl font-semibold tracking-tight">4</p>
-                  <p className="text-sm text-[var(--muted)] mt-1">Major retailers</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-semibold tracking-tight">~15%</p>
-                  <p className="text-sm text-[var(--muted)] mt-1">Avg. savings found</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-semibold tracking-tight">&lt;2s</p>
-                  <p className="text-sm text-[var(--muted)] mt-1">Search time</p>
+            {/* Key differentiator section */}
+            <section className="max-w-5xl mx-auto px-6 py-16">
+              <div className="max-w-3xl">
+                <div className="bg-white border border-[var(--border)] p-8" style={{ borderRadius: '8px' }}>
+                  <div className="differentiator">
+                    <h2 className="text-2xl font-semibold mb-4 tracking-tight">
+                      We don't just find your product cheaper—we find better alternatives others miss
+                    </h2>
+                    <p className="text-[var(--foreground)] leading-relaxed mb-4">
+                      Unlike Honey and other extensions that only check if your exact product is cheaper elsewhere, Pick goes further. We search for <strong>similar products with comparable reviews</strong> across {retailers.length} major retailers.
+                    </p>
+                    <p className="text-[var(--muted)] leading-relaxed">
+                      The best deal often isn't the same product at a lower price—it's a comparable alternative you didn't know existed.
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
+
+            {/* Retailers grid */}
+            <section className="max-w-5xl mx-auto px-6 py-12">
+              <p className="text-sm text-[var(--muted)] mb-4">We search across</p>
+              <div className="flex flex-wrap gap-2">
+                {retailers.map((retailer) => (
+                  <span key={retailer} className="retailer-badge">
+                    {retailer}
+                  </span>
+                ))}
+              </div>
+            </section>
+
+            <div className="max-w-5xl mx-auto px-6 py-4">
+              <div className="h-px bg-[var(--border)]" />
+            </div>
 
             {/* How it works - clean asymmetric layout */}
             <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20">
@@ -216,7 +237,7 @@ export default function Home() {
                     How it works
                   </h2>
                   <p className="text-[var(--muted)] mb-12 max-w-sm">
-                    We do the comparison shopping so you don&apos;t have to open 10 browser tabs.
+                    We do the comparison shopping so you don&apos;t have to open a dozen browser tabs.
                   </p>
 
                   <div className="space-y-10">
@@ -233,9 +254,9 @@ export default function Home() {
                     <div className="flex gap-4">
                       <span className="text-sm font-medium text-[var(--accent)] mt-0.5">02</span>
                       <div>
-                        <h3 className="font-medium mb-1.5">We query the retailers</h3>
+                        <h3 className="font-medium mb-1.5">We query {retailers.length} retailers</h3>
                         <p className="text-sm text-[var(--muted)] leading-relaxed">
-                          Pick checks Amazon, Walmart, Best Buy, and Target simultaneously to find current prices.
+                          Pick checks Amazon, Walmart, Target, Best Buy, and more simultaneously for current prices and similar products.
                         </p>
                       </div>
                     </div>
@@ -243,9 +264,9 @@ export default function Home() {
                     <div className="flex gap-4">
                       <span className="text-sm font-medium text-[var(--accent)] mt-0.5">03</span>
                       <div>
-                        <h3 className="font-medium mb-1.5">See every price, sorted</h3>
+                        <h3 className="font-medium mb-1.5">Compare and decide</h3>
                         <p className="text-sm text-[var(--muted)] leading-relaxed">
-                          Compare prices side by side. Click through to buy from whichever retailer has the best deal.
+                          See prices side by side, including alternatives you might not have found. Click through to buy from whichever retailer has the best deal.
                         </p>
                       </div>
                     </div>
@@ -253,7 +274,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-end">
-                  <div className="w-full p-6 border border-[var(--border)] bg-white" style={{ borderRadius: '8px' }}>
+                  <div className="w-full p-6 border border-[var(--border)] bg-white card-hover" style={{ borderRadius: '8px' }}>
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-[var(--subtle-warm)] flex items-center justify-center">
                         <ShoppingBag size={18} className="text-[var(--accent)]" />
@@ -276,6 +297,10 @@ export default function Home() {
                         <span className="text-sm text-[var(--muted)]">Best Buy</span>
                         <span className="text-sm font-medium">$349.99</span>
                       </div>
+                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                        <span className="text-sm text-[var(--muted)]">Target</span>
+                        <span className="text-sm font-medium">$349.99</span>
+                      </div>
                     </div>
                     <p className="text-xs text-[var(--accent)] mt-4 font-medium">
                       Save $21.99 buying from Amazon
@@ -293,7 +318,7 @@ export default function Home() {
                     See price comparisons while you shop
                   </h2>
                   <p className="text-[var(--muted)] mb-8 leading-relaxed">
-                    Install our browser extension. When you visit a product page on Amazon, Walmart, or any supported retailer, Pick automatically shows you if it&apos;s cheaper somewhere else.
+                    Install our browser extension. When you visit a product page on any supported retailer, Pick automatically shows you if it&apos;s cheaper somewhere else—or if there&apos;s a better alternative.
                   </p>
                   <button
                     onClick={() => setShowInstallModal(true)}
@@ -301,7 +326,7 @@ export default function Home() {
                     style={{ borderRadius: '6px' }}
                   >
                     <span>Add to Chrome</span>
-                    <ArrowRight size={16} />
+                    <ArrowRight size={16} className="arrow" />
                   </button>
                   <p className="text-xs text-[var(--muted)] mt-4">
                     Free forever. No account required.

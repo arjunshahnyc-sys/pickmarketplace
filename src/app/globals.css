@@ -68,33 +68,94 @@ h1, h2, h3, h4, h5, h6 {
   outline-offset: 2px;
 }
 
-/* Input styles */
+/* Search input interactive states */
+input[type="text"] {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
 input[type="text"]:focus {
-  box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(42, 157, 143, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  outline: none;
 }
 
-/* Button micro-interaction */
-.btn-primary {
-  transition: all 0.15s ease;
+input[type="text"]:hover:not(:focus):not(:disabled) {
+  border-color: #C5C5C3;
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(42, 157, 143, 0.25);
+/* Button base with micro-interactions */
+.btn, button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+.btn:hover:not(:disabled), button:hover:not(:disabled):not([type="submit"]) {
+  transform: scale(1.02);
 }
 
-/* Card hover effect */
+.btn:active:not(:disabled), button:active:not(:disabled):not([type="submit"]) {
+  transform: scale(0.98);
+}
+
+/* Primary button */
+.btn-primary, button[type="submit"] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled), button[type="submit"]:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+}
+
+.btn-primary:active:not(:disabled), button[type="submit"]:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(42, 157, 143, 0.2);
+}
+
+/* Secondary/outline button */
+.btn-secondary {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Card hover effect - subtle lift */
 .card-hover {
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* View product button with sliding arrow */
+.btn-view-product {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-view-product .arrow {
+  transition: transform 0.2s ease;
+}
+
+.btn-view-product:hover .arrow {
+  transform: translateX(4px);
+}
+
+.btn-view-product:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.btn-view-product:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 /* Link underline animation */
@@ -171,4 +232,38 @@ input[type="text"]:focus {
   height: 16px;
   background: var(--accent);
   border-radius: 2px;
+}
+
+/* Retailer badge */
+.retailer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Differentiator callout */
+.differentiator {
+  position: relative;
+  padding-left: 12px;
+}
+
+.differentiator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
 }
