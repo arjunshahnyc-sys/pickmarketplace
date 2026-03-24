@@ -2,14 +2,14 @@ import { ImageResponse } from 'next/og';
 
 // Image metadata
 export const size = {
-  width: 32,
-  height: 32,
+  width: 180,
+  height: 180,
 };
 
 export const contentType = 'image/png';
 
-// Icon component
-export default function Icon() {
+// Apple Touch Icon component
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
@@ -20,16 +20,16 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: '6px',
+          borderRadius: '40px',
         }}
       >
         <svg
-          width="22"
-          height="22"
+          width="120"
+          height="120"
           viewBox="0 0 24 24"
           fill="none"
           stroke="white"
-          strokeWidth="2"
+          strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >

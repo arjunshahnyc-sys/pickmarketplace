@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, ShoppingBag, ExternalLink } from 'lucide-react';
 import { getRelatedSearches } from '@/lib/scrapers';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -102,6 +103,7 @@ function searchProducts(query: string, maxPrice?: number): { message: string; pr
 }
 
 export function ChatWidget() {
+  const { user, isAuthenticated, searchesRemaining, incrementSearchCount } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -115,6 +117,9 @@ export function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Determine max products to show based on plan
+  const maxProducts = user?.plan === 'premium' ? 5 : 3;
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -127,6 +132,30 @@ export function ChatWidget() {
     if (!input.trim() || isLoading) return;
 
     const userInput = input;
+
+    // Check if this is a search query (not just conversation)
+    const isSearchQuery = /find|looking for|search|show me|i want|i need|get me|compare|cheapest|best price|similar|alternative|like/.test(userInput.toLowerCase()) ||
+                         (userInput.length > 2 && !/^(hey|hi|hello|sup|yo|thanks|thank you|bye|goodbye|how are you|what can you do|help)$/i.test(userInput));
+
+    // Check search limits for free users
+    if (isAuthenticated && user?.plan === 'free' && isSearchQuery && searchesRemaining <= 0) {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: userInput,
+        timestamp: new Date()
+      };
+      const limitMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "You've reached your daily search limit of 5 searches. 💎 Upgrade to Premium for unlimited searches!\n\nVisit /pricing to upgrade.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMessage, limitMessage]);
+      setInput('');
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -171,8 +200,8 @@ export function ChatWidget() {
           // Brief delay to show the searching message
           await new Promise(resolve => setTimeout(resolve, 800));
 
-          // Call the search API directly (now uses live search)
-          const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+          // Call the search API directly (now uses live search with real products)
+          const response = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
 
           if (response.ok) {
             const data = await response.json();
@@ -181,16 +210,21 @@ export function ChatWidget() {
               // Filter by price if specified
               let products = data.results;
               if (maxPrice) {
-                products = products.filter((p: any) => p.lowestPrice <= maxPrice);
+                products = products.filter((p: any) => p.price <= maxPrice);
               }
 
               if (products.length > 0) {
-                // Format products for display
-                const formattedProducts = products.slice(0, 5).map((product: any) => ({
+                // Increment search count for authenticated free users
+                if (isAuthenticated && user?.plan === 'free') {
+                  incrementSearchCount();
+                }
+
+                // Format products for display (already in correct format from new API)
+                const formattedProducts = products.slice(0, maxProducts).map((product: any) => ({
                   name: product.name,
-                  price: product.lowestPrice,
-                  retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
-                  url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
+                  price: product.price,
+                  retailer: product.retailer,
+                  url: product.url,
                   image: product.imageUrl
                 }));
 
@@ -201,7 +235,8 @@ export function ChatWidget() {
                 // Find the best deal
                 const prices = formattedProducts.map((p: any) => p.price);
                 const bestPrice = Math.min(...prices);
-                const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}${priceInfo}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:`;
+                const upgradeHint = user?.plan === 'free' ? '\n\n💎 Upgrade to Premium for more results and unlimited searches!' : '';
+                const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}${priceInfo}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
 
                 // Get related searches
                 const relatedSearches = getRelatedSearches(searchQuery);
@@ -424,22 +459,23 @@ export function ChatWidget() {
                                     await new Promise(resolve => setTimeout(resolve, 800));
 
                                     try {
-                                      const response = await fetch(`/api/search?q=${encodeURIComponent(relatedSearch)}`);
+                                      const response = await fetch(`/api/search-live?q=${encodeURIComponent(relatedSearch)}`);
                                       if (response.ok) {
                                         const data = await response.json();
                                         if (data.results && data.results.length > 0) {
-                                          const formattedProducts = data.results.slice(0, 5).map((product: any) => ({
+                                          const formattedProducts = data.results.slice(0, maxProducts).map((product: any) => ({
                                             name: product.name,
-                                            price: product.lowestPrice,
-                                            retailer: product.prices.find((p: any) => p.amount === product.lowestPrice)?.retailer || 'Amazon',
-                                            url: product.prices.find((p: any) => p.amount === product.lowestPrice)?.url || '#',
+                                            price: product.price,
+                                            retailer: product.retailer,
+                                            url: product.url,
                                             image: product.imageUrl
                                           }));
 
                                           const totalCount = data.results.length;
                                           const prices = formattedProducts.map((p: any) => p.price);
                                           const bestPrice = Math.min(...prices);
-                                          const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:`;
+                                          const upgradeHint = user?.plan === 'free' ? '\n\n💎 Upgrade to Premium for more results!' : '';
+                                          const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
                                           const relatedSearches = getRelatedSearches(relatedSearch);
 
                                           setMessages(prev => {

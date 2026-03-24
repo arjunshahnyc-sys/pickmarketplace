@@ -2,28 +2,86 @@
 
 import { useState, useEffect } from 'react';
 import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-react';
+import { motion } from 'motion/react';
 import { SearchBar } from '@/components/SearchBar';
-import { ProductGrid } from '@/components/ProductGrid';
-import type { ProductResult, SearchResponse } from '@/lib/types';
+import { ProductCard } from '@/components/ProductCard';
+import type { SearchResponse } from '@/lib/types';
 import { getTrendingProducts } from '@/lib/scrapers';
+import { useAuth } from '@/contexts/AuthContext';
+import Header from '@/components/Header';
+import RetailerMarquee from '@/components/RetailerMarquee';
+
+// Animation variants for staggered product grid
+const gridVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 50, scale: 0.9 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
 
 export default function Home() {
-  const [results, setResults] = useState<ProductResult[]>([]);
+  const { user, isAuthenticated, searchesRemaining, incrementSearchCount, getFeatureLimit } =
+    useAuth();
+  const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Searching retailers...');
   const [hasSearched, setHasSearched] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [searchResponse, setSearchResponse] = useState<any>(null);
+
+  // Cycling loading text
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const retailers = [
+      'Searching Amazon...',
+      'Checking Target...',
+      'Scanning Best Buy...',
+      'Looking at Walmart...',
+      "Browsing Macy's...",
+      'Checking Nordstrom...',
+    ];
+    let i = 0;
+    const interval = setInterval(() => {
+      setLoadingText(retailers[i % retailers.length]);
+      i++;
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const handleSearch = async (searchQuery: string) => {
+    // Check if user has searches remaining (if authenticated and on free plan)
+    if (isAuthenticated && user?.plan === 'free' && searchesRemaining <= 0) {
+      alert('Daily search limit reached. Upgrade to Premium for unlimited searches!');
+      return;
+    }
+
     setIsLoading(true);
     setQuery(searchQuery);
     setHasSearched(true);
+    setResults([]);
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-      const data: SearchResponse = await response.json();
-      setResults(data.results);
+      const response = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
+      const data: any = await response.json();
+      setResults(data.results || []);
+      setSearchResponse(data);
+
+      // Increment search count for authenticated free users
+      if (isAuthenticated && user?.plan === 'free') {
+        incrementSearchCount();
+      }
     } catch (error) {
       console.error('Search failed:', error);
       setResults([]);
@@ -47,9 +105,24 @@ export default function Home() {
   }, []);
 
   const retailers = [
-    'Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco', 'eBay',
-    'Home Depot', "Lowe's", "Macy's", 'Nordstrom', 'Wayfair', 'Kroger'
+    'Amazon',
+    'Walmart',
+    'Target',
+    'Best Buy',
+    'Costco',
+    'eBay',
+    'Home Depot',
+    "Lowe's",
+    "Macy's",
+    'Nordstrom',
+    'Wayfair',
+    'Kroger',
   ];
+
+  // Extract unique retailers from results
+  const resultRetailers = results.length > 0
+    ? Array.from(new Set(results.map((p: any) => p.retailer)))
+    : [];
 
   return (
     <div className="relative z-10 texture-bg min-h-screen">
@@ -83,7 +156,9 @@ export default function Home() {
 
             <div className="space-y-6">
               <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">1</span>
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">
+                  1
+                </span>
                 <div>
                   <p className="font-medium mb-1">Download the extension</p>
                   <a
@@ -98,21 +173,30 @@ export default function Home() {
               </div>
 
               <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">2</span>
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">
+                  2
+                </span>
                 <div>
                   <p className="font-medium mb-1">Open Chrome Extensions</p>
                   <p className="text-sm text-[var(--muted)]">
-                    Go to <code className="px-1.5 py-0.5 bg-[var(--background)] rounded text-xs">chrome://extensions</code> and enable <strong>Developer mode</strong> (top right)
+                    Go to{' '}
+                    <code className="px-1.5 py-0.5 bg-[var(--background)] rounded text-xs">
+                      chrome://extensions
+                    </code>{' '}
+                    and enable <strong>Developer mode</strong> (top right)
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">3</span>
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">
+                  3
+                </span>
                 <div>
                   <p className="font-medium mb-1">Load the extension</p>
                   <p className="text-sm text-[var(--muted)]">
-                    Unzip the file, click <strong>Load unpacked</strong>, and select the unzipped folder
+                    Unzip the file, click <strong>Load unpacked</strong>, and select the unzipped
+                    folder
                   </p>
                 </div>
               </div>
@@ -128,43 +212,71 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <header className="border-b border-[var(--border)] bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2.5 group">
-            <ShoppingBag size={22} strokeWidth={1.5} className="text-[var(--accent)]" />
-            <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-              pick
-            </span>
-          </a>
-          <nav className="flex items-center gap-8">
-            <a
-              href="#how-it-works"
-              className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
-            >
-              How it works
-            </a>
-            <button
-              onClick={() => setShowInstallModal(true)}
-              className="btn-secondary text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white cursor-pointer"
-              style={{ borderRadius: '6px' }}
-            >
-              Get extension
-            </button>
-          </nav>
-        </div>
-      </header>
+      <Header onInstallClick={() => setShowInstallModal(true)} />
 
       <main>
-        {/* Hero Section */}
+        {/* Usage Meter for Free Users */}
+        {isAuthenticated && user?.plan === 'free' && (
+          <div className="max-w-5xl mx-auto px-6 pt-6">
+            <div
+              className="bg-white border border-[var(--border)] p-4"
+              style={{ borderRadius: '6px' }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Daily Searches
+                </span>
+                <span className="text-sm text-[var(--muted)]">
+                  {searchesRemaining} / {getFeatureLimit('searchesPerDay')} remaining
+                </span>
+              </div>
+              <div className="w-full bg-[var(--background)] h-2" style={{ borderRadius: '4px' }}>
+                <div
+                  className={`h-2 transition-all ${
+                    searchesRemaining === 0
+                      ? 'bg-red-500'
+                      : searchesRemaining <= 2
+                      ? 'bg-yellow-500'
+                      : 'bg-[var(--accent)]'
+                  }`}
+                  style={{
+                    borderRadius: '4px',
+                    width: `${(searchesRemaining / Number(getFeatureLimit('searchesPerDay'))) * 100}%`,
+                  }}
+                />
+              </div>
+              {searchesRemaining === 0 && (
+                <p className="text-xs text-red-600 mt-2">
+                  Limit reached.{' '}
+                  <a href="/pricing" className="underline hover:text-red-700">
+                    Upgrade to Premium
+                  </a>{' '}
+                  for unlimited searches.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Hero Section with animation */}
         <section className="max-w-5xl mx-auto px-6 pt-24 pb-16">
-          <div className="max-w-2xl mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="max-w-2xl mb-12"
+          >
             <h1 className="text-8xl md:text-9xl font-bold mb-6 tracking-tighter leading-[0.95]">
               FIND SIMILAR. PAY LESS.
             </h1>
-            <p className="text-base text-[var(--muted)] leading-relaxed max-w-lg mb-8" style={{ opacity: 0.7 }}>
-              We don't just find your product cheaper—we find similar products with comparable reviews at better prices that others miss.
+            <p
+              className="text-base text-[var(--muted)] leading-relaxed max-w-lg mb-8"
+              style={{ opacity: 0.7 }}
+            >
+              We don't just find your product cheaper—we find similar products with comparable
+              reviews at better prices that others miss.
             </p>
-          </div>
+          </motion.div>
 
           <SearchBar onSearch={handleSearch} isLoading={isLoading} />
 
@@ -172,22 +284,33 @@ export default function Home() {
           {!hasSearched && (
             <div className="mt-8 flex items-center gap-3 flex-wrap">
               <span className="text-sm text-[var(--muted)]">Try:</span>
-              {['Sony WH-1000XM5', 'MacBook Air M3', 'KitchenAid mixer', 'Dyson vacuum'].map((term) => (
-                <button
-                  key={term}
-                  onClick={() => handleSearch(term)}
-                  className="btn text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
-                >
-                  {term}
-                </button>
-              ))}
+              {['Sony WH-1000XM5', 'MacBook Air M3', 'KitchenAid mixer', 'Dyson vacuum'].map(
+                (term) => (
+                  <button
+                    key={term}
+                    onClick={() => handleSearch(term)}
+                    className="btn text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors link-underline"
+                  >
+                    {term}
+                  </button>
+                )
+              )}
             </div>
           )}
         </section>
 
+        {/* Retailer Marquee */}
+        {!hasSearched && <RetailerMarquee />}
+
         {/* Trending Now Section */}
         {!hasSearched && trendingProducts.length > 0 && (
-          <section className="max-w-5xl mx-auto px-6 pb-16">
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-5xl mx-auto px-6 pb-16 pt-8"
+          >
             <div className="flex items-center gap-2 mb-6">
               <TrendingUp size={20} className="text-[var(--accent)]" />
               <h2 className="text-xl font-semibold">Trending Now</h2>
@@ -196,9 +319,7 @@ export default function Home() {
               {trendingProducts.map((product, idx) => (
                 <a
                   key={idx}
-                  href={product.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/?q=${encodeURIComponent(product.name)}`}
                   className="group bg-white border border-[var(--border)] rounded-lg p-4 hover:border-[var(--accent)] transition-all hover:shadow-md"
                 >
                   <div className="aspect-square mb-3 bg-[var(--background)] rounded flex items-center justify-center overflow-hidden">
@@ -215,29 +336,137 @@ export default function Home() {
                     <span className="text-lg font-semibold text-[var(--accent)]">
                       ${product.price.toFixed(2)}
                     </span>
-                    <span className="text-xs text-[var(--muted)]">
-                      at {product.retailer}
-                    </span>
                   </div>
                 </a>
               ))}
             </div>
-          </section>
+          </motion.section>
         )}
 
-        {/* Results */}
+        {/* Results Section */}
         {hasSearched && (
           <section className="max-w-5xl mx-auto px-6 pb-24">
             {isLoading ? (
-              <div className="flex items-center justify-center py-24">
-                <div className="flex items-center gap-3 text-[var(--muted)]">
+              <div className="flex flex-col items-center justify-center py-24">
+                <div className="flex items-center gap-3 text-[var(--muted)] mb-4">
                   <div className="w-5 h-5 border-2 border-[var(--border)] border-t-[var(--accent)] rounded-full spinner" />
-                  <span className="text-sm">Checking prices across {retailers.length} retailers...</span>
+                  <span className="text-sm animate-pulse">{loadingText}</span>
+                </div>
+                {/* Loading skeleton */}
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white border border-[var(--border)] rounded-lg overflow-hidden animate-pulse"
+                    >
+                      <div className="aspect-[4/3] bg-gray-200" />
+                      <div className="p-4 space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-3/4" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2" />
+                        <div className="h-8 bg-gray-200 rounded" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            ) : results.length > 0 ? (
+              <>
+                {/* Results header */}
+                <div className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-2">
+                    Found {results.length} results for &quot;{query}&quot;
+                  </h2>
+                  <p className="text-sm text-[var(--muted)]">
+                    {resultRetailers.length > 0 && (
+                      <>
+                        Across {resultRetailers.join(', ')} •{' '}
+                      </>
+                    )}
+                    Prices checked {searchResponse?.cachedAt || 'just now'}
+                  </p>
+                </div>
+
+                {/* Product grid with stagger animation */}
+                <motion.div
+                  variants={gridVariants}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, amount: 0.05 }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                >
+                  {results
+                    .slice(
+                      0,
+                      isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10
+                    )
+                    .map((product, i) => (
+                      <motion.div key={product.id || i} variants={cardVariants}>
+                        <ProductCard product={product} />
+                      </motion.div>
+                    ))}
+                </motion.div>
+
+                {/* Show upgrade prompt if there are more results */}
+                {results.length >
+                  (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10) && (
+                  <div
+                    className="mt-12 text-center p-8 border border-[var(--border)] bg-white"
+                    style={{ borderRadius: '8px' }}
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
+                      Premium Feature
+                    </h3>
+                    <p className="text-[var(--muted)] mb-4">
+                      Upgrade to Premium to see{' '}
+                      {results.length -
+                        (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10)}{' '}
+                      more results
+                    </p>
+                    <a
+                      href="/pricing"
+                      className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 hover:shadow-lg transition-shadow"
+                      style={{ borderRadius: '6px' }}
+                    >
+                      Upgrade Now
+                    </a>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="fade-in">
-                <ProductGrid products={results} query={query} />
+              // Empty state
+              <div className="text-center py-24">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShoppingBag size={32} className="text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No results found for &quot;{query}&quot;</h3>
+                <p className="text-[var(--muted)] mb-6">Try a broader search or different keywords</p>
+                <div className="flex justify-center gap-2 flex-wrap">
+                  <span className="text-sm text-[var(--muted)]">Try these popular searches:</span>
+                  {['Headphones', 'Laptops', 'Running Shoes', 'Skincare', 'Kitchen'].map((term) => (
+                    <button
+                      key={term}
+                      onClick={() => handleSearch(term)}
+                      className="px-4 py-2 bg-[var(--accent)] text-white text-sm rounded hover:bg-[var(--accent-hover)] transition-colors"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -251,23 +480,37 @@ export default function Home() {
             </div>
 
             {/* Key differentiator section */}
-            <section className="max-w-5xl mx-auto px-6 py-16">
+            <motion.section
+              initial={{ opacity: 0, x: -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              className="max-w-5xl mx-auto px-6 py-16"
+            >
               <div className="max-w-3xl">
-                <div className="bg-white border border-[var(--border)] p-8" style={{ borderRadius: '8px' }}>
+                <div
+                  className="bg-white border border-[var(--border)] p-8"
+                  style={{ borderRadius: '8px' }}
+                >
                   <div className="differentiator">
                     <h2 className="text-2xl font-semibold mb-4 tracking-tight">
-                      We don't just find your product cheaper—we find better alternatives others miss
+                      We don't just find your product cheaper—we find better alternatives others
+                      miss
                     </h2>
                     <p className="text-[var(--foreground)] leading-relaxed mb-4">
-                      Unlike Honey and other extensions that only check if your exact product is cheaper elsewhere, Pick goes further. We search for <strong>similar products with comparable reviews</strong> across {retailers.length} major retailers.
+                      Unlike Honey and other extensions that only check if your exact product is
+                      cheaper elsewhere, Pick goes further. We search for{' '}
+                      <strong>similar products with comparable reviews</strong> across{' '}
+                      {retailers.length} major retailers.
                     </p>
                     <p className="text-[var(--muted)] leading-relaxed">
-                      The best deal often isn't the same product at a lower price—it's a comparable alternative you didn't know existed.
+                      The best deal often isn't the same product at a lower price—it's a comparable
+                      alternative you didn't know existed.
                     </p>
                   </div>
                 </div>
               </div>
-            </section>
+            </motion.section>
 
             {/* Retailers grid */}
             <section className="max-w-5xl mx-auto px-6 py-12">
@@ -288,12 +531,16 @@ export default function Home() {
             {/* How it works - clean asymmetric layout */}
             <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20">
               <div className="grid md:grid-cols-2 gap-16">
-                <div>
-                  <h2 className="text-3xl font-semibold mb-4 tracking-tight">
-                    How it works
-                  </h2>
+                <motion.div
+                  initial={{ opacity: 0, x: -60 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                >
+                  <h2 className="text-3xl font-semibold mb-4 tracking-tight">How it works</h2>
                   <p className="text-[var(--muted)] mb-12 max-w-sm">
-                    We do the comparison shopping so you don&apos;t have to open a dozen browser tabs.
+                    We do the comparison shopping so you don&apos;t have to open a dozen browser
+                    tabs.
                   </p>
 
                   <div className="space-y-10">
@@ -302,7 +549,8 @@ export default function Home() {
                       <div>
                         <h3 className="font-medium mb-1.5">Enter what you&apos;re looking for</h3>
                         <p className="text-sm text-[var(--muted)] leading-relaxed">
-                          Type a product name, brand, or category. Be as specific or general as you like.
+                          Type a product name, brand, or category. Be as specific or general as you
+                          like.
                         </p>
                       </div>
                     </div>
@@ -310,9 +558,12 @@ export default function Home() {
                     <div className="flex gap-4">
                       <span className="text-sm font-medium text-[var(--accent)] mt-0.5">02</span>
                       <div>
-                        <h3 className="font-medium mb-1.5">We query {retailers.length} retailers</h3>
+                        <h3 className="font-medium mb-1.5">
+                          We query {retailers.length} retailers
+                        </h3>
                         <p className="text-sm text-[var(--muted)] leading-relaxed">
-                          Pick checks Amazon, Walmart, Target, Best Buy, and more simultaneously for current prices and similar products.
+                          Pick checks Amazon, Walmart, Target, Best Buy, and more simultaneously for
+                          current prices and similar products.
                         </p>
                       </div>
                     </div>
@@ -322,15 +573,25 @@ export default function Home() {
                       <div>
                         <h3 className="font-medium mb-1.5">Compare and decide</h3>
                         <p className="text-sm text-[var(--muted)] leading-relaxed">
-                          See prices side by side, including alternatives you might not have found. Click through to buy from whichever retailer has the best deal.
+                          See prices side by side, including alternatives you might not have found.
+                          Click through to buy from whichever retailer has the best deal.
                         </p>
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="flex items-end">
-                  <div className="w-full p-6 border border-[var(--border)] bg-white card-hover" style={{ borderRadius: '8px' }}>
+                <motion.div
+                  initial={{ opacity: 0, x: 60 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                  className="flex items-end"
+                >
+                  <div
+                    className="w-full p-6 border border-[var(--border)] bg-white card-hover"
+                    style={{ borderRadius: '8px' }}
+                  >
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-[var(--subtle-warm)] flex items-center justify-center">
                         <ShoppingBag size={18} className="text-[var(--accent)]" />
@@ -341,19 +602,31 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                      <div
+                        className="flex justify-between items-center py-2 px-3 bg-[var(--background)]"
+                        style={{ borderRadius: '4px' }}
+                      >
                         <span className="text-sm text-[var(--muted)]">Amazon</span>
                         <span className="text-sm font-medium text-[var(--accent)]">$328.00</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                      <div
+                        className="flex justify-between items-center py-2 px-3 bg-[var(--background)]"
+                        style={{ borderRadius: '4px' }}
+                      >
                         <span className="text-sm text-[var(--muted)]">Walmart</span>
                         <span className="text-sm font-medium">$348.00</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                      <div
+                        className="flex justify-between items-center py-2 px-3 bg-[var(--background)]"
+                        style={{ borderRadius: '4px' }}
+                      >
                         <span className="text-sm text-[var(--muted)]">Best Buy</span>
                         <span className="text-sm font-medium">$349.99</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 px-3 bg-[var(--background)]" style={{ borderRadius: '4px' }}>
+                      <div
+                        className="flex justify-between items-center py-2 px-3 bg-[var(--background)]"
+                        style={{ borderRadius: '4px' }}
+                      >
                         <span className="text-sm text-[var(--muted)]">Target</span>
                         <span className="text-sm font-medium">$349.99</span>
                       </div>
@@ -362,19 +635,31 @@ export default function Home() {
                       Save $21.99 buying from Amazon
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </div>
             </section>
 
             {/* Extension CTA */}
-            <section id="extension" className="max-w-5xl mx-auto px-6 py-20">
-              <div className="border border-[var(--border)] bg-white p-10 md:p-14" style={{ borderRadius: '8px' }}>
+            <motion.section
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              id="extension"
+              className="max-w-5xl mx-auto px-6 py-20"
+            >
+              <div
+                className="border border-[var(--border)] bg-white p-10 md:p-14"
+                style={{ borderRadius: '8px' }}
+              >
                 <div className="max-w-lg">
                   <h2 className="text-2xl md:text-3xl font-semibold mb-4 tracking-tight">
                     See price comparisons while you shop
                   </h2>
                   <p className="text-[var(--muted)] mb-8 leading-relaxed">
-                    Install our browser extension. When you visit a product page on any supported retailer, Pick automatically shows you if it&apos;s cheaper somewhere else—or if there&apos;s a better alternative.
+                    Install our browser extension. When you visit a product page on any supported
+                    retailer, Pick automatically shows you if it&apos;s cheaper somewhere else—or if
+                    there&apos;s a better alternative.
                   </p>
                   <button
                     onClick={() => setShowInstallModal(true)}
@@ -389,7 +674,7 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-            </section>
+            </motion.section>
           </>
         )}
       </main>
@@ -403,8 +688,12 @@ export default function Home() {
               <span className="text-sm font-medium">pick</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[var(--muted)]">
-              <a href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacy</a>
-              <a href="/terms" className="hover:text-[var(--foreground)] transition-colors">Terms</a>
+              <a href="/privacy" className="hover:text-[var(--foreground)] transition-colors">
+                Privacy
+              </a>
+              <a href="/terms" className="hover:text-[var(--foreground)] transition-colors">
+                Terms
+              </a>
               <span>&copy; {new Date().getFullYear()}</span>
             </div>
           </div>
