@@ -67,7 +67,22 @@ async function performSearch(query: string): Promise<SearchResponse> {
   const wasRecentlyCached = existingTimestamp && (Date.now() - existingTimestamp) < 30 * 60 * 1000;
 
   // Call the new cachedSearch function from scrapers.ts
-  const products = await cachedSearch(query);
+  let products = await cachedSearch(query);
+
+  // CRITICAL: Filter out any products with invalid data before returning
+  products = products.filter((p) => {
+    // Must have valid price
+    if (!p.price || typeof p.price !== 'number' || isNaN(p.price) || p.price <= 0) {
+      console.log(`[API Filter] Removing product with invalid price:`, p.name);
+      return false;
+    }
+    // Must have valid name
+    if (!p.name || typeof p.name !== 'string' || p.name.trim() === '') {
+      console.log(`[API Filter] Removing product with no name`);
+      return false;
+    }
+    return true;
+  });
 
   // Update timestamp if this is a fresh search
   if (!wasRecentlyCached) {

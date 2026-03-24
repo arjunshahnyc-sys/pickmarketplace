@@ -1,3 +1,5 @@
+import { formatPrice } from '@/lib/formatters';
+
 interface OrganizationSchemaProps {
   name: string;
   url: string;
@@ -67,7 +69,7 @@ export function ProductSchema({
     url,
     offers: {
       '@type': 'Offer',
-      price: price.toFixed(2),
+      price: formatPrice(price),
       priceCurrency: currency,
       availability: `https://schema.org/${availability}`,
       url,

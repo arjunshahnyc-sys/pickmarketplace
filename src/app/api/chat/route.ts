@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { formatPrice } from '@/lib/formatters';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -213,8 +214,8 @@ async function handleProductSearch(
         const prices = formattedProducts.map((p: any) => p.price);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
-        const savings = (maxPrice - minPrice).toFixed(2);
-        message = `I compared prices across retailers. The best price is $${minPrice.toFixed(2)}, saving you $${savings} compared to the highest price! Check these options:`;
+        const savings = formatPrice(maxPrice - minPrice);
+        message = `I compared prices across retailers. The best price is $${formatPrice(minPrice)}, saving you $${savings} compared to the highest price! Check these options:`;
         break;
 
       case 'recommendations':

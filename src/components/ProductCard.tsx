@@ -3,6 +3,7 @@
 import { ArrowUpRight, ArrowRight, Bookmark, Eye } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { retailerDomains } from './RetailerLogos';
+import { formatPrice, formatRating } from '@/lib/formatters';
 
 interface ProductCardProps {
   product: {
@@ -28,10 +29,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  // Safe price formatting helper
-  const formatPrice = (price: number | undefined): string => {
-    return price && typeof price === 'number' && !isNaN(price) ? price.toFixed(2) : '0.00';
-  };
+  // Null safety check - return null if product data is invalid
+  if (!product || !product.price || typeof product.price !== 'number' || isNaN(product.price) || product.price <= 0) {
+    return null;
+  }
 
   const savingsPercent = product.originalPrice && product.price
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -91,7 +92,7 @@ export function ProductCard({ product }: ProductCardProps) {
               className="px-2.5 py-1 text-xs font-medium bg-[#2A9D8F] text-white shadow-md"
               style={{ borderRadius: '4px' }}
             >
-              SAVE ${product.savings.toFixed(2)}
+              SAVE ${formatPrice(product.savings)}
             </span>
             <span
               className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-black text-[#2A9D8F] border border-[#2A9D8F]"
@@ -125,7 +126,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.rating && product.rating > 0 && (
             <span className="text-xs bg-white/90 dark:bg-black/90 px-2 py-1 rounded flex items-center gap-1">
               <span className="text-[#F59E0B]">★</span>
-              <span className="font-medium text-black dark:text-white">{product.rating.toFixed(1)}</span>
+              <span className="font-medium text-black dark:text-white">{formatRating(product.rating)}</span>
               {product.reviewCount && product.reviewCount > 0 && (
                 <span className="text-black/40 dark:text-white/40">({product.reviewCount.toLocaleString()})</span>
               )}
@@ -171,7 +172,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-sm text-black/40 dark:text-white/40 line-through">
-                ${product.originalPrice.toFixed(2)}
+                ${formatPrice(product.originalPrice)}
               </span>
             )}
           </div>
@@ -220,7 +221,7 @@ export function ProductCard({ product }: ProductCardProps) {
                       </span>
                       {Math.abs(priceDiff) > 0.5 && (
                         <span className={`text-[10px] ${isHigher ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>
-                          {isHigher ? `+$${priceDiff.toFixed(2)}` : `-$${Math.abs(priceDiff).toFixed(2)}`}
+                          {isHigher ? `+$${formatPrice(priceDiff)}` : `-$${formatPrice(Math.abs(priceDiff))}`}
                         </span>
                       )}
                       <ArrowUpRight

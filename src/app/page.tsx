@@ -9,6 +9,7 @@ import type { SearchResponse } from '@/lib/types';
 // Removed getTrendingProducts - using static trending searches instead
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
+import { formatPrice } from '@/lib/formatters';
 import RetailerMarquee from '@/components/RetailerMarquee';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HowItWorks } from '@/components/HowItWorks';
@@ -349,7 +350,7 @@ export default function Home() {
                   </h3>
                   <div className="flex items-baseline gap-2">
                     <span className="text-lg font-semibold text-[#2A9D8F]">
-                      ${product.price.toFixed(2)}
+                      ${formatPrice(product.price)}
                     </span>
                   </div>
                 </a>

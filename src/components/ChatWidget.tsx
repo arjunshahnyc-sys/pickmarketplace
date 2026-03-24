@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, ShoppingBag, ExternalLink } from 'lucide-react';
 import { getRelatedSearches } from '@/lib/scrapers';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatPrice } from '@/lib/formatters';
 
 interface Message {
   id: string;
@@ -236,7 +237,7 @@ export function ChatWidget() {
                 const prices = formattedProducts.map((p: any) => p.price);
                 const bestPrice = Math.min(...prices);
                 const upgradeHint = user?.plan === 'free' ? '\n\n💎 Upgrade to Premium for more results and unlimited searches!' : '';
-                const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}${priceInfo}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
+                const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}${priceInfo}! Best price: $${formatPrice(bestPrice)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
 
                 // Get related searches
                 const relatedSearches = getRelatedSearches(searchQuery);
@@ -405,7 +406,7 @@ export function ChatWidget() {
                                 {product.name}
                               </p>
                               <p className="text-sm font-semibold text-[#2A9D8F]">
-                                ${product.price.toFixed(2)}
+                                ${formatPrice(product.price)}
                               </p>
                               <p className="text-xs text-[#6B6B6B]">{product.retailer}</p>
                             </div>
@@ -475,7 +476,7 @@ export function ChatWidget() {
                                           const prices = formattedProducts.map((p: any) => p.price);
                                           const bestPrice = Math.min(...prices);
                                           const upgradeHint = user?.plan === 'free' ? '\n\n💎 Upgrade to Premium for more results!' : '';
-                                          const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}! Best price: $${bestPrice.toFixed(2)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
+                                          const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}! Best price: $${formatPrice(bestPrice)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
                                           const relatedSearches = getRelatedSearches(relatedSearch);
 
                                           setMessages(prev => {
