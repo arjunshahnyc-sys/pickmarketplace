@@ -61,7 +61,7 @@ export function WhyPick() {
             Why Pick, Not Honey?
           </h2>
           <p className="text-xl text-[var(--muted)] max-w-3xl mx-auto">
-            We're building the shopping assistant you deserve - transparent, fast, and truly on your side.
+            We're building the shopping assistant you deserve: transparent, fast, and truly on your side.
           </p>
         </motion.div>
 
@@ -208,7 +208,7 @@ export function WhyPick() {
             href="#search"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent)] text-white text-lg font-semibold rounded-xl hover:bg-[var(--accent-hover)] transition-all hover:scale-105 shadow-lg"
           >
-            Try Pick Now - It's Free
+            Try Pick Now, It's Free
             <Search className="w-5 h-5" aria-hidden="true" />
           </a>
           <p className="text-sm text-[var(--muted)] mt-4">

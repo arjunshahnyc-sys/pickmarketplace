@@ -9,7 +9,7 @@ export function HowItWorks() {
       icon: Search,
       number: '1',
       title: 'Search Any Product',
-      description: 'Type in what you\'re looking for - from headphones to laptops, we\'ll find it across 50+ retailers.',
+      description: 'Type in what you\'re looking for, from headphones to laptops, and we\'ll find it across 50+ retailers.',
       color: 'from-blue-500 to-cyan-500',
     },
     {
