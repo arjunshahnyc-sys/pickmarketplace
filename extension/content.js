@@ -4,7 +4,7 @@
 (function() {
   'use strict';
 
-  const API_BASE = 'https://pickdeals.vercel.app';
+  const API_BASE = 'https://pickmarketplace.app';
 
   // Product detection selectors for different sites
   const SITE_CONFIGS = {

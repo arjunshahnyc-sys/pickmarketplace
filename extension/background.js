@@ -1,6 +1,6 @@
 // Pick - Background Service Worker
 
-const API_BASE = 'https://pickdeals.vercel.app';
+const API_BASE = 'https://pickmarketplace.app';
 
 // Listen for installation
 chrome.runtime.onInstalled.addListener(() => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingBag, ArrowRight } from 'lucide-react';
+import { ShoppingBag, ArrowRight, X, Download, Chrome } from 'lucide-react';
 import { SearchBar } from '@/components/SearchBar';
 import { ProductGrid } from '@/components/ProductGrid';
 import type { ProductResult, SearchResponse } from '@/lib/types';
@@ -11,6 +11,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   const handleSearch = async (searchQuery: string) => {
     setIsLoading(true);
@@ -31,6 +32,80 @@ export default function Home() {
 
   return (
     <div className="relative z-10 texture-bg min-h-screen">
+      {/* Install Extension Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowInstallModal(false)}
+          />
+          <div
+            className="relative bg-white w-full max-w-md p-8 shadow-xl"
+            style={{ borderRadius: '8px' }}
+          >
+            <button
+              onClick={() => setShowInstallModal(false)}
+              className="absolute top-4 right-4 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 flex items-center justify-center">
+                <Chrome size={24} className="text-[var(--accent)]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Install Pick Extension</h3>
+                <p className="text-sm text-[var(--muted)]">3 simple steps</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">1</span>
+                <div>
+                  <p className="font-medium mb-1">Download the extension</p>
+                  <a
+                    href="/extension.zip"
+                    download
+                    className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
+                  >
+                    <Download size={14} />
+                    Download pick-extension.zip
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">2</span>
+                <div>
+                  <p className="font-medium mb-1">Open Chrome Extensions</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    Go to <code className="px-1.5 py-0.5 bg-[var(--background)] rounded text-xs">chrome://extensions</code> and enable <strong>Developer mode</strong> (top right)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center">3</span>
+                <div>
+                  <p className="font-medium mb-1">Load the extension</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    Unzip the file, click <strong>Load unpacked</strong>, and select the unzipped folder
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-[var(--border)]">
+              <p className="text-xs text-[var(--muted)] text-center">
+                Works on Chrome, Edge, Brave, and other Chromium browsers
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="border-b border-[var(--border)] bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -47,13 +122,13 @@ export default function Home() {
             >
               How it works
             </a>
-            <a
-              href="#extension"
-              className="text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white transition-all"
+            <button
+              onClick={() => setShowInstallModal(true)}
+              className="text-sm px-4 py-2 border border-[var(--border)] hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white transition-all cursor-pointer"
               style={{ borderRadius: '6px' }}
             >
               Get extension
-            </a>
+            </button>
           </nav>
         </div>
       </header>
@@ -220,14 +295,14 @@ export default function Home() {
                   <p className="text-[var(--muted)] mb-8 leading-relaxed">
                     Install our browser extension. When you visit a product page on Amazon, Walmart, or any supported retailer, Pick automatically shows you if it&apos;s cheaper somewhere else.
                   </p>
-                  <a
-                    href="#"
-                    className="btn-primary inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-hover)]"
+                  <button
+                    onClick={() => setShowInstallModal(true)}
+                    className="btn-primary inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-hover)] cursor-pointer"
                     style={{ borderRadius: '6px' }}
                   >
                     <span>Add to Chrome</span>
                     <ArrowRight size={16} />
-                  </a>
+                  </button>
                   <p className="text-xs text-[var(--muted)] mt-4">
                     Free forever. No account required.
                   </p>
