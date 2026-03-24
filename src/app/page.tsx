@@ -92,14 +92,94 @@ export default function Home() {
   // Load trending products and check for URL query on mount
   useEffect(() => {
     const trending = [
-      'Wireless Headphones',
-      'Laptop Stand',
-      'Running Shoes',
-      'Coffee Maker',
-      'Smart Watch',
-      'Yoga Mat',
-      'Desk Lamp',
-      'Water Bottle',
+      {
+        id: 'trending-1',
+        name: "Apple AirPods Pro 2nd Gen",
+        price: 189.99,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL1500_.jpg",
+        retailer: "Amazon",
+        url: "https://www.amazon.com/s?k=airpods+pro+2",
+        rating: 4.7,
+        reviewCount: 45000
+      },
+      {
+        id: 'trending-2',
+        name: "Stanley Quencher H2.0 40oz",
+        price: 35.00,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/71Ii9xjt+oL._AC_SL1500_.jpg",
+        retailer: "Target",
+        url: "https://www.target.com/s?searchTerm=stanley+quencher",
+        rating: 4.8,
+        reviewCount: 12000
+      },
+      {
+        id: 'trending-3',
+        name: "Nike Dunk Low",
+        price: 110.00,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/71hAMWJCuLL._AC_SL1500_.jpg",
+        retailer: "Nike",
+        url: "https://www.nike.com/w/dunk-shoes-90aohZ8y3qp",
+        rating: 4.6,
+        reviewCount: 8500
+      },
+      {
+        id: 'trending-4',
+        name: "Dyson Airwrap Complete",
+        price: 499.99,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/61dwFIzICML._SL1500_.jpg",
+        retailer: "Best Buy",
+        url: "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+airwrap",
+        rating: 4.5,
+        reviewCount: 6200
+      },
+      {
+        id: 'trending-5',
+        name: "Sony WH-1000XM5",
+        price: 298.00,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/51aXvjzcukL._AC_SL1500_.jpg",
+        retailer: "Amazon",
+        url: "https://www.amazon.com/s?k=sony+wh1000xm5",
+        rating: 4.7,
+        reviewCount: 32000
+      },
+      {
+        id: 'trending-6',
+        name: "Lululemon Align Leggings",
+        price: 98.00,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/51VZPNmEXJL._AC_SL1500_.jpg",
+        retailer: "Nordstrom",
+        url: "https://www.nordstrom.com/sr?origin=keywordsearch&keyword=lululemon+align",
+        rating: 4.8,
+        reviewCount: 15000
+      },
+      {
+        id: 'trending-7',
+        name: "CeraVe Moisturizing Cream 16oz",
+        price: 15.99,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/61S7BrCBj7L._SL1000_.jpg",
+        retailer: "Target",
+        url: "https://www.target.com/s?searchTerm=cerave+moisturizing+cream",
+        rating: 4.7,
+        reviewCount: 89000
+      },
+      {
+        id: 'trending-8',
+        name: "Ninja Creami Ice Cream Maker",
+        price: 149.99,
+        currency: 'USD',
+        imageUrl: "https://m.media-amazon.com/images/I/61nzEWnbk8L._AC_SL1500_.jpg",
+        retailer: "Walmart",
+        url: "https://www.walmart.com/search?q=ninja+creami",
+        rating: 4.6,
+        reviewCount: 18000
+      },
     ];
     setTrendingProducts(trending);
 
@@ -220,7 +300,7 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <Header onInstallClick={() => setShowInstallModal(true)} />
+      <Header onInstallClick={() => alert('Chrome extension coming soon to the Web Store!')} />
 
       <main>
         {/* Usage Meter for Free Users */}
@@ -335,14 +415,17 @@ export default function Home() {
               {trendingProducts.map((product, idx) => (
                 <a
                   key={idx}
-                  href={`/?q=${encodeURIComponent(product.name)}`}
+                  href={product.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="group bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
                 >
                   <div className="aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
                     <img
                       src={product.imageUrl}
                       alt={product.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
+                      loading="lazy"
                     />
                   </div>
                   <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem] text-black">
@@ -712,12 +795,12 @@ export default function Home() {
             <div className="text-black/60 space-y-4 text-base leading-relaxed">
               <p>
                 I started Pick because I was tired of overpaying for things. Every time I found a product I wanted,
-                the price felt too high — and I knew there had to be a better deal somewhere, but I didn't have
+                the price felt too high, and I knew there had to be a better deal somewhere, but I didn't have
                 the time to check every single retailer.
               </p>
               <p>
                 Even more frustrating was when a product was genuinely out of my budget. Instead of just being
-                bummed about it, I wanted a way to find similar products that I'd be just as happy with — but
+                bummed about it, I wanted a way to find similar products that I'd be just as happy with, but
                 at a price I could actually afford.
               </p>
               <p>
@@ -726,7 +809,7 @@ export default function Home() {
                 Save money without settling.
               </p>
             </div>
-            <p className="mt-8 text-sm text-black/40">— Arjun Shah, Founder</p>
+            <p className="mt-8 text-sm text-black/40">Arjun Shah, Founder</p>
           </div>
         </section>
       </main>

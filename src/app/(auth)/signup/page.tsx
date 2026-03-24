@@ -136,7 +136,7 @@ export default function SignupPage() {
             <p className="text-sm italic">
               "Found my AirPods for $60 less than Amazon's listed price. This tool is insane."
             </p>
-            <p className="text-xs text-white/50 mt-2">— Sarah M., Pick Premium member</p>
+            <p className="text-xs text-white/50 mt-2">Sarah M., Pick Premium member</p>
           </div>
         </div>
 
@@ -170,6 +170,7 @@ export default function SignupPage() {
           {/* Social Login Buttons */}
           <button
             type="button"
+            onClick={() => alert('Google sign-in coming soon! Sign up with email for now.')}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-3"
           >
             <GoogleIcon />
@@ -177,6 +178,7 @@ export default function SignupPage() {
           </button>
           <button
             type="button"
+            onClick={() => alert('Apple sign-in coming soon! Sign up with email for now.')}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-6"
           >
             <AppleIcon />

@@ -97,7 +97,7 @@ export default function LoginPage() {
             <p className="text-sm italic">
               "Saved $200 on a new laptop by using Pick. Can't believe I was about to overpay!"
             </p>
-            <p className="text-xs text-white/50 mt-2">— Mike R., Pick user since 2024</p>
+            <p className="text-xs text-white/50 mt-2">Mike R., Pick user since 2024</p>
           </div>
         </div>
 
@@ -131,6 +131,7 @@ export default function LoginPage() {
           {/* Social Login Buttons */}
           <button
             type="button"
+            onClick={() => alert('Google sign-in coming soon! Log in with email for now.')}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-3"
           >
             <GoogleIcon />
@@ -138,6 +139,7 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
+            onClick={() => alert('Apple sign-in coming soon! Log in with email for now.')}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-6"
           >
             <AppleIcon />

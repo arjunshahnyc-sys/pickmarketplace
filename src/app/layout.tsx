@@ -7,7 +7,7 @@ import { SkipToContent } from '@/components/SkipToContent';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
 
 export const metadata: Metadata = {
-  title: 'Pick — Never Overpay Again',
+  title: 'Pick: Never Overpay Again',
   description: 'AI-powered shopping assistant that finds better prices and similar products across 50+ retailers in real-time. Save money on every purchase.',
   keywords: ['price comparison', 'shopping assistant', 'save money', 'best deals', 'product search', 'online shopping'],
   authors: [{ name: 'Pick Marketplace' }],
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL('https://pickmarketplace.com'),
   openGraph: {
-    title: 'Pick — Never Overpay Again',
+    title: 'Pick: Never Overpay Again',
     description: 'AI-powered shopping assistant that finds better prices and similar products across 50+ retailers in real-time.',
     url: 'https://pickmarketplace.com',
     siteName: 'Pick Marketplace',
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pick — Never Overpay Again',
+    title: 'Pick: Never Overpay Again',
     description: 'AI-powered shopping assistant that finds better prices across 50+ retailers.',
     images: ['/og-image.png'],
     creator: '@pickmarketplace',

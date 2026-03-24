@@ -20,11 +20,11 @@ const faqData: FAQItem[] = [
   },
   {
     question: 'How does Pick make money?',
-    answer: 'We earn a small affiliate commission when you purchase through some of our retailer links. This doesn\'t affect your price — you always get the best deal we find. Premium subscriptions help us keep the service fast and ad-free.',
+    answer: 'We earn a small affiliate commission when you purchase through some of our retailer links. This doesn\'t affect your price.you always get the best deal we find. Premium subscriptions help us keep the service fast and ad-free.',
   },
   {
     question: 'Is Pick like Honey?',
-    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick uses AI to compare prices across 50+ retailers and find similar products at better prices. We also prioritize privacy — we don\'t track your browsing or sell your data.',
+    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick uses AI to compare prices across 50+ retailers and find similar products at better prices. We also prioritize privacy.we don\'t track your browsing or sell your data.',
   },
   {
     question: 'What payment methods do you accept?',
