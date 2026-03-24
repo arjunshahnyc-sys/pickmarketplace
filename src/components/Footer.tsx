@@ -14,27 +14,7 @@ export function Footer() {
             Trusted by Shoppers Worldwide
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* Stats */}
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#2A9D8F] mb-2">
-                <AnimatedCounter target={150000} suffix="+" />
-              </div>
-              <p className="text-sm text-black/60 dark:text-white/60">Products Searched Daily</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#2A9D8F] mb-2">
-                <AnimatedCounter target={50} suffix="+" />
-              </div>
-              <p className="text-sm text-black/60 dark:text-white/60">Retailers Compared</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[#2A9D8F] mb-2">
-                <AnimatedCounter target={2} prefix="$" suffix="M+" />
-              </div>
-              <p className="text-sm text-black/60 dark:text-white/60">Saved for Customers</p>
-            </div>
-          </div>
+          {/* Removed fake statistics - replaced with trust signals below */}
 
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 items-center">

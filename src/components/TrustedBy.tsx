@@ -28,9 +28,6 @@ export function TrustedBy() {
           </div>
         ))}
       </div>
-      <p className="text-center text-[11px] text-black/30 dark:text-white/40 mt-4 uppercase tracking-[0.15em]">
-        Joining 10,000+ smart shoppers worldwide
-      </p>
     </section>
   );
 }

@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import { SearchBar } from '@/components/SearchBar';
 import { ProductCard } from '@/components/ProductCard';
 import type { SearchResponse } from '@/lib/types';
-import { getTrendingProducts } from '@/lib/scrapers';
+// Removed getTrendingProducts - using static trending searches instead
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import RetailerMarquee from '@/components/RetailerMarquee';
@@ -90,7 +90,16 @@ export default function Home() {
 
   // Load trending products and check for URL query on mount
   useEffect(() => {
-    const trending = getTrendingProducts();
+    const trending = [
+      'Wireless Headphones',
+      'Laptop Stand',
+      'Running Shoes',
+      'Coffee Maker',
+      'Smart Watch',
+      'Yoga Mat',
+      'Desk Lamp',
+      'Water Bottle',
+    ];
     setTrendingProducts(trending);
 
     // Check for query parameter in URL
@@ -455,19 +464,28 @@ export default function Home() {
               </>
             ) : (
               // Empty state
-              <div className="text-center py-24">
-                <div className="w-16 h-16 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ShoppingBag size={32} className="text-black/40 dark:text-white/40" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2 text-black dark:text-white">No results found for &quot;{query}&quot;</h3>
-                <p className="text-black/60 dark:text-white/60 mb-6">Try a broader search or different keywords</p>
-                <div className="flex justify-center gap-2 flex-wrap">
-                  <span className="text-sm text-black/60 dark:text-white/60">Try these popular searches:</span>
-                  {['Headphones', 'Laptops', 'Running Shoes', 'Skincare', 'Kitchen'].map((term) => (
+              <div className="text-center py-16">
+                <svg
+                  className="w-16 h-16 mx-auto text-black/10 dark:text-white/10 mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1}
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="text-lg font-medium text-black dark:text-white mb-2">
+                  No results found for &quot;{query}&quot;
+                </h3>
+                <p className="text-black/50 dark:text-white/50 mb-6">
+                  Try a different search term or browse popular categories.
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {['Headphones', 'Laptops', 'Running Shoes', 'Skincare', 'Kitchen', 'Watches', 'Backpacks'].map((term) => (
                     <button
                       key={term}
                       onClick={() => handleSearch(term)}
-                      className="px-4 py-2 bg-[#2A9D8F] text-white text-sm rounded hover:bg-[#238B7E] transition-colors"
+                      className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/10 text-sm text-black/60 dark:text-white/60 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
                     >
                       {term}
                     </button>
@@ -683,6 +701,33 @@ export default function Home() {
             </motion.section>
           </>
         )}
+
+        {/* Founder Story */}
+        <section className="py-20 px-6 border-t border-black/5 dark:border-white/5">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-3xl font-heading font-bold text-black dark:text-white mb-6">
+              Why I Built Pick
+            </h2>
+            <div className="text-black/60 dark:text-white/60 space-y-4 text-base leading-relaxed">
+              <p>
+                I started Pick because I was tired of overpaying for things. Every time I found a product I wanted,
+                the price felt too high — and I knew there had to be a better deal somewhere, but I didn't have
+                the time to check every single retailer.
+              </p>
+              <p>
+                Even more frustrating was when a product was genuinely out of my budget. Instead of just being
+                bummed about it, I wanted a way to find similar products that I'd be just as happy with — but
+                at a price I could actually afford.
+              </p>
+              <p>
+                That's what Pick does. It searches across retailers to find you the best price on the exact product
+                you want, and helps you discover alternatives you might not have found on your own.
+                Save money without settling.
+              </p>
+            </div>
+            <p className="mt-8 text-sm text-black/40 dark:text-white/40">— Arjun Shah, Founder</p>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
