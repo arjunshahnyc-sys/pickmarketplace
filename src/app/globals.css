@@ -38,36 +38,36 @@
   --button-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
 }
 
-/* Dark mode - inspired by Linear/Spotify */
+/* Dark mode - Pure black, white, and teal ONLY */
 .dark {
-  --bg-primary: #09090B;        /* Near black, not grey - like Linear */
-  --bg-secondary: #111113;      /* Slightly lighter for sections */
-  --bg-tertiary: #18181B;       /* Cards and elevated surfaces */
-  --bg-card: #18181B;           /* Card background */
-  --bg-card-hover: #1F1F23;     /* Card hover state */
-  --text-primary: #FAFAFA;      /* Almost white, not pure white */
-  --text-secondary: #A1A1AA;    /* Muted text - zinc-400 */
-  --text-tertiary: #71717A;     /* Even more muted - zinc-500 */
-  --border-primary: #27272A;    /* Subtle borders - zinc-800 */
-  --border-secondary: #1F1F23;  /* Even subtler borders */
-  --accent: #2DD4A8;            /* Brighter teal that pops on dark backgrounds */
-  --accent-hover: #34E0B4;      /* Lighter on hover */
-  --accent-light: rgba(45, 212, 168, 0.1); /* Teal glow for badges */
-  --surface-overlay: rgba(0, 0, 0, 0.7);
+  --bg-primary: #000000;        /* Pure black for all backgrounds */
+  --bg-secondary: #000000;      /* Pure black */
+  --bg-tertiary: #000000;       /* Pure black */
+  --bg-card: #000000;           /* Pure black */
+  --bg-card-hover: #000000;     /* Pure black */
+  --text-primary: #FFFFFF;      /* Pure white for all text */
+  --text-secondary: #FFFFFF;    /* Pure white */
+  --text-tertiary: #FFFFFF;     /* Pure white */
+  --border-primary: rgba(255, 255, 255, 0.1);    /* White with 10% opacity */
+  --border-secondary: rgba(255, 255, 255, 0.1);  /* White with 10% opacity */
+  --accent: #2A9D8F;            /* Pick teal - the ONLY color */
+  --accent-hover: rgba(42, 157, 143, 0.8);  /* Teal at 80% */
+  --accent-light: rgba(42, 157, 143, 0.1);  /* Teal at 10% for badges */
+  --surface-overlay: rgba(0, 0, 0, 0.8);
 
   /* Legacy variables for backwards compatibility */
-  --background: #09090B;
-  --foreground: #FAFAFA;
-  --border: #27272A;
-  --muted: #A1A1AA;
-  --subtle-warm: #18181B;
-  --accent-secondary: #FF8A5B;
-  --accent-secondary-hover: #FF9D70;
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.1);
+  --muted: #FFFFFF;
+  --subtle-warm: #000000;
+  --accent-secondary: #2A9D8F;
+  --accent-secondary-hover: rgba(42, 157, 143, 0.8);
 
-  /* Shadows - deeper in dark mode */
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.6);
-  --button-shadow: 0 4px 12px rgba(45, 212, 168, 0.3);
+  /* No shadows in dark mode */
+  --card-shadow: none;
+  --card-shadow-hover: none;
+  --button-shadow: none;
 
   /* Semantic colors stay vibrant */
   --success: #10B981;
@@ -358,12 +358,30 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   background: var(--text-tertiary);
 }
 
+.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #000000;
+}
+
 .dark ::-webkit-scrollbar-thumb {
-  background: var(--border-primary);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-secondary);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::selection {
+  background: rgba(42, 157, 143, 0.4);
+  color: #FFFFFF;
+}
+
+.dark *:focus-visible {
+  outline-color: #2A9D8F;
 }
 
 /* Loading spinner */

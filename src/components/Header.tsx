@@ -127,7 +127,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
               <>
                 <Link
                   href="/login"
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] font-medium transition-colors"
+                  className="text-sm text-gray-600 dark:text-white/70 hover:text-[#2A9D8F] dark:hover:text-[#2A9D8F] font-medium transition-colors"
                 >
                   Log In
                 </Link>

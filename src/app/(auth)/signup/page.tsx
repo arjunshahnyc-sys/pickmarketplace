@@ -146,7 +146,7 @@ export default function SignupPage() {
       </div>
 
       {/* Right Side: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-white dark:bg-[var(--bg-primary)]">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-white dark:bg-black">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2 mb-4">
@@ -156,7 +156,7 @@ export default function SignupPage() {
             <h2 className="text-2xl font-heading font-bold text-[var(--foreground)] mt-4">
               Create your account
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-500 dark:text-white/70 mt-1">
               Free forever. No credit card required.
             </p>
           </div>
@@ -170,14 +170,14 @@ export default function SignupPage() {
           {/* Social Login Buttons */}
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition mb-3 dark:text-white"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition mb-3 dark:text-white"
           >
             <GoogleIcon />
             <span className="text-sm font-medium">Continue with Google</span>
           </button>
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition mb-6 dark:text-white"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition mb-6 dark:text-white"
           >
             <AppleIcon />
             <span className="text-sm font-medium">Continue with Apple</span>
@@ -195,7 +195,7 @@ export default function SignupPage() {
             <div className="space-y-4">
               {/* Name Field */}
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-white/70 mb-1 block">
                   Full name
                 </label>
                 <div className="relative">
@@ -210,8 +210,8 @@ export default function SignupPage() {
                         ? 'border-red-500 dark:border-red-500'
                         : touched.name && isFieldValid('name')
                         ? 'border-green-500 dark:border-green-500'
-                        : 'border-gray-200 dark:border-gray-700'
-                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-[var(--bg-tertiary)] dark:text-white`}
+                        : 'border-gray-200 dark:border-white/10'
+                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-black dark:text-white`}
                   />
                   {isFieldValid('name') && (
                     <Check className="absolute right-3 top-3 w-5 h-5 text-green-500" />
@@ -222,7 +222,7 @@ export default function SignupPage() {
 
               {/* Email Field */}
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-white/70 mb-1 block">
                   Email
                 </label>
                 <div className="relative">
@@ -237,8 +237,8 @@ export default function SignupPage() {
                         ? 'border-red-500 dark:border-red-500'
                         : touched.email && isFieldValid('email')
                         ? 'border-green-500 dark:border-green-500'
-                        : 'border-gray-200 dark:border-gray-700'
-                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-[var(--bg-tertiary)] dark:text-white`}
+                        : 'border-gray-200 dark:border-white/10'
+                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-black dark:text-white`}
                   />
                   {isFieldValid('email') && (
                     <Check className="absolute right-3 top-3 w-5 h-5 text-green-500" />
@@ -249,7 +249,7 @@ export default function SignupPage() {
 
               {/* Password Field */}
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-white/70 mb-1 block">
                   Password
                 </label>
                 <div className="relative">
@@ -264,13 +264,13 @@ export default function SignupPage() {
                         ? 'border-red-500 dark:border-red-500'
                         : touched.password && isFieldValid('password')
                         ? 'border-green-500 dark:border-green-500'
-                        : 'border-gray-200 dark:border-gray-700'
-                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-[var(--bg-tertiary)] dark:text-white`}
+                        : 'border-gray-200 dark:border-white/10'
+                    } text-sm focus:ring-2 focus:ring-[#2A9D8F] focus:border-transparent outline-none transition bg-white dark:bg-black dark:text-white`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-white"
                     aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -290,17 +290,17 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-4">
+          <p className="text-xs text-gray-400 dark:text-white/70 text-center mt-4">
             By signing up, you agree to our{' '}
-            <Link href="/terms" className="underline hover:text-gray-600 dark:hover:text-gray-300">
+            <Link href="/terms" className="underline hover:text-gray-600 dark:hover:text-white">
               Terms
             </Link>{' '}
             and{' '}
-            <Link href="/privacy" className="underline hover:text-gray-600 dark:hover:text-gray-300">
+            <Link href="/privacy" className="underline hover:text-gray-600 dark:hover:text-white">
               Privacy Policy
             </Link>
           </p>
-          <p className="text-sm text-center mt-6 text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-center mt-6 text-gray-500 dark:text-white/70">
             Already have an account?{' '}
             <Link href="/login" className="text-[#2A9D8F] font-medium hover:underline">
               Log in

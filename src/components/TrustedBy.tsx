@@ -20,7 +20,7 @@ export function TrustedBy() {
   ];
 
   return (
-    <section className="py-8 border-y border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-[var(--bg-primary)]/50">
+    <section className="py-8 border-y border-gray-100 dark:border-white/10 bg-white/50 dark:bg-black/50">
       <p className="text-center text-xs text-gray-400 uppercase tracking-[0.2em] mb-6 font-medium">
         Searching prices across 50+ retailers
       </p>

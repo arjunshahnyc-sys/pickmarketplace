@@ -93,7 +93,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen texture-overlay flex flex-col">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <SkipToContent />
           <AuthProvider>
             <main id="main-content" className="flex-1" tabIndex={-1}>
