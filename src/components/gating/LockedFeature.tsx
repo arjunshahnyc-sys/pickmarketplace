@@ -27,7 +27,7 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
   }
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200">
       <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
           <path

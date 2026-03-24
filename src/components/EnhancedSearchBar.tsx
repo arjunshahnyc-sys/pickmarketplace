@@ -108,7 +108,7 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
-            className="w-full pl-12 pr-24 py-4 text-base border-2 border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10 transition-all bg-white"
+            className="w-full pl-12 pr-24 py-4 text-base border-2 border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10 transition-all bg-white dark:bg-black"
             aria-label="Search for products"
             autoComplete="off"
           />
@@ -135,7 +135,7 @@ export function EnhancedSearchBar({ onSearch, initialQuery = '', placeholder = '
 
       {/* Suggestions Dropdown */}
       {showSuggestions && (
-        <div className="absolute top-full mt-2 w-full bg-white border border-[var(--border)] rounded-xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full mt-2 w-full bg-white dark:bg-black border border-[var(--border)] rounded-xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto">
           {/* Recent Searches */}
           {recentSearches.length > 0 && (
             <div className="p-4 border-b border-[var(--border)]">

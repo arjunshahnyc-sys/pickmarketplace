@@ -31,7 +31,7 @@ export default function RetailerMarquee() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="py-10 border-y border-gray-100 bg-white/50"
+      className="py-10 border-y border-gray-100 bg-white/50 dark:bg-black/50"
     >
       <p className="text-center text-xs text-gray-400 mb-6 uppercase tracking-[0.2em] font-medium">
         Searching across 50+ retailers in real time

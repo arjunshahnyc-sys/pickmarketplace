@@ -77,7 +77,7 @@ export function WhyPick() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="relative group"
               >
-                <div className="h-full bg-white rounded-2xl p-8 border border-[var(--border)] hover:border-[var(--accent)] transition-all hover:shadow-xl">
+                <div className="h-full bg-white dark:bg-black rounded-2xl p-8 border border-[var(--border)] hover:border-[var(--accent)] transition-all hover:shadow-xl">
                   {/* Icon */}
                   <div className="w-14 h-14 bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Icon className="w-7 h-7 text-white" strokeWidth={2} aria-hidden="true" />
@@ -110,7 +110,7 @@ export function WhyPick() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-20"
         >
-          <div className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden shadow-lg">
+          <div className="bg-white dark:bg-black rounded-2xl border border-[var(--border)] overflow-hidden shadow-lg">
             <table className="w-full">
               <thead>
                 <tr className="bg-[var(--subtle-warm)]">
@@ -134,7 +134,7 @@ export function WhyPick() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-black rounded-full">
                       <span className="text-gray-400 font-bold">✗</span>
                     </span>
                   </td>
@@ -147,7 +147,7 @@ export function WhyPick() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-black rounded-full">
                       <span className="text-gray-400 font-bold">~</span>
                     </span>
                   </td>
@@ -160,7 +160,7 @@ export function WhyPick() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-black rounded-full">
                       <span className="text-gray-400 font-bold">✗</span>
                     </span>
                   </td>
@@ -173,7 +173,7 @@ export function WhyPick() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-black rounded-full">
                       <span className="text-gray-400 text-sm">Limited</span>
                     </span>
                   </td>
@@ -186,7 +186,7 @@ export function WhyPick() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-black rounded-full">
                       <span className="text-gray-400 font-bold">✗</span>
                     </span>
                   </td>

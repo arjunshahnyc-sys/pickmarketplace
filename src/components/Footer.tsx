@@ -6,7 +6,7 @@ import { AnimatedCounter } from './AnimatedCounter';
 
 export function Footer() {
   return (
-    <footer className="bg-white border-t border-[var(--border)] mt-20">
+    <footer className="bg-white dark:bg-black border-t border-[var(--border)] mt-20">
       {/* Trust Signals & Stats */}
       <section className="border-b border-[var(--border)] py-12 bg-gradient-to-b from-[var(--subtle-warm)] to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,15 +38,15 @@ export function Footer() {
 
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 items-center">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--border)] rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-black border border-[var(--border)] rounded-lg shadow-sm">
               <Shield className="w-5 h-5 text-[var(--accent)]" />
               <span className="text-sm font-medium text-[var(--foreground)]">Secure Shopping</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--border)] rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-black border border-[var(--border)] rounded-lg shadow-sm">
               <Zap className="w-5 h-5 text-[var(--accent)]" />
               <span className="text-sm font-medium text-[var(--foreground)]">Real-Time Prices</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--border)] rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-black border border-[var(--border)] rounded-lg shadow-sm">
               <Lock className="w-5 h-5 text-[var(--accent)]" />
               <span className="text-sm font-medium text-[var(--foreground)]">Privacy Protected</span>
             </div>

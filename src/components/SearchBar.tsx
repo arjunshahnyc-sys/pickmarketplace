@@ -26,7 +26,7 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search any product..."
-          className="w-full px-5 py-4 pr-36 text-base border border-[var(--border)] bg-white placeholder:text-[#A3A3A3] transition-all"
+          className="w-full px-5 py-4 pr-36 text-base border border-[var(--border)] bg-white dark:bg-black placeholder:text-[#A3A3A3] transition-all"
           style={{ borderRadius: '8px' }}
           disabled={isLoading}
         />

@@ -8,8 +8,8 @@ interface BlurOverlayProps {
 
 export default function BlurOverlay({ message = 'Upgrade to Premium to see more results' }: BlurOverlayProps) {
   return (
-    <div className="absolute inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-10">
-      <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
+    <div className="absolute inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-10">
+      <div className="bg-white dark:bg-black p-6 rounded-lg shadow-xl text-center max-w-sm">
         <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
             className="w-6 h-6 text-white"

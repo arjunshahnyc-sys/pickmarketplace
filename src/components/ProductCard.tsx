@@ -49,7 +49,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article
-      className="group bg-white border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:border-[var(--accent)]"
+      className="group bg-white dark:bg-black border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:border-[var(--accent)]"
       style={{ borderRadius: '6px' }}
       aria-label={`${product.name} - $${product.price.toFixed(2)} at ${product.retailer}`}
     >
@@ -84,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
               SAVE ${product.savings.toFixed(2)}
             </span>
             <span
-              className="px-2.5 py-1 text-xs font-bold bg-white text-[var(--accent)] border border-[var(--accent)]"
+              className="px-2.5 py-1 text-xs font-bold bg-white dark:bg-black text-[var(--accent)] border border-[var(--accent)]"
               style={{ borderRadius: '4px' }}
             >
               {savingsPercent}% OFF
@@ -98,7 +98,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.retailer}
           </span>
           {product.rating && product.rating > 0 && (
-            <span className="text-xs bg-white/90 px-2 py-1 rounded flex items-center gap-1">
+            <span className="text-xs bg-white/90 dark:bg-black/90 px-2 py-1 rounded flex items-center gap-1">
               <span className="text-yellow-500">★</span>
               <span className="font-medium">{product.rating.toFixed(1)}</span>
               {product.reviewCount && product.reviewCount > 0 && (
@@ -111,7 +111,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Bookmark button */}
         <button
           onClick={handleBookmark}
-          className="absolute top-3 left-3 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+          className="absolute top-3 left-3 p-2 bg-white/90 dark:bg-black/90 hover:bg-white dark:hover:bg-black rounded-full shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
           aria-label={isBookmarked ? 'Remove from saved' : 'Save for later'}
           title={isBookmarked ? 'Remove from saved' : 'Save for later'}
         >

@@ -27,14 +27,14 @@ export default function AccountPage() {
   const resultsLimit = getFeatureLimit('resultsPerSearch');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
 
         {/* Profile Info */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white dark:bg-black rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Information</h2>
           <div className="space-y-3">
             <div>
@@ -59,7 +59,7 @@ export default function AccountPage() {
         </div>
 
         {/* Current Plan */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white dark:bg-black rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Plan</h2>
 
           <div className="flex items-center justify-between mb-6">
@@ -88,7 +88,7 @@ export default function AccountPage() {
             ) : (
               <button
                 onClick={downgradToFree}
-                className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
               >
                 Cancel Subscription
               </button>
@@ -129,7 +129,7 @@ export default function AccountPage() {
         </div>
 
         {/* Features Access */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white dark:bg-black rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Feature Access</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2">
@@ -204,7 +204,7 @@ export default function AccountPage() {
         </div>
 
         {/* Logout */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-black rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Actions</h2>
           <button
             onClick={() => {

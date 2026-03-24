@@ -132,7 +132,7 @@ export default function Home() {
             onClick={() => setShowInstallModal(false)}
           />
           <div
-            className="relative bg-white w-full max-w-md p-8 shadow-xl"
+            className="relative bg-white dark:bg-black w-full max-w-md p-8 shadow-xl"
             style={{ borderRadius: '8px' }}
           >
             <button
@@ -217,7 +217,7 @@ export default function Home() {
         {isAuthenticated && user?.plan === 'free' && (
           <div className="max-w-5xl mx-auto px-6 pt-6">
             <div
-              className="bg-white border border-[var(--border)] p-4"
+              className="bg-white dark:bg-black border border-[var(--border)] p-4"
               style={{ borderRadius: '6px' }}
             >
               <div className="flex items-center justify-between mb-2">
@@ -327,7 +327,7 @@ export default function Home() {
                 <a
                   key={idx}
                   href={`/?q=${encodeURIComponent(product.name)}`}
-                  className="group bg-white border border-[var(--border)] rounded-lg p-4 hover:border-[var(--accent)] transition-all hover:shadow-md"
+                  className="group bg-white dark:bg-black border border-[var(--border)] rounded-lg p-4 hover:border-[var(--accent)] transition-all hover:shadow-md"
                 >
                   <div className="aspect-square mb-3 bg-[var(--background)] rounded flex items-center justify-center overflow-hidden">
                     <img
@@ -364,7 +364,7 @@ export default function Home() {
                   {[...Array(8)].map((_, i) => (
                     <div
                       key={i}
-                      className="bg-white border border-[var(--border)] rounded-lg overflow-hidden animate-pulse"
+                      className="bg-white dark:bg-black border border-[var(--border)] rounded-lg overflow-hidden animate-pulse"
                     >
                       <div className="aspect-[4/3] bg-gray-200" />
                       <div className="p-4 space-y-3">
@@ -417,7 +417,7 @@ export default function Home() {
                 {results.length >
                   (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10) && (
                   <div
-                    className="mt-12 text-center p-8 border border-[var(--border)] bg-white"
+                    className="mt-12 text-center p-8 border border-[var(--border)] bg-white dark:bg-black"
                     style={{ borderRadius: '8px' }}
                   >
                     <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -457,7 +457,7 @@ export default function Home() {
             ) : (
               // Empty state
               <div className="text-center py-24">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-black rounded-full flex items-center justify-center mx-auto mb-4">
                   <ShoppingBag size={32} className="text-gray-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No results found for &quot;{query}&quot;</h3>
@@ -496,7 +496,7 @@ export default function Home() {
             >
               <div className="max-w-3xl">
                 <div
-                  className="bg-white border border-[var(--border)] p-8"
+                  className="bg-white dark:bg-black border border-[var(--border)] p-8"
                   style={{ borderRadius: '8px' }}
                 >
                   <div className="differentiator">
@@ -596,7 +596,7 @@ export default function Home() {
                   className="flex items-end"
                 >
                   <div
-                    className="w-full p-6 border border-[var(--border)] bg-white card-hover"
+                    className="w-full p-6 border border-[var(--border)] bg-white dark:bg-black card-hover"
                     style={{ borderRadius: '8px' }}
                   >
                     <div className="flex items-center gap-3 mb-4">
@@ -656,7 +656,7 @@ export default function Home() {
               className="max-w-5xl mx-auto px-6 py-20"
             >
               <div
-                className="border border-[var(--border)] bg-white p-10 md:p-14"
+                className="border border-[var(--border)] bg-white dark:bg-black p-10 md:p-14"
                 style={{ borderRadius: '8px' }}
               >
                 <div className="max-w-lg">
@@ -687,7 +687,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] bg-white mt-auto">
+      <footer className="border-t border-[var(--border)] bg-white dark:bg-black mt-auto">
         <div className="max-w-5xl mx-auto px-6 py-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-2">

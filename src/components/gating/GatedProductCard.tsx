@@ -13,7 +13,7 @@ export default function GatedProductCard({ children, isLocked }: GatedProductCar
     <div className={`relative ${isLocked ? 'pointer-events-none' : ''}`}>
       {isLocked && (
         <div className="absolute inset-0 z-10">
-          <div className="absolute inset-0 backdrop-blur-[2px] bg-white/40" />
+          <div className="absolute inset-0 backdrop-blur-[2px] bg-white/40 dark:bg-black/40" />
         </div>
       )}
       <div className={isLocked ? 'opacity-50' : ''}>{children}</div>

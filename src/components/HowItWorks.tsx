@@ -63,7 +63,7 @@ export function HowItWorks() {
                   <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-[var(--accent)] to-transparent opacity-30" />
                 )}
 
-                <div className="bg-white rounded-2xl p-8 shadow-sm border border-[var(--border)] hover:shadow-lg transition-shadow relative z-10">
+                <div className="bg-white dark:bg-black rounded-2xl p-8 shadow-sm border border-[var(--border)] hover:shadow-lg transition-shadow relative z-10">
                   {/* Number badge */}
                   <div
                     className={`absolute -top-4 -right-4 w-12 h-12 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center text-xl font-bold shadow-lg`}

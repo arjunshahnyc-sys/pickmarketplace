@@ -1,7 +1,7 @@
 export function ProductCardSkeleton() {
   return (
     <div
-      className="bg-white border border-[var(--border)] overflow-hidden animate-pulse"
+      className="bg-white dark:bg-black border border-[var(--border)] overflow-hidden animate-pulse"
       style={{ borderRadius: '6px' }}
       role="status"
       aria-label="Loading product"

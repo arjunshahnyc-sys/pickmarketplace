@@ -344,11 +344,11 @@ export function ChatWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-[380px] h-[600px] bg-white border border-[#E5E5E3] rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden">
+        <div className="fixed bottom-6 right-6 w-[380px] h-[600px] bg-white dark:bg-black border border-[#E5E5E3] rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-[#2A9D8F] text-white border-b border-[#238579]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-white/20 dark:bg-black/20 rounded-full flex items-center justify-center">
                 <ShoppingBag size={18} />
               </div>
               <div>
@@ -397,7 +397,7 @@ export function ChatWidget() {
                               <img
                                 src={product.image}
                                 alt={product.name}
-                                className="w-16 h-16 object-contain rounded bg-white"
+                                className="w-16 h-16 object-contain rounded bg-white dark:bg-black"
                               />
                             )}
                             <div className="flex-1 min-w-0">
@@ -500,7 +500,7 @@ export function ChatWidget() {
                                     }
                                   })();
                                 }}
-                                className="text-xs px-2 py-1 bg-white border border-[#E5E5E3] rounded hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition-colors"
+                                className="text-xs px-2 py-1 bg-white dark:bg-black border border-[#E5E5E3] rounded hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition-colors"
                               >
                                 {relatedSearch}
                               </button>
@@ -516,7 +516,7 @@ export function ChatWidget() {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-[#E5E5E3] rounded-lg p-3">
+                <div className="bg-white dark:bg-black border border-[#E5E5E3] rounded-lg p-3">
                   <div className="flex gap-2">
                     <div className="w-2 h-2 bg-[#2A9D8F] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <div className="w-2 h-2 bg-[#2A9D8F] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -530,7 +530,7 @@ export function ChatWidget() {
           </div>
 
           {/* Input */}
-          <div className="p-4 bg-white border-t border-[#E5E5E3]">
+          <div className="p-4 bg-white dark:bg-black border-t border-[#E5E5E3]">
             <div className="flex gap-2">
               <input
                 type="text"

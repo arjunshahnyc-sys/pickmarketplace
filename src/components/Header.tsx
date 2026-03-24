@@ -28,7 +28,7 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
 
   return (
     <header
-      className={`bg-white/80 backdrop-blur-sm border-b border-[var(--border)] z-50 ${sticky ? 'sticky top-0' : ''}`}
+      className={`bg-white/80 dark:bg-black/80 backdrop-blur-sm border-b border-[var(--border)] z-50 ${sticky ? 'sticky top-0' : ''}`}
       role="banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

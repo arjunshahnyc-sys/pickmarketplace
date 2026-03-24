@@ -47,7 +47,7 @@ export default function PricingPage() {
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Free Tier */}
-          <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-gray-200">
+          <div className="bg-white dark:bg-black rounded-xl shadow-lg p-8 border-2 border-gray-200">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Pick Basic</h2>
               <div className="flex items-baseline mb-4">
@@ -114,7 +114,7 @@ export default function PricingPage() {
           {/* Premium Tier */}
           <div className="bg-gradient-to-br from-[#2A9D8F] to-[#1A7A6F] rounded-xl shadow-2xl p-8 border-2 border-[#2A9D8F] relative">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="bg-white text-[#2A9D8F] px-4 py-1 rounded-full text-sm font-bold">
+              <span className="bg-white dark:bg-black text-[#2A9D8F] px-4 py-1 rounded-full text-sm font-bold">
                 MOST POPULAR
               </span>
             </div>
@@ -181,7 +181,7 @@ export default function PricingPage() {
             <button
               onClick={handleUpgrade}
               disabled={isAuthenticated && user?.plan === 'premium'}
-              className="w-full bg-white text-[#2A9D8F] py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-white dark:bg-black text-[#2A9D8F] py-3 rounded-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAuthenticated && user?.plan === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
             </button>
