@@ -1,14 +1,49 @@
 @import "tailwindcss";
 
 :root {
+  /* Primary Colors */
   --background: #FAFAF8;
   --foreground: #1A1A1A;
-  --accent: #2A9D8F;
+  --accent: #2A9D8F; /* Teal - primary brand */
   --accent-hover: #238579;
+  --accent-secondary: #FF6B35; /* Orange - CTAs and urgency */
+  --accent-secondary-hover: #E85A2A;
+
+  /* Neutrals */
   --border: #E5E5E3;
   --muted: #737373;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   --subtle-warm: #F8F6F3;
+
+  /* Semantic Colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
+
+  /* Shadows */
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --button-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+}
+
+/* Dark mode colors */
+.dark {
+  --background: #0F1419;
+  --foreground: #E8E8E6;
+  --accent: #3DB8A8;
+  --accent-hover: #4DCABB;
+  --accent-secondary: #FF8A5B;
+  --accent-secondary-hover: #FF9D70;
+  --border: #2A2F36;
+  --muted: #9CA3AF;
+  --subtle-warm: #1A1F26;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --button-shadow: 0 4px 12px rgba(61, 184, 168, 0.3);
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
 }
 
 @theme inline {
@@ -16,10 +51,25 @@
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-secondary: var(--accent-secondary);
   --color-border: var(--border);
   --color-muted: var(--muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
   --font-heading: 'DM Sans', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+/* Font display optimization */
+@font-face {
+  font-family: 'DM Sans';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-display: swap;
 }
 
 * {
@@ -62,10 +112,55 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 0;
 }
 
-/* Focus styles */
+/* Focus styles - WCAG 2.1 AA compliant */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* High contrast focus for buttons and links */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(42, 157, 143, 0.2);
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Remove sr-only when focused (for skip links) */
+.sr-only:focus,
+.sr-only:active {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
 }
 
 /* Search input interactive states */
@@ -96,8 +191,10 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   transform: scale(0.98);
 }
 
-/* Primary button */
+/* Primary button - Enhanced with ripple effect */
 .btn-primary, button[type="submit"] {
+  position: relative;
+  overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
@@ -109,6 +206,25 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
 .btn-primary:active:not(:disabled), button[type="submit"]:active:not(:disabled) {
   transform: scale(0.98);
   box-shadow: 0 2px 6px rgba(42, 157, 143, 0.2);
+}
+
+/* Ripple effect */
+.btn-primary::before, button[type="submit"]::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::before, button[type="submit"]:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 /* Secondary/outline button */
@@ -125,14 +241,22 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   transform: scale(0.98);
 }
 
-/* Card hover effect - subtle lift */
+/* Card hover effect - subtle lift with glow */
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
 }
 
 .card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12),
+              0 0 0 1px rgba(42, 157, 143, 0.1);
+}
+
+.card-hover:active {
+  transform: translateY(-2px) scale(0.99);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* View product button with sliding arrow */
@@ -215,6 +339,106 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
 
 .fade-in {
   animation: fadeIn 0.3s ease forwards;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    #f0f0f0 0%,
+    #e0e0e0 20%,
+    #f0f0f0 40%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Bounce animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.bounce {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+/* Slide in from bottom */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Smooth page transitions */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Price tag chip */

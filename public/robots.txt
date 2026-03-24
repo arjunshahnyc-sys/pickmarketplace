@@ -1,0 +1,29 @@
+# Robots.txt for Pick Marketplace
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://pickmarketplace.com/sitemap.xml
+
+# Crawl-delay for specific bots (optional)
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot
+Crawl-delay: 0
+
+# Disallow admin/auth pages
+Disallow: /api/
+Disallow: /account/
+Disallow: /login/
+Disallow: /signup/
+
+# Allow images
+User-agent: Googlebot-Image
+Allow: /
+
+# Allow mobile
+User-agent: Googlebot-Mobile
+Allow: /
