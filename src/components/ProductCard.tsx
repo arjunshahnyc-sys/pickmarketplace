@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, ArrowRight, Bookmark, Eye } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { retailerDomains } from './RetailerLogos';
 
 interface ProductCardProps {
   product: {
@@ -94,7 +95,22 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Retailer badge */}
         <div className="absolute bottom-3 left-3 flex items-center gap-2">
-          <span className="retailer-badge">
+          <span className="retailer-badge flex items-center gap-1.5">
+            {retailerDomains[product.retailer] && (
+              <img
+                src={`https://logo.clearbit.com/${retailerDomains[product.retailer]}`}
+                alt={product.retailer}
+                className="h-4 w-4 object-contain rounded-sm"
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  if (!img.src.includes('google.com')) {
+                    img.src = `https://www.google.com/s2/favicons?domain=${retailerDomains[product.retailer]}&sz=32`;
+                  } else {
+                    img.style.display = 'none';
+                  }
+                }}
+              />
+            )}
             {product.retailer}
           </span>
           {product.rating && product.rating > 0 && (
