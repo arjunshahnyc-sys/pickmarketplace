@@ -11,17 +11,71 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Links */}
-        <div className="flex flex-wrap justify-between items-center gap-4 text-sm text-pick-muted">
+        {/* Navigation */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <p className="font-heading font-bold text-pick-teal text-lg">Pick Marketplace</p>
-            <p className="text-xs mt-1">Compare prices across 50+ retailers</p>
+            <h3 className="font-semibold text-black mb-3">Company</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="/about" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  About Us
+                </a>
+              </li>
+              <li>
+                <a href="/how-it-works" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  How It Works
+                </a>
+              </li>
+              <li>
+                <a href="/supported-retailers" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  Supported Retailers
+                </a>
+              </li>
+            </ul>
           </div>
 
-          <div className="flex gap-6">
-            <a href="/privacy" className="hover:text-pick-teal transition-colors">Privacy</a>
-            <a href="/terms" className="hover:text-pick-teal transition-colors">Terms</a>
-            <a href="mailto:support@pickmarketplace.com" className="hover:text-pick-teal transition-colors">Contact</a>
+          <div>
+            <h3 className="font-semibold text-black mb-3">Support</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="/help" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a href="/faq" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  FAQ
+                </a>
+              </li>
+              <li>
+                <a href="/contact" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  Contact
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-black mb-3">Legal</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="/compliance" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  Compliance
+                </a>
+              </li>
+              <li>
+                <a href="/cookie-policy" className="text-pick-muted hover:text-pick-teal transition-colors">
+                  Cookie Policy
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="font-heading font-bold text-pick-teal text-lg mb-2">Pick Marketplace</p>
+            <p className="text-xs text-pick-muted">
+              Compare prices across 50+ retailers
+            </p>
           </div>
         </div>
 
