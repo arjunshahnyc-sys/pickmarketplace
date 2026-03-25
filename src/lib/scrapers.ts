@@ -386,3 +386,31 @@ export function generateFallbackProducts(query: string): Product[] {
 
   return products;
 }
+
+// ─── Cached Search: Search across all retailers ──────────────────────────
+export async function cachedSearch(query: string): Promise<Product[]> {
+  const results = await Promise.allSettled([
+    searchAmazon(query),
+    searchTarget(query),
+    searchBestBuy(query),
+    searchMacys(query),
+    searchGoogleShopping(query),
+  ]);
+
+  const products: Product[] = [];
+
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      products.push(...result.value);
+    }
+  }
+
+  // If no products found from scrapers, return fallback products
+  if (products.length === 0) {
+    return generateFallbackProducts(query);
+  }
+
+  // Add lastVerified timestamp to real scraped products
+  const now = new Date().toISOString();
+  return products.map(p => ({ ...p, lastVerified: now }));
+}

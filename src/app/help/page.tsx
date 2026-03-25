@@ -19,7 +19,7 @@ export default function HelpPage() {
     {
       icon: TrendingDown,
       title: 'How Price Comparison Works',
-      content: 'When you search, we check current prices from Amazon, Target, Best Buy, Walmart, and 50+ other retailers. Results are sorted by total price when possible. Click on any product to go directly to the retailer's website. Prices update regularly but may not reflect real-time changes—always verify the final price on the retailer's site before purchasing.',
+      content: 'When you search, we check current prices from Amazon, Target, Best Buy, Walmart, and 50+ other retailers. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices update regularly but may not reflect real-time changes—always verify the final price on the retailer\'s site before purchasing.',
     },
     {
       icon: AlertCircle,

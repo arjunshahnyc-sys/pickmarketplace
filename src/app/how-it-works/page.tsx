@@ -13,7 +13,7 @@ export default function HowItWorksPage() {
     {
       icon: Search,
       title: 'Search for Any Product',
-      description: 'Type what you're looking for—headphones, running shoes, air fryer, laptop, dress—into the search bar. Be as specific or general as you want.',
+      description: 'Type what you\'re looking for—headphones, running shoes, air fryer, laptop, dress—into the search bar. Be as specific or general as you want.',
     },
     {
       icon: Zap,

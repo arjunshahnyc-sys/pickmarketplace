@@ -44,7 +44,7 @@ export default function SupportedRetailersPage() {
       name: 'Google Shopping',
       colorClass: 'bg-green-100 text-green-800 border-green-200',
       categories: 'All categories from thousands of online retailers',
-      coverage: 'Aggregated results from Google's shopping platform',
+      coverage: 'Aggregated results from Google\'s shopping platform',
     },
   ];
 

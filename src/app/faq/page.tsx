@@ -11,7 +11,7 @@ export default function FAQPage() {
   const faqs = [
     {
       question: 'Is Pick Marketplace free to use?',
-      answer: 'Yes, Pick Marketplace is completely free. You don't need to create an account, provide payment information, or pay any subscription fees. We earn affiliate commissions when you purchase through our links, which allows us to keep the service free for everyone.',
+      answer: 'Yes, Pick Marketplace is completely free. You don\'t need to create an account, provide payment information, or pay any subscription fees. We earn affiliate commissions when you purchase through our links, which allows us to keep the service free for everyone.',
     },
     {
       question: 'How does Pick Marketplace make money?',

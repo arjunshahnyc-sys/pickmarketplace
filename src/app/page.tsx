@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import { SearchBar } from '@/components/SearchBar';
-import { ProductCard } from '@/components/ProductCard';
+import ProductCard from '@/components/ProductCard';
 import type { SearchResponse } from '@/lib/types';
 // Removed getTrendingProducts - using static trending searches instead
 import { useAuth } from '@/contexts/AuthContext';
