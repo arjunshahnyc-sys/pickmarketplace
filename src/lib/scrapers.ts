@@ -1,512 +1,388 @@
-// ============================================================================
-// PICK MARKETPLACE - REAL PRODUCT SEARCH ENGINE
-// Multi-source product aggregator with NO fake products
-// ============================================================================
-
-import * as cheerio from 'cheerio';
+import * as cheerio from "cheerio";
 
 export interface Product {
-  id: string;
   name: string;
   price: number;
   originalPrice?: number;
-  savings?: number;
-  currency: string;
+  image: string;
   retailer: string;
   url: string;
-  imageUrl: string;
   rating?: number;
   reviewCount?: number;
   category?: string;
   brand?: string;
-  inStock?: boolean;
-  alsoAvailableAt?: Array<{ retailer: string; price: number; url: string }>;
+  isFallback?: boolean; // True if this is example/demo data, not real scraped data
+  lastVerified?: string; // ISO timestamp when price was last verified
 }
 
-// ============================================================================
-// SOURCE 1: SERPER.DEV GOOGLE SHOPPING API
-// Returns REAL products from ALL retailers with real images and URLs
-// ============================================================================
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
-async function searchSerper(query: string): Promise<Product[]> {
-  const apiKey = process.env.SERPER_API_KEY;
-  if (!apiKey) {
-    console.log('[Serper] API key not configured, skipping');
-    return [];
-  }
+const HEADERS = {
+  "User-Agent": UA,
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+};
 
-  try {
-    const response = await fetch('https://google.serper.dev/shopping', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: query,
-        num: 40,
-        gl: 'us',
-      }),
-    });
-
-    if (!response.ok) {
-      console.log(`[Serper] API error: ${response.status}`);
-      return [];
-    }
-
-    const data = await response.json();
-    const items = data.shopping || [];
-
-    const products = items.map((item: any) => ({
-      id: item.position?.toString() || Math.random().toString(),
-      name: item.title || 'Unknown Product',
-      price: parseFloat(String(item.price || '0').replace(/[^0-9.]/g, '')) || 0,
-      originalPrice: item.oldPrice
-        ? parseFloat(String(item.oldPrice).replace(/[^0-9.]/g, ''))
-        : undefined,
-      savings: undefined, // Will be calculated below
-      currency: 'USD',
-      retailer: cleanRetailerName(item.source || 'Unknown'),
-      url: item.link || '#',
-      imageUrl: item.imageUrl || item.thumbnail || '',
-      rating: item.rating || 0,
-      reviewCount: item.ratingCount || 0,
-      category: item.category || '',
-      brand: extractBrand(item.title || ''),
-    }));
-
-    // Calculate savings
-    products.forEach((p: Product) => {
-      if (p.originalPrice && p.originalPrice > p.price) {
-        p.savings = p.originalPrice - p.price;
-      }
-    });
-
-    console.log(`[Serper] Found ${products.length} products`);
-    return products.filter((p: Product) => p.price > 0 && p.name !== 'Unknown Product');
-  } catch (error) {
-    console.error('[Serper] Error:', error);
-    return [];
-  }
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
 }
 
-// ============================================================================
-// SOURCE 2: BEST BUY API
-// Official API with real electronics products
-// ============================================================================
-
-async function searchBestBuy(query: string): Promise<Product[]> {
-  const apiKey = process.env.BESTBUY_API_KEY;
-  if (!apiKey) {
-    console.log('[Best Buy] API key not configured, skipping');
-    return [];
-  }
-
-  try {
-    const encodedQuery = encodeURIComponent(query);
-    const url = `https://api.bestbuy.com/v1/products((search=${encodedQuery}))?apiKey=${apiKey}&show=sku,name,salePrice,regularPrice,image,url,customerReviewAverage,customerReviewCount,shortDescription,categoryPath&pageSize=20&format=json&sort=bestSellingRank.asc`;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.log(`[Best Buy] API error: ${response.status}`);
-      return [];
-    }
-
-    const data = await response.json();
-    const items = data.products || [];
-
-    const products = items.map((item: any) => ({
-      id: item.sku?.toString() || Math.random().toString(),
-      name: item.name || 'Unknown Product',
-      price: item.salePrice || 0,
-      originalPrice: item.regularPrice > item.salePrice ? item.regularPrice : undefined,
-      savings: item.regularPrice > item.salePrice ? item.regularPrice - item.salePrice : undefined,
-      currency: 'USD',
-      retailer: 'Best Buy',
-      url: item.url || '#',
-      imageUrl: item.image || item.largeFrontImage || '',
-      rating: item.customerReviewAverage || 0,
-      reviewCount: item.customerReviewCount || 0,
-      category: item.categoryPath?.[0]?.name || 'Electronics',
-      brand: extractBrand(item.name || ''),
-    }));
-
-    console.log(`[Best Buy] Found ${products.length} products`);
-    return products.filter((p: Product) => p.price > 0);
-  } catch (error) {
-    console.error('[Best Buy] Error:', error);
-    return [];
-  }
+function guessCategory(name: string): string {
+  const lower = name.toLowerCase();
+  if (/headphone|earbud|speaker|tv|monitor|laptop|tablet|phone|camera|charger|cable|keyboard|mouse/i.test(lower)) return "Electronics";
+  if (/shoe|sneaker|boot|sandal|slipper/i.test(lower)) return "Shoes";
+  if (/shirt|dress|jacket|coat|pant|jean|skirt|blouse|sweater|hoodie|top|shorts/i.test(lower)) return "Clothing";
+  if (/sofa|lamp|pillow|blanket|candle|rug|curtain|vase|furniture|decor/i.test(lower)) return "Home";
+  if (/moisturizer|serum|cream|makeup|lipstick|foundation|perfume|cologne|lotion|skincare/i.test(lower)) return "Beauty";
+  if (/pot|pan|knife|blender|air fryer|mixer|toaster|coffee|kitchen/i.test(lower)) return "Kitchen";
+  if (/yoga|running|fitness|gym|ball|racket|bike|camping|hiking|outdoor/i.test(lower)) return "Sports";
+  if (/toy|lego|doll|game|puzzle/i.test(lower)) return "Toys";
+  return "Other";
 }
 
-// ============================================================================
-// SOURCE 3: DUMMYJSON
-// Free fallback with realistic product data
-// ============================================================================
-
-async function searchDummyJSON(query: string): Promise<Product[]> {
+// ─── Amazon ────────────────────────────────────────────────────────────────
+export async function searchAmazon(query: string): Promise<Product[]> {
+  const products: Product[] = [];
   try {
-    const response = await fetch(
-      `https://dummyjson.com/products/search?q=${encodeURIComponent(query)}&limit=30`
-    );
-
-    if (!response.ok) {
-      console.log(`[DummyJSON] API error: ${response.status}`);
-      return [];
-    }
-
-    const data = await response.json();
-    const items = data.products || [];
-
-    const retailers = ['Amazon', 'Target', 'Walmart', 'Best Buy', "Macy's"];
-
-    const products = items.map((item: any, index: number) => {
-      const price = item.price || 0;
-      const discountPercent = item.discountPercentage || 0;
-      const originalPrice =
-        discountPercent > 0 ? Math.round((price / (1 - discountPercent / 100)) * 100) / 100 : undefined;
-
-      return {
-        id: item.id?.toString() || Math.random().toString(),
-        name: item.title || 'Unknown Product',
-        price: price,
-        originalPrice: originalPrice,
-        savings: originalPrice ? originalPrice - price : undefined,
-        currency: 'USD',
-        retailer: retailers[index % retailers.length],
-        url: `https://www.amazon.com/s?k=${encodeURIComponent(item.title || query)}`,
-        imageUrl: item.thumbnail || item.images?.[0] || '',
-        rating: item.rating || 0,
-        reviewCount: Math.floor(Math.random() * 2000) + 100,
-        category: item.category || '',
-        brand: item.brand || extractBrand(item.title || ''),
-      };
-    });
-
-    console.log(`[DummyJSON] Found ${products.length} products`);
-    return products.filter((p: Product) => p.price > 0);
-  } catch (error) {
-    console.error('[DummyJSON] Error:', error);
-    return [];
-  }
-}
-
-// ============================================================================
-// SOURCE 4: GOOGLE SHOPPING HTML SCRAPE
-// Backup scraper with no API key required
-// ============================================================================
-
-async function scrapeGoogleShopping(query: string): Promise<Product[]> {
-  try {
-    const encodedQuery = encodeURIComponent(query);
-    const url = `https://www.google.com/search?tbm=shop&q=${encodedQuery}&hl=en&gl=us`;
-
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        Accept: 'text/html,application/xhtml+xml',
-      },
-    });
-
-    if (!response.ok) {
-      console.log(`[Google Shopping] Scrape error: ${response.status}`);
-      return [];
-    }
-
-    const html = await response.text();
+    const url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
+    const res = await withTimeout(fetch(url, { headers: HEADERS }), 8000);
+    const html = await res.text();
     const $ = cheerio.load(html);
-    const products: Product[] = [];
 
-    // Try multiple selector patterns Google Shopping uses
-    $('.sh-dgr__grid-result, .sh-dlr__list-result, [data-docid]').each((_, el) => {
-      const $el = $(el);
-      const name = $el.find('h3, .tAxDx, [data-name]').first().text().trim();
-      const priceText = $el.find('.a8Pemb, .HRLxBb, .kHxwFf').first().text().trim();
-      const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
-      const image = $el.find('img').first().attr('src') || $el.find('img').first().attr('data-src') || '';
-      const link = $el.find('a').first().attr('href') || '#';
-      const retailer = $el.find('.aULzUe, .IuHnof').first().text().trim();
+    $('[data-component-type="s-search-result"]').each((_, el) => {
+      const name = $(el).find("h2 a span").text().trim();
+      const priceWhole = $(el).find(".a-price .a-price-whole").first().text().replace(/[^0-9]/g, "");
+      const priceFraction = $(el).find(".a-price .a-price-fraction").first().text().replace(/[^0-9]/g, "");
+      const img = $(el).find("img.s-image").attr("src") || "";
+      const link = $(el).find("h2 a").attr("href") || "";
+      const ratingText = $(el).find(".a-icon-alt").first().text();
+      const reviewText = $(el).find('[aria-label*="stars"] + span, .a-size-base.s-underline-text').first().text();
+      const oldPrice = $(el).find(".a-price.a-text-price .a-offscreen").first().text().replace(/[^0-9.]/g, "");
 
-      if (name && price > 0) {
+      if (name && priceWhole) {
+        const price = parseFloat(`${priceWhole}.${priceFraction || "00"}`);
+        const rating = ratingText ? parseFloat(ratingText) : undefined;
+        const reviewCount = reviewText ? parseInt(reviewText.replace(/[^0-9]/g, ""), 10) || undefined : undefined;
+
         products.push({
-          id: Math.random().toString(),
           name,
           price,
-          currency: 'USD',
-          imageUrl: image.startsWith('http') ? image : '',
-          retailer: retailer || 'Google Shopping',
-          url: link.startsWith('http') ? link : `https://www.google.com${link}`,
-          rating: 0,
-          reviewCount: 0,
-          brand: extractBrand(name),
+          originalPrice: oldPrice ? parseFloat(oldPrice) : undefined,
+          image: img,
+          retailer: "Amazon",
+          url: link.startsWith("http") ? link : `https://www.amazon.com${link}`,
+          rating,
+          reviewCount,
+          category: guessCategory(name),
+          brand: name.split(" ")[0],
         });
       }
     });
-
-    console.log(`[Google Shopping] Found ${products.length} products`);
-    return products;
-  } catch (error) {
-    console.error('[Google Shopping] Error:', error);
-    return [];
-  }
+  } catch {}
+  return products;
 }
 
-// ============================================================================
-// MASTER SEARCH: FAN OUT TO ALL SOURCES
-// ============================================================================
+// ─── Target ────────────────────────────────────────────────────────────────
+export async function searchTarget(query: string): Promise<Product[]> {
+  const products: Product[] = [];
+  try {
+    const apiUrl = `https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=9f36aeafbe60771e321a7cc95a78140772ab3e96&channel=WEB&count=20&keyword=${encodeURIComponent(query)}&offset=0&page=%2Fs%2F${encodeURIComponent(query)}&pricing_store_id=3991&scheduled_delivery_store_id=3991&store_ids=3991&visitor_id=web`;
+    const res = await withTimeout(fetch(apiUrl, { headers: { ...HEADERS, Accept: "application/json" } }), 8000);
+    const data = await res.json();
 
-export async function searchAllRetailers(query: string): Promise<Product[]> {
-  console.log(`[Search] Query: "${query}"`);
+    const items = data?.data?.search?.products || [];
+    for (const item of items) {
+      const name = item.item?.product_description?.title || "";
+      const price = item.price?.formatted_current_price
+        ? parseFloat(item.price.formatted_current_price.replace(/[^0-9.]/g, ""))
+        : item.price?.current_retail || 0;
+      const origPrice = item.price?.reg_retail || undefined;
+      const img = item.item?.enrichment?.images?.primary_image_url || "";
+      const rating = item.ratings_and_reviews?.statistics?.rating?.average;
+      const reviewCount = item.ratings_and_reviews?.statistics?.rating?.count;
+      const tcin = item.tcin || "";
 
-  const results = await Promise.allSettled([
-    searchSerper(query),
-    searchBestBuy(query),
-    scrapeGoogleShopping(query),
-    searchDummyJSON(query),
-  ]);
-
-  let allProducts: Product[] = [];
-  for (const result of results) {
-    if (result.status === 'fulfilled' && result.value.length > 0) {
-      allProducts.push(...result.value);
+      if (name && price) {
+        products.push({
+          name,
+          price,
+          originalPrice: origPrice && origPrice > price ? origPrice : undefined,
+          image: img,
+          retailer: "Target",
+          url: `https://www.target.com/p/-/A-${tcin}`,
+          rating,
+          reviewCount,
+          category: guessCategory(name),
+          brand: item.item?.primary_brand?.name || name.split(" ")[0],
+        });
+      }
     }
-  }
-
-  console.log(`[Search] Total products before dedup: ${allProducts.length}`);
-
-  // Deduplicate by similar names
-  allProducts = deduplicateProducts(allProducts);
-
-  // CRITICAL: Filter out products with invalid data
-  allProducts = allProducts.filter((p) => {
-    // Must have valid price
-    if (!p.price || typeof p.price !== 'number' || isNaN(p.price) || p.price <= 0) {
-      console.log(`[Filter] Removing product with invalid price: ${p.name}`);
-      return false;
-    }
-    // Must have valid name
-    if (!p.name || p.name.trim() === '') {
-      console.log(`[Filter] Removing product with no name`);
-      return false;
-    }
-    // Must have valid image (optional but if present, must be valid)
-    if (p.imageUrl && (!p.imageUrl.startsWith('http') || p.imageUrl.includes('placehold.co'))) {
-      console.log(`[Filter] Removing product with invalid image: ${p.name}`);
-      return false;
-    }
-    return true;
-  });
-
-  // Ensure all products have valid URLs
-  allProducts = allProducts.map((p) => ({
-    ...p,
-    url:
-      p.url && p.url !== '#'
-        ? p.url
-        : `https://www.amazon.com/s?k=${encodeURIComponent(p.name)}`,
-  }));
-
-  console.log(`[Search] Final product count: ${allProducts.length}`);
-  return allProducts;
+  } catch {}
+  return products;
 }
 
-// ============================================================================
-// CACHE: 30-MINUTE TTL
-// ============================================================================
+// ─── Best Buy ──────────────────────────────────────────────────────────────
+export async function searchBestBuy(query: string): Promise<Product[]> {
+  const products: Product[] = [];
+  try {
+    const url = `https://www.bestbuy.com/site/searchpage.jsp?st=${encodeURIComponent(query)}`;
+    const res = await withTimeout(fetch(url, { headers: HEADERS }), 8000);
+    const html = await res.text();
+    const $ = cheerio.load(html);
 
-const cache = new Map<string, { data: Product[]; timestamp: number }>();
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+    $(".sku-item").each((_, el) => {
+      const name = $(el).find(".sku-title a").text().trim();
+      const priceText = $(el).find(".priceView-customer-price span").first().text().replace(/[^0-9.]/g, "");
+      const img = $(el).find(".product-image img").attr("src") || "";
+      const link = $(el).find(".sku-title a").attr("href") || "";
+      const ratingText = $(el).find(".c-ratings-reviews").text();
+      const oldPriceText = $(el).find(".pricing-price__regular-price").text().replace(/[^0-9.]/g, "");
 
-export async function cachedSearch(query: string): Promise<Product[]> {
-  const key = query.toLowerCase().trim();
-  const hit = cache.get(key);
-
-  if (hit && Date.now() - hit.timestamp < CACHE_TTL) {
-    console.log(`[Cache] Hit for "${query}"`);
-    return hit.data;
-  }
-
-  console.log(`[Cache] Miss for "${query}"`);
-  const results = await searchAllRetailers(query);
-
-  if (results.length > 0) {
-    cache.set(key, { data: results, timestamp: Date.now() });
-  }
-
-  return results;
+      if (name && priceText) {
+        const price = parseFloat(priceText);
+        products.push({
+          name,
+          price,
+          originalPrice: oldPriceText ? parseFloat(oldPriceText) : undefined,
+          image: img.startsWith("http") ? img : `https://www.bestbuy.com${img}`,
+          retailer: "Best Buy",
+          url: link.startsWith("http") ? link : `https://www.bestbuy.com${link}`,
+          rating: ratingText ? parseFloat(ratingText) || undefined : undefined,
+          category: guessCategory(name),
+          brand: name.split(" ")[0],
+        });
+      }
+    });
+  } catch {}
+  return products;
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
+// ─── Macy's ────────────────────────────────────────────────────────────────
+export async function searchMacys(query: string): Promise<Product[]> {
+  const products: Product[] = [];
+  try {
+    const url = `https://www.macys.com/shop/featured/${encodeURIComponent(query)}`;
+    const res = await withTimeout(fetch(url, { headers: HEADERS }), 8000);
+    const html = await res.text();
+    const $ = cheerio.load(html);
 
-function cleanRetailerName(source: string): string {
-  const s = source.toLowerCase().replace(/\.com$/, '').replace(/www\./, '').trim();
-  const map: Record<string, string> = {
-    amazon: 'Amazon',
-    target: 'Target',
-    'best buy': 'Best Buy',
-    bestbuy: 'Best Buy',
-    walmart: 'Walmart',
-    "macy's": "Macy's",
-    macys: "Macy's",
-    nordstrom: 'Nordstrom',
-    nike: 'Nike',
-    costco: 'Costco',
-    ebay: 'eBay',
-    etsy: 'Etsy',
-    wayfair: 'Wayfair',
-    "kohl's": "Kohl's",
-    kohls: "Kohl's",
-    'home depot': 'Home Depot',
-    sephora: 'Sephora',
-    adidas: 'Adidas',
-    "dick's sporting": "Dick's",
-    rei: 'REI',
-    'bed bath': 'Bed Bath',
-    overstock: 'Overstock',
-    zappos: 'Zappos',
-    asos: 'ASOS',
-    hm: 'H&M',
-    zara: 'Zara',
-    gap: 'Gap',
-    'old navy': 'Old Navy',
-    'banana republic': 'Banana Republic',
-    'j.crew': 'J.Crew',
-    jcrew: 'J.Crew',
-    uniqlo: 'Uniqlo',
+    $(".productDetail").each((_, el) => {
+      const name = $(el).find(".productDescription a").text().trim();
+      const priceText = $(el).find(".regular, .sale, .lowest").first().text().replace(/[^0-9.]/g, "");
+      const img = $(el).find("img").attr("src") || "";
+      const link = $(el).find(".productDescription a").attr("href") || "";
+      const brand = $(el).find(".productBrand").text().trim();
+
+      if (name && priceText) {
+        products.push({
+          name,
+          price: parseFloat(priceText),
+          image: img.startsWith("http") ? img : `https://www.macys.com${img}`,
+          retailer: "Macy's",
+          url: link.startsWith("http") ? link : `https://www.macys.com${link}`,
+          category: guessCategory(name),
+          brand: brand || name.split(" ")[0],
+        });
+      }
+    });
+  } catch {}
+  return products;
+}
+
+// ─── Google Shopping ───────────────────────────────────────────────────────
+export async function searchGoogleShopping(query: string): Promise<Product[]> {
+  const products: Product[] = [];
+  try {
+    const url = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}&num=30`;
+    const res = await withTimeout(fetch(url, { headers: HEADERS }), 8000);
+    const html = await res.text();
+    const $ = cheerio.load(html);
+
+    $(".sh-dgr__gr-auto, .sh-dlr__list-result").each((_, el) => {
+      const name = $(el).find("h3, .tAxDx, .Xjkr3b").first().text().trim();
+      const priceText = $(el).find(".a8Pemb, .HRLxBb, .kHxwFf").first().text().replace(/[^0-9.]/g, "");
+      const img = $(el).find("img").attr("src") || "";
+      const retailer = $(el).find(".aULzUe, .IuHnof, .E5ocAb").first().text().trim();
+      const link = $(el).find("a").attr("href") || "";
+      const ratingText = $(el).find('[aria-label*="rating"], .Rsc7Yb').first().text();
+
+      if (name && priceText) {
+        products.push({
+          name,
+          price: parseFloat(priceText),
+          image: img,
+          retailer: retailer || "Google Shopping",
+          url: link.startsWith("http") ? link : `https://www.google.com${link}`,
+          rating: ratingText ? parseFloat(ratingText) || undefined : undefined,
+          category: guessCategory(name),
+          brand: name.split(" ")[0],
+        });
+      }
+    });
+  } catch {}
+  return products;
+}
+
+// ─── Fallback: generate realistic products when scrapers are blocked ─────
+// WARNING: This generates EXAMPLE products for demo purposes
+// These are NOT real products with verified prices
+// URLs link to retailer search pages, not actual product pages
+export function generateFallbackProducts(query: string): Product[] {
+  const q = query.toLowerCase();
+  const products: Product[] = [];
+  const retailers = ["Amazon", "Target", "Best Buy", "Macy's", "Walmart"];
+
+  // Product templates by category keyword
+  const templates: Record<string, Array<{ name: string; basePrice: number; cat: string }> | string> = {
+    headphone: [
+      { name: "Sony WH-1000XM5 Wireless Noise Cancelling", basePrice: 348, cat: "Electronics" },
+      { name: "Apple AirPods Max", basePrice: 449, cat: "Electronics" },
+      { name: "Bose QuietComfort Ultra", basePrice: 379, cat: "Electronics" },
+      { name: "JBL Tune 760NC Wireless", basePrice: 79, cat: "Electronics" },
+      { name: "Samsung Galaxy Buds2 Pro", basePrice: 159, cat: "Electronics" },
+      { name: "Beats Studio Pro", basePrice: 299, cat: "Electronics" },
+      { name: "Sennheiser Momentum 4", basePrice: 299, cat: "Electronics" },
+      { name: "Audio-Technica ATH-M50x", basePrice: 149, cat: "Electronics" },
+      { name: "Skullcandy Crusher ANC 2", basePrice: 149, cat: "Electronics" },
+      { name: "Sony WF-1000XM5 Earbuds", basePrice: 278, cat: "Electronics" },
+    ],
+    laptop: [
+      { name: "Apple MacBook Air M3 15-inch", basePrice: 1299, cat: "Electronics" },
+      { name: "Dell XPS 14 (2024)", basePrice: 1199, cat: "Electronics" },
+      { name: "HP Spectre x360 16", basePrice: 1399, cat: "Electronics" },
+      { name: "Lenovo ThinkPad X1 Carbon Gen 11", basePrice: 1249, cat: "Electronics" },
+      { name: "ASUS ZenBook 14 OLED", basePrice: 799, cat: "Electronics" },
+      { name: "Acer Swift Go 14", basePrice: 649, cat: "Electronics" },
+      { name: "Microsoft Surface Laptop 6", basePrice: 999, cat: "Electronics" },
+      { name: "Samsung Galaxy Book4 Pro", basePrice: 1099, cat: "Electronics" },
+      { name: "Razer Blade 14 Gaming Laptop", basePrice: 1799, cat: "Electronics" },
+      { name: "Lenovo IdeaPad Slim 5", basePrice: 549, cat: "Electronics" },
+    ],
+    shoe: [
+      { name: "Nike Air Max 90", basePrice: 130, cat: "Shoes" },
+      { name: "Adidas Ultraboost Light", basePrice: 190, cat: "Shoes" },
+      { name: "New Balance 990v6", basePrice: 199, cat: "Shoes" },
+      { name: "Nike Air Force 1 '07", basePrice: 110, cat: "Shoes" },
+      { name: "ASICS Gel-Kayano 30", basePrice: 160, cat: "Shoes" },
+      { name: "Converse Chuck Taylor All Star", basePrice: 65, cat: "Shoes" },
+      { name: "Adidas Samba OG", basePrice: 100, cat: "Shoes" },
+      { name: "Puma Suede Classic XXI", basePrice: 75, cat: "Shoes" },
+      { name: "Hoka Clifton 9", basePrice: 145, cat: "Shoes" },
+      { name: "Brooks Ghost 15", basePrice: 140, cat: "Shoes" },
+      { name: "Reebok Club C 85", basePrice: 75, cat: "Shoes" },
+      { name: "Nike Dunk Low", basePrice: 110, cat: "Shoes" },
+    ],
+    sneaker: "shoe",
+    running: "shoe",
+    dress: [
+      { name: "A-Line Midi Wrap Dress", basePrice: 59, cat: "Clothing" },
+      { name: "Floral Print Maxi Dress", basePrice: 78, cat: "Clothing" },
+      { name: "Satin Slip Cocktail Dress", basePrice: 89, cat: "Clothing" },
+      { name: "Casual T-Shirt Dress", basePrice: 35, cat: "Clothing" },
+      { name: "Linen Blend Summer Dress", basePrice: 65, cat: "Clothing" },
+      { name: "Knit Sweater Dress", basePrice: 55, cat: "Clothing" },
+      { name: "Bodycon Mini Dress", basePrice: 45, cat: "Clothing" },
+      { name: "Embroidered Boho Dress", basePrice: 72, cat: "Clothing" },
+      { name: "Pleated Shirt Dress", basePrice: 68, cat: "Clothing" },
+      { name: "Velvet Evening Gown", basePrice: 120, cat: "Clothing" },
+    ],
+    jacket: [
+      { name: "North Face Nuptse 700 Down Jacket", basePrice: 299, cat: "Clothing" },
+      { name: "Patagonia Nano Puff", basePrice: 199, cat: "Clothing" },
+      { name: "Levi's Trucker Denim Jacket", basePrice: 89, cat: "Clothing" },
+      { name: "Columbia Bugaboo II Fleece Interchange", basePrice: 160, cat: "Clothing" },
+      { name: "Carhartt WIP Michigan Chore Coat", basePrice: 175, cat: "Clothing" },
+      { name: "Nike Windrunner", basePrice: 110, cat: "Clothing" },
+      { name: "Arc'teryx Atom LT Hoody", basePrice: 259, cat: "Clothing" },
+      { name: "Uniqlo Ultra Light Down Jacket", basePrice: 69, cat: "Clothing" },
+      { name: "Barbour Classic Bedale Wax Jacket", basePrice: 450, cat: "Clothing" },
+      { name: "REI Co-op 650 Down Jacket 2.0", basePrice: 119, cat: "Clothing" },
+    ],
+    "air fryer": [
+      { name: "Ninja Air Fryer Max XL", basePrice: 99, cat: "Kitchen" },
+      { name: "Cosori Pro II Air Fryer 5.8Qt", basePrice: 89, cat: "Kitchen" },
+      { name: "Instant Vortex Plus 6-in-1", basePrice: 109, cat: "Kitchen" },
+      { name: "Philips Premium Airfryer XXL", basePrice: 249, cat: "Kitchen" },
+      { name: "CHEFMAN TurboFry Air Fryer", basePrice: 49, cat: "Kitchen" },
+      { name: "Cuisinart Air Fryer Toaster Oven", basePrice: 199, cat: "Kitchen" },
+      { name: "GoWISE USA 7-Quart Air Fryer", basePrice: 69, cat: "Kitchen" },
+      { name: "Breville Smart Oven Air Fryer Pro", basePrice: 349, cat: "Kitchen" },
+      { name: "Dash Compact Air Fryer", basePrice: 39, cat: "Kitchen" },
+      { name: "Ninja Foodi 6-in-1 10qt XL 2-Basket", basePrice: 179, cat: "Kitchen" },
+    ],
+    skincare: [
+      { name: "CeraVe Moisturizing Cream 16oz", basePrice: 16, cat: "Beauty" },
+      { name: "The Ordinary Niacinamide 10% + Zinc", basePrice: 6, cat: "Beauty" },
+      { name: "La Roche-Posay Anthelios SPF 60", basePrice: 35, cat: "Beauty" },
+      { name: "Cetaphil Gentle Skin Cleanser", basePrice: 14, cat: "Beauty" },
+      { name: "Paula's Choice 2% BHA Exfoliant", basePrice: 32, cat: "Beauty" },
+      { name: "Neutrogena Hydro Boost Gel-Cream", basePrice: 19, cat: "Beauty" },
+      { name: "Tatcha The Dewy Skin Cream", basePrice: 69, cat: "Beauty" },
+      { name: "Drunk Elephant Protini Moisturizer", basePrice: 68, cat: "Beauty" },
+      { name: "Kiehl's Ultra Facial Cream", basePrice: 35, cat: "Beauty" },
+      { name: "First Aid Beauty Ultra Repair Cream", basePrice: 38, cat: "Beauty" },
+    ],
   };
 
-  for (const [key, value] of Object.entries(map)) {
-    if (s.includes(key)) return value;
+  // Find matching templates
+  let matched: Array<{ name: string; basePrice: number; cat: string }> = [];
+  for (const [keyword, tpl] of Object.entries(templates)) {
+    if (typeof tpl === "string") continue; // alias
+    if (q.includes(keyword)) {
+      matched = [...matched, ...tpl];
+    }
   }
-
-  // Capitalize first letter of domain
-  return source.split('.')[0].charAt(0).toUpperCase() + source.split('.')[0].slice(1);
-}
-
-function extractBrand(title: string): string {
-  const brands = [
-    'Nike',
-    'Adidas',
-    'Apple',
-    'Samsung',
-    'Sony',
-    'Bose',
-    'LG',
-    'Dell',
-    'HP',
-    'Lenovo',
-    'ASUS',
-    'Colgate',
-    'Crest',
-    'Dove',
-    'CeraVe',
-    'North Face',
-    'Patagonia',
-    "Levi's",
-    'New Balance',
-    'Puma',
-    'Ninja',
-    'KitchenAid',
-    'Dyson',
-    'JBL',
-    'Beats',
-    'Sennheiser',
-    'Garmin',
-    'Fitbit',
-    'Casio',
-    'OtterBox',
-    'Hydro Flask',
-    'Stanley',
-    'Yeti',
-    'Anker',
-    'Logitech',
-    'Razer',
-    'Corsair',
-    'Coach',
-    'Michael Kors',
-    'Kate Spade',
-    'Fossil',
-    'Timberland',
-    'Herschel',
-    'Osprey',
-    'Under Armour',
-    'Champion',
-    'Ralph Lauren',
-    'Uniqlo',
-    'Zara',
-    'Gucci',
-    'Louis Vuitton',
-    'Prada',
-    'Chanel',
-    'Dior',
-    'Tom Ford',
-    'Calvin Klein',
-    'Tommy Hilfiger',
-  ];
-
-  for (const b of brands) {
-    if (title.toLowerCase().includes(b.toLowerCase())) return b;
-  }
-
-  return '';
-}
-
-function deduplicateProducts(products: Product[]): Product[] {
-  const seen = new Map<string, Product>();
-
-  for (const p of products) {
-    // Create a key from the first 50 chars of the normalized name
-    const key = p.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .slice(0, 50);
-
-    // Keep the product with the lowest price
-    if (!seen.has(key) || (seen.get(key)!.price > p.price)) {
-      seen.set(key, p);
+  // Check aliases
+  for (const [keyword, alias] of Object.entries(templates)) {
+    if (typeof alias === "string" && q.includes(keyword) && typeof templates[alias] !== "string") {
+      matched = [...matched, ...(templates[alias] as Array<{ name: string; basePrice: number; cat: string }>)];
     }
   }
 
-  return Array.from(seen.values());
-}
+  // Generic fallback — create products from the query itself
+  if (matched.length === 0) {
+    const cats = ["Electronics", "Home", "Kitchen", "Clothing", "Beauty", "Sports"];
+    const adjectives = ["Premium", "Professional", "Classic", "Modern", "Ultra", "Essential", "Deluxe", "Elite", "Pro", "Smart"];
+    const titleQuery = query.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-// Helper function for generating deterministic placeholder colors (used by ProductCard)
-export function stringToColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const c = (hash & 0x00ffffff).toString(16).toUpperCase();
-  return '00000'.substring(0, 6 - c.length) + c;
-}
-
-// Generate related search suggestions based on a query
-export function getRelatedSearches(query: string): string[] {
-  const q = query.toLowerCase().trim();
-
-  // Simple related search suggestions based on common categories
-  const suggestions: Record<string, string[]> = {
-    headphone: ['Wireless Earbuds', 'Noise Cancelling Headphones', 'Gaming Headset', 'Bluetooth Headphones'],
-    laptop: ['Gaming Laptop', 'MacBook', 'Chromebook', 'Ultrabook', 'Laptop Stand'],
-    shoe: ['Running Shoes', 'Sneakers', 'Athletic Shoes', 'Walking Shoes'],
-    watch: ['Smart Watch', 'Apple Watch', 'Fitness Tracker', 'Digital Watch'],
-    phone: ['iPhone', 'Samsung Galaxy', 'Phone Case', 'Screen Protector'],
-    coffee: ['Coffee Maker', 'Espresso Machine', 'Coffee Grinder', 'Coffee Beans'],
-    skincare: ['Moisturizer', 'Serum', 'Sunscreen', 'Face Wash'],
-    kitchen: ['Blender', 'Air Fryer', 'Instant Pot', 'Cutting Board'],
-  };
-
-  // Find matching suggestions
-  for (const [key, values] of Object.entries(suggestions)) {
-    if (q.includes(key)) {
-      return values;
+    for (let i = 0; i < 15; i++) {
+      const adj = adjectives[i % adjectives.length];
+      matched.push({
+        name: `${adj} ${titleQuery} ${i > 7 ? "- Edition " + (i - 7) : ""}`.trim(),
+        basePrice: Math.round(20 + Math.random() * 280),
+        cat: guessCategory(query) || cats[i % cats.length],
+      });
     }
   }
 
-  // Default suggestions
-  return ['Headphones', 'Laptops', 'Running Shoes', 'Smart Watch', 'Coffee Maker'];
+  // Generate multi-retailer entries with price variation
+  for (const tpl of matched) {
+    const numRetailers = 2 + Math.floor(Math.random() * 3); // 2-4 retailers
+    const shuffled = [...retailers].sort(() => Math.random() - 0.5).slice(0, numRetailers);
+    for (const retailer of shuffled) {
+      const variance = 0.85 + Math.random() * 0.3; // 85% to 115% of base price
+      const price = Math.round(tpl.basePrice * variance * 100) / 100;
+      const hasDiscount = Math.random() > 0.6;
+      products.push({
+        name: tpl.name,
+        price,
+        originalPrice: hasDiscount ? Math.round(price * (1.15 + Math.random() * 0.25) * 100) / 100 : undefined,
+        image: `https://placehold.co/400x400/2A9D8F/ffffff?text=${encodeURIComponent(tpl.name.slice(0, 20))}`,
+        retailer,
+        url: `https://www.${retailer.toLowerCase().replace(/[^a-z]/g, "")}.com/search?q=${encodeURIComponent(tpl.name)}`,
+        rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
+        reviewCount: Math.floor(50 + Math.random() * 5000),
+        category: tpl.cat,
+        brand: tpl.name.split(" ")[0],
+        isFallback: true, // Mark as example data
+        lastVerified: undefined, // No verification for example data
+      });
+    }
+  }
+
+  return products;
 }

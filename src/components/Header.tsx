@@ -1,122 +1,47 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Menu, X, Search, User, LogOut, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 
-interface HeaderProps {
-  onSearch?: (query: string) => void;
-  showSearch?: boolean;
-  sticky?: boolean;
-  onInstallClick?: () => void;
-}
-
-export default function Header({ onSearch, showSearch = false, sticky = true, onInstallClick }: HeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim() && onSearch) {
-      onSearch(searchQuery.trim());
-      setMobileMenuOpen(false);
-    }
-  };
-
   return (
-    <header
-      className={`bg-white/80 backdrop-blur-sm border-b border-black/5 z-50 ${sticky ? 'sticky top-0' : ''}`}
-      role="banner"
-    >
+    <header className="bg-white border-b border-pick-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group" aria-label="Pick Marketplace Home">
-            <ShoppingBag size={22} strokeWidth={1.5} className="text-[#2A9D8F] group-hover:scale-110 transition-transform" aria-hidden="true" />
-            <span className="text-xl font-semibold tracking-tight text-black" style={{ fontFamily: 'var(--font-heading)' }}>
-              pick
-            </span>
+        <div className="flex justify-between items-center h-16">
+          <Link href="/" className="text-2xl font-bold text-pick-teal font-heading tracking-tight">
+            Pick
           </Link>
 
-          {/* Desktop Search Bar */}
-          {showSearch && (
-            <div className="hidden md:block flex-1 max-w-xl mx-8">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for products..."
-                  className="w-full px-4 py-2.5 pl-10 bg-white text-black border border-black/10 rounded-lg focus:outline-none focus:border-[#2A9D8F] focus:ring-2 focus:ring-[#2A9D8F]/20 transition-all placeholder:text-black/40"
-                  aria-label="Search for products"
-                />
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/60"
-                  aria-hidden="true"
-                />
-                {searchQuery && (
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#2A9D8F] text-white text-sm font-medium rounded hover:bg-[#238B7E] transition-colors"
-                    aria-label="Search"
-                  >
-                    Search
-                  </button>
-                )}
-              </form>
-            </div>
-          )}
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-4" aria-label="Main navigation">
-            <Link
-              href="#how-it-works"
-              className="text-sm text-black/60 hover:text-black transition-colors link-underline"
-            >
-              How it works
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-sm text-black/60 hover:text-black transition-colors link-underline"
-            >
+          <nav className="flex items-center gap-6">
+            <Link href="/pricing" className="text-pick-muted hover:text-pick-teal transition-colors">
               Pricing
             </Link>
+
             {isAuthenticated ? (
               <>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-black/60">{user?.name}</span>
+                  <span className="text-sm text-gray-600">{user?.name}</span>
                   <span
-                    className={`px-2.5 py-1 text-xs font-medium ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${
                       user?.plan === 'premium'
-                        ? 'bg-[#2A9D8F] text-white'
-                        : 'bg-black/5 text-black/60'
+                        ? 'bg-pick-teal text-white'
+                        : 'bg-pick-border text-pick-muted'
                     }`}
-                    style={{ borderRadius: '4px' }}
-                    aria-label={`Current plan: ${user?.plan === 'premium' ? 'Premium' : 'Basic'}`}
                   >
-                    {user?.plan === 'premium' ? 'Premium' : 'Basic'}
+                    {user?.plan === 'premium' ? 'PREMIUM' : 'BASIC'}
                   </span>
                 </div>
-                {user?.plan === 'free' && (
-                  <Link
-                    href="/pricing"
-                    className="text-sm px-4 py-2 border-2 border-[#2A9D8F] text-[#2A9D8F] rounded-lg font-medium hover:bg-[#2A9D8F] hover:text-white transition-all"
-                  >
-                    ⭐ Upgrade
-                  </Link>
-                )}
                 <Link
                   href="/account"
-                  className="text-sm text-black/60 hover:text-black transition-colors link-underline"
+                  className="text-pick-muted hover:text-pick-teal transition-colors"
                 >
                   Account
                 </Link>
                 <button
                   onClick={logout}
-                  className="text-sm text-black/60 hover:text-black transition-colors btn"
-                  aria-label="Logout"
+                  className="text-pick-muted hover:text-pick-teal transition-colors"
                 >
                   Logout
                 </button>
@@ -125,162 +50,20 @@ export default function Header({ onSearch, showSearch = false, sticky = true, on
               <>
                 <Link
                   href="/login"
-                  className="text-sm text-black/60 hover:text-black font-medium transition-colors"
+                  className="text-pick-muted hover:text-pick-teal transition-colors font-medium"
                 >
-                  Log In
+                  Login
                 </Link>
                 <Link
                   href="/signup"
-                  className="text-sm px-5 py-2 bg-[#2A9D8F] text-white rounded-lg font-medium hover:bg-[#238B7E] transition-all hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+                  className="bg-pick-teal text-white px-5 py-2 rounded-lg hover:opacity-90 transition-all font-medium"
                 >
                   Sign Up
                 </Link>
               </>
             )}
-            {onInstallClick && (
-              <button
-                onClick={onInstallClick}
-                className="btn-secondary text-sm px-4 py-2 border border-black/10 hover:border-black hover:bg-black hover:text-white cursor-pointer"
-                style={{ borderRadius: '6px' }}
-              >
-                Get extension
-              </button>
-            )}
           </nav>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-black/60 hover:text-[#2A9D8F][#2A9D8F] transition-colors"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" aria-hidden="true" />
-            ) : (
-              <Menu className="w-6 h-6" aria-hidden="true" />
-            )}
-          </button>
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div
-            className="md:hidden py-4 border-t border-black/10"
-            role="navigation"
-            aria-label="Mobile navigation"
-          >
-            {/* Mobile Search */}
-            {showSearch && (
-              <form onSubmit={handleSearch} className="mb-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for products..."
-                    className="w-full px-4 py-2.5 pl-10 bg-white text-black border border-black/10 rounded-lg focus:outline-none focus:border-[#2A9D8F] focus:ring-2 focus:ring-[#2A9D8F]/20 placeholder:text-black/40"
-                    aria-label="Search for products"
-                  />
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/60"
-                    aria-hidden="true"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#2A9D8F] text-white text-sm font-medium rounded hover:bg-[#238B7E]"
-                      aria-label="Search"
-                    >
-                      Go
-                    </button>
-                  )}
-                </div>
-              </form>
-            )}
-
-            {/* Mobile Navigation Links */}
-            <nav className="space-y-3">
-              <Link
-                href="#how-it-works"
-                className="block py-2 text-base font-medium text-black hover:text-[#2A9D8F][#2A9D8F] transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                How it works
-              </Link>
-              <Link
-                href="/pricing"
-                className="block py-2 text-base font-medium text-black hover:text-[#2A9D8F][#2A9D8F] transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Pricing
-              </Link>
-              {isAuthenticated ? (
-                <>
-                  <div className="flex items-center gap-2 py-2">
-                    <User className="w-5 h-5 text-black/60" aria-hidden="true" />
-                    <span className="text-base font-medium text-black">{user?.name}</span>
-                    <span
-                      className={`px-2 py-0.5 text-xs font-medium ${
-                        user?.plan === 'premium'
-                          ? 'bg-[#2A9D8F] text-white'
-                          : 'bg-black/5 text-black/60'
-                      }`}
-                      style={{ borderRadius: '4px' }}
-                    >
-                      {user?.plan === 'premium' ? 'Premium' : 'Basic'}
-                    </span>
-                  </div>
-                  <Link
-                    href="/account"
-                    className="block py-2 text-base font-medium text-black hover:text-[#2A9D8F][#2A9D8F] transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Account
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 py-2 text-base font-medium text-[#EF4444] hover:text-[#EF4444]/80 transition-colors w-full text-left"
-                  >
-                    <LogOut className="w-5 h-5" aria-hidden="true" />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="block py-2 text-base font-medium text-black hover:text-[#2A9D8F][#2A9D8F] transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="block py-2 px-4 bg-[#2A9D8F] text-white text-base font-medium rounded-lg hover:bg-[#238B7E] transition-colors text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign up free
-                  </Link>
-                </>
-              )}
-              {onInstallClick && (
-                <button
-                  onClick={() => {
-                    onInstallClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full py-2 px-4 bg-black text-white text-base font-medium rounded-lg hover:bg-black/90 transition-colors text-center"
-                >
-                  Get extension
-                </button>
-              )}
-            </nav>
-          </div>
-        )}
       </div>
     </header>
   );

@@ -1,839 +1,227 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-react';
-import { motion } from 'motion/react';
-import { SearchBar } from '@/components/SearchBar';
-import { ProductCard } from '@/components/ProductCard';
-import type { SearchResponse } from '@/lib/types';
-// Removed getTrendingProducts - using static trending searches instead
-import { useAuth } from '@/contexts/AuthContext';
-import Header from '@/components/Header';
-import { formatPrice } from '@/lib/formatters';
-import RetailerMarquee from '@/components/RetailerMarquee';
-import { TrustedBy } from '@/components/TrustedBy';
-import { HowItWorks } from '@/components/HowItWorks';
-import { StatsSection } from '@/components/StatsSection';
+import { useState, useEffect, useCallback } from "react";
+import Chatbot from "@/components/Chatbot";
+import ProductCard from "@/components/ProductCard";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import UsageMeter from "@/components/membership/UsageMeter";
+import GatedProductCard from "@/components/gating/GatedProductCard";
+import BlurOverlay from "@/components/gating/BlurOverlay";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Animation variants for staggered product grid
-const gridVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
-};
+interface Product {
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  retailer: string;
+  url: string;
+  rating?: number;
+  reviewCount?: number;
+  category?: string;
+  brand?: string;
+}
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 50, scale: 0.9 },
-  show: { opacity: 1, y: 0, scale: 1 },
-};
+const CATEGORIES = ["All", "Electronics", "Clothing", "Shoes", "Home", "Beauty", "Kitchen", "Sports", "Toys"];
 
 export default function Home() {
-  const { user, isAuthenticated, searchesRemaining, incrementSearchCount, getFeatureLimit } =
-    useAuth();
-  const [results, setResults] = useState<any[]>([]);
-  const [query, setQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState('Searching retailers...');
-  const [hasSearched, setHasSearched] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
-  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
-  const [searchResponse, setSearchResponse] = useState<any>(null);
+  const { user, isAuthenticated, searchesRemaining, incrementSearchCount, getFeatureLimit } = useAuth();
+  const [query, setQuery] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchStatus, setSearchStatus] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [sortBy, setSortBy] = useState("relevance");
+  const [retailerFilter, setRetailerFilter] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [totalFound, setTotalFound] = useState(0);
 
-  // Cycling loading text
-  useEffect(() => {
-    if (!isLoading) return;
+  const retailers = ["All", ...Array.from(new Set(products.map((p) => p.retailer)))];
 
-    const retailers = [
-      'Searching Amazon...',
-      'Checking Target...',
-      'Scanning Best Buy...',
-      'Looking at Walmart...',
-      "Browsing Macy's...",
-      'Checking Nordstrom...',
-    ];
-    let i = 0;
-    const interval = setInterval(() => {
-      setLoadingText(retailers[i % retailers.length]);
-      i++;
-    }, 800);
+  const search = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
 
-    return () => clearInterval(interval);
-  }, [isLoading]);
-
-  const handleSearch = async (searchQuery: string) => {
     // Check if user has searches remaining (if authenticated and on free plan)
     if (isAuthenticated && user?.plan === 'free' && searchesRemaining <= 0) {
-      alert('Daily search limit reached. Upgrade to Premium for unlimited searches!');
+      setSearchStatus("Daily search limit reached. Upgrade to Premium for unlimited searches.");
       return;
     }
 
-    setIsLoading(true);
-    setQuery(searchQuery);
-    setHasSearched(true);
-    setResults([]);
+    setLoading(true);
+    setProducts([]);
+    setVisibleCount(20);
+    setSearchStatus("Searching across retailers...");
 
     try {
-      const response = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
-      const data: any = await response.json();
-      setResults(data.results || []);
-      setSearchResponse(data);
+      const res = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      setProducts(data.results || []);
+      setTotalFound(data.results?.length || 0);
+      setSearchStatus("");
 
       // Increment search count for authenticated free users
       if (isAuthenticated && user?.plan === 'free') {
         incrementSearchCount();
       }
-    } catch (error) {
-      console.error('Search failed:', error);
-      setResults([]);
+    } catch {
+      setSearchStatus("Search took longer than expected. Try again!");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
+  }, [isAuthenticated, user, searchesRemaining, incrementSearchCount]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    search(query);
   };
 
-  // Load trending products and check for URL query on mount
-  useEffect(() => {
-    const trending = [
-      {
-        id: 'trending-1',
-        name: "Apple AirPods Pro 2nd Gen",
-        price: 189.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL1500_.jpg",
-        retailer: "Amazon",
-        url: "https://www.amazon.com/s?k=airpods+pro+2",
-        rating: 4.7,
-        reviewCount: 45000
-      },
-      {
-        id: 'trending-2',
-        name: "Stanley Quencher H2.0 40oz",
-        price: 35.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/71Ii9xjt+oL._AC_SL1500_.jpg",
-        retailer: "Target",
-        url: "https://www.target.com/s?searchTerm=stanley+quencher",
-        rating: 4.8,
-        reviewCount: 12000
-      },
-      {
-        id: 'trending-3',
-        name: "Nike Dunk Low",
-        price: 110.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/71hAMWJCuLL._AC_SL1500_.jpg",
-        retailer: "Nike",
-        url: "https://www.nike.com/w/dunk-shoes-90aohZ8y3qp",
-        rating: 4.6,
-        reviewCount: 8500
-      },
-      {
-        id: 'trending-4',
-        name: "Dyson Airwrap Complete",
-        price: 499.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61dwFIzICML._SL1500_.jpg",
-        retailer: "Best Buy",
-        url: "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+airwrap",
-        rating: 4.5,
-        reviewCount: 6200
-      },
-      {
-        id: 'trending-5',
-        name: "Sony WH-1000XM5",
-        price: 298.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/51aXvjzcukL._AC_SL1500_.jpg",
-        retailer: "Amazon",
-        url: "https://www.amazon.com/s?k=sony+wh1000xm5",
-        rating: 4.7,
-        reviewCount: 32000
-      },
-      {
-        id: 'trending-6',
-        name: "Lululemon Align Leggings",
-        price: 98.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/51VZPNmEXJL._AC_SL1500_.jpg",
-        retailer: "Nordstrom",
-        url: "https://www.nordstrom.com/sr?origin=keywordsearch&keyword=lululemon+align",
-        rating: 4.8,
-        reviewCount: 15000
-      },
-      {
-        id: 'trending-7',
-        name: "CeraVe Moisturizing Cream 16oz",
-        price: 15.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61S7BrCBj7L._SL1000_.jpg",
-        retailer: "Target",
-        url: "https://www.target.com/s?searchTerm=cerave+moisturizing+cream",
-        rating: 4.7,
-        reviewCount: 89000
-      },
-      {
-        id: 'trending-8',
-        name: "Ninja Creami Ice Cream Maker",
-        price: 149.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61nzEWnbk8L._AC_SL1500_.jpg",
-        retailer: "Walmart",
-        url: "https://www.walmart.com/search?q=ninja+creami",
-        rating: 4.6,
-        reviewCount: 18000
-      },
-    ];
-    setTrendingProducts(trending);
+  let filtered = products;
+  if (activeCategory !== "All") {
+    filtered = filtered.filter((p) => p.category?.toLowerCase() === activeCategory.toLowerCase());
+  }
+  if (retailerFilter !== "All") {
+    filtered = filtered.filter((p) => p.retailer === retailerFilter);
+  }
+  if (sortBy === "price-low") filtered = [...filtered].sort((a, b) => a.price - b.price);
+  if (sortBy === "price-high") filtered = [...filtered].sort((a, b) => b.price - a.price);
+  if (sortBy === "rating") filtered = [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-    // Check for query parameter in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryParam = urlParams.get('q');
-    if (queryParam) {
-      handleSearch(queryParam);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Apply result limits based on plan
+  const resultLimit = isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10;
+  const limitedResults = filtered.slice(0, resultLimit);
+  const excessResults = filtered.slice(resultLimit);
 
-  const retailers = [
-    'Amazon',
-    'Walmart',
-    'Target',
-    'Best Buy',
-    'Costco',
-    'eBay',
-    'Home Depot',
-    "Lowe's",
-    "Macy's",
-    'Nordstrom',
-    'Wayfair',
-    'Kroger',
-  ];
-
-  // Extract unique retailers from results
-  const resultRetailers = results.length > 0
-    ? Array.from(new Set(results.map((p: any) => p.retailer)))
-    : [];
+  const visible = limitedResults.slice(0, visibleCount);
 
   return (
-    <div className="relative z-10 texture-bg min-h-screen">
-      {/* Install Extension Modal */}
-      {showInstallModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowInstallModal(false)}
-          />
-          <div
-            className="relative bg-white text-black w-full max-w-md p-8 shadow-xl border border-black/10"
-            style={{ borderRadius: '8px' }}
-          >
-            <button
-              onClick={() => setShowInstallModal(false)}
-              className="absolute top-4 right-4 text-black/60 hover:text-black transition-colors btn"
-            >
-              <X size={20} />
-            </button>
+    <div className="min-h-screen">
+      <Header />
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-full bg-[#2A9D8F]/10 flex items-center justify-center">
-                <Globe size={24} className="text-[#2A9D8F]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-black">Install Pick Extension</h3>
-                <p className="text-sm text-black/60">3 simple steps</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2A9D8F] text-white text-sm font-medium flex items-center justify-center">
-                  1
-                </span>
-                <div>
-                  <p className="font-medium mb-1 text-black">Download the extension</p>
-                  <a
-                    href="/extension.zip"
-                    download
-                    className="inline-flex items-center gap-2 text-sm text-[#2A9D8F] hover:underline"
-                  >
-                    <Download size={14} />
-                    Download pick-extension.zip
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2A9D8F] text-white text-sm font-medium flex items-center justify-center">
-                  2
-                </span>
-                <div>
-                  <p className="font-medium mb-1 text-black">Open Chrome Extensions</p>
-                  <p className="text-sm text-black/60">
-                    Go to{' '}
-                    <code className="px-1.5 py-0.5 bg-black/5 rounded text-xs">
-                      chrome://extensions
-                    </code>{' '}
-                    and enable <strong>Developer mode</strong> (top right)
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2A9D8F] text-white text-sm font-medium flex items-center justify-center">
-                  3
-                </span>
-                <div>
-                  <p className="font-medium mb-1 text-black">Load the extension</p>
-                  <p className="text-sm text-black/60">
-                    Unzip the file, click <strong>Load unpacked</strong>, and select the unzipped
-                    folder
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-black/10">
-              <p className="text-xs text-black/60 text-center">
-                Works on Chrome, Edge, Brave, and other Chromium browsers
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <Header onInstallClick={() => alert('Chrome extension coming soon to the Web Store!')} />
-
-      <main>
-        {/* Usage Meter for Free Users */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Usage Meter for authenticated users */}
         {isAuthenticated && user?.plan === 'free' && (
-          <div className="max-w-5xl mx-auto px-6 pt-6">
-            <div
-              className="bg-white border border-black/10 p-4"
-              style={{ borderRadius: '6px' }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-black">
-                  Daily Searches
-                </span>
-                <span className="text-sm text-black/60">
-                  {searchesRemaining} / {getFeatureLimit('searchesPerDay')} remaining
-                </span>
-              </div>
-              <div className="w-full bg-black/5 h-2" style={{ borderRadius: '4px' }}>
-                <div
-                  className={`h-2 transition-all ${
-                    searchesRemaining === 0
-                      ? 'bg-[#EF4444]'
-                      : searchesRemaining <= 2
-                      ? 'bg-[#F59E0B]'
-                      : 'bg-[#2A9D8F]'
-                  }`}
-                  style={{
-                    borderRadius: '4px',
-                    width: `${(searchesRemaining / Number(getFeatureLimit('searchesPerDay'))) * 100}%`,
-                  }}
-                />
-              </div>
-              {searchesRemaining === 0 && (
-                <p className="text-xs text-[#EF4444] mt-2">
-                  Limit reached.{' '}
-                  <a href="/pricing" className="underline hover:text-[#EF4444]/80">
-                    Upgrade to Premium
-                  </a>{' '}
-                  for unlimited searches.
-                </p>
-              )}
-            </div>
+          <div className="mb-6 max-w-md">
+            <UsageMeter />
           </div>
         )}
 
-        {/* Hero Section with animation */}
-        <section className="max-w-5xl mx-auto px-6 pt-24 pb-16">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="max-w-2xl mb-12"
-          >
-            <h1 className="text-8xl md:text-9xl font-bold mb-6 tracking-tighter leading-[0.95] text-black">
-              FIND SIMILAR. PAY LESS.
-            </h1>
-            <p
-              className="text-base text-black/60 leading-relaxed max-w-lg mb-8"
-            >
-              We don't just find your product cheaper—we find similar products with comparable
-              reviews at better prices that others miss.
+        {/* Hero when no search */}
+        {products.length === 0 && !loading && (
+          <div className="text-center py-20">
+            <h2 className="font-heading text-4xl font-bold mb-3">Find the best deal on anything</h2>
+            <p className="text-pick-muted text-lg mb-8 max-w-lg mx-auto">
+              Search any product and we'll compare prices across Amazon, Target, Best Buy, Macy's, and more.
             </p>
-          </motion.div>
-
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-
-          {/* Quick search hints */}
-          {!hasSearched && (
-            <div className="mt-8 flex items-center gap-3 flex-wrap">
-              <span className="text-sm text-black/60">Try:</span>
-              {['Sony WH-1000XM5', 'MacBook Air M3', 'KitchenAid mixer', 'Dyson vacuum'].map(
-                (term) => (
-                  <button
-                    key={term}
-                    onClick={() => handleSearch(term)}
-                    className="btn text-sm text-black/60 hover:text-black transition-colors link-underline"
-                  >
-                    {term}
-                  </button>
-                )
-              )}
-            </div>
-          )}
-        </section>
-
-        {/* Trusted By Section */}
-        {!hasSearched && <TrustedBy />}
-
-        {/* Retailer Marquee */}
-        {!hasSearched && <RetailerMarquee />}
-
-        {/* How It Works Section */}
-        {!hasSearched && <HowItWorks />}
-
-        {/* Stats Section */}
-        {!hasSearched && <StatsSection />}
-
-        {/* Trending Now Section */}
-        {!hasSearched && trendingProducts.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-5xl mx-auto px-6 pb-16 pt-8"
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp size={20} className="text-[#2A9D8F]" />
-              <h2 className="text-xl font-semibold text-black">Trending Now</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {trendingProducts.map((product, idx) => (
-                <a
-                  key={idx}
-                  href={product.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
+            <div className="flex flex-wrap gap-2 justify-center">
+              {["Running Shoes", "Wireless Earbuds", "Air Fryer", "Winter Jacket", "Laptop Stand", "Skincare Set"].map((term) => (
+                <button
+                  key={term}
+                  onClick={() => { setQuery(term); search(term); }}
+                  className="px-4 py-2 bg-white border border-pick-border rounded-full text-sm hover:border-pick-teal hover:text-pick-teal transition"
                 >
-                  <div className="aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
-                      loading="lazy"
-                    />
-                  </div>
-                  <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem] text-black">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-semibold text-[#2A9D8F]">
-                      ${formatPrice(product.price)}
-                    </span>
-                  </div>
-                </a>
+                  {term}
+                </button>
               ))}
             </div>
-          </motion.section>
+          </div>
         )}
 
-        {/* Results Section */}
-        {hasSearched && (
-          <section className="max-w-5xl mx-auto px-6 pb-24">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-24">
-                <div className="flex items-center gap-3 text-black/60 mb-4">
-                  <div className="w-5 h-5 border-2 border-black/10 border-t-[#2A9D8F] rounded-full spinner" />
-                  <span className="text-sm animate-pulse">{loadingText}</span>
+        {/* Loading */}
+        {loading && (
+          <div>
+            <p className="text-center text-pick-muted mb-6 animate-pulse">{searchStatus}</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 border border-pick-border">
+                  <div className="skeleton h-40 rounded-lg mb-3" />
+                  <div className="skeleton h-4 rounded mb-2 w-3/4" />
+                  <div className="skeleton h-4 rounded w-1/2" />
                 </div>
-                {/* Loading skeleton */}
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-white border border-black/10 rounded-lg overflow-hidden animate-pulse"
-                    >
-                      <div className="aspect-[4/3] bg-black/5" />
-                      <div className="p-4 space-y-3">
-                        <div className="h-4 bg-black/5 rounded w-3/4" />
-                        <div className="h-4 bg-black/5 rounded w-1/2" />
-                        <div className="h-8 bg-black/5 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Results */}
+        {!loading && products.length > 0 && (
+          <>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <p className="text-sm text-pick-muted">
+                Found <span className="font-semibold text-pick-text">{totalFound}</span> results for &quot;{query}&quot;
+              </p>
+              <div className="flex items-center gap-3">
+                <select
+                  value={retailerFilter}
+                  onChange={(e) => setRetailerFilter(e.target.value)}
+                  className="text-sm border border-pick-border rounded-lg px-3 py-1.5 bg-white"
+                >
+                  {retailers.map((r) => <option key={r}>{r}</option>)}
+                </select>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="text-sm border border-pick-border rounded-lg px-3 py-1.5 bg-white"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                </select>
               </div>
-            ) : results.length > 0 ? (
-              <>
-                {/* Results header */}
-                <div className="mb-8">
-                  <h2 className="text-2xl font-semibold mb-2 text-black">
-                    Found {results.length} results for &quot;{query}&quot;
-                  </h2>
-                  <p className="text-sm text-black/60">
-                    {resultRetailers.length > 0 && (
-                      <>
-                        Across {resultRetailers.join(', ')} •{' '}
-                      </>
-                    )}
-                    Prices checked {searchResponse?.cachedAt || 'just now'}
-                  </p>
-                </div>
+            </div>
 
-                {/* Product grid with stagger animation */}
-                <motion.div
-                  variants={gridVariants}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, amount: 0.05 }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            {/* Category tabs */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap transition ${
+                    activeCategory === cat
+                      ? "bg-pick-teal text-white"
+                      : "bg-white border border-pick-border text-pick-muted hover:border-pick-teal"
+                  }`}
                 >
-                  {results
-                    .slice(
-                      0,
-                      isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10
-                    )
-                    .map((product, i) => (
-                      <motion.div key={product.id || i} variants={cardVariants}>
-                        <ProductCard product={product} />
-                      </motion.div>
-                    ))}
-                </motion.div>
+                  {cat}
+                </button>
+              ))}
+            </div>
 
-                {/* Show upgrade prompt if there are more results */}
-                {results.length >
-                  (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10) && (
-                  <div
-                    className="mt-12 text-center p-8 border border-black/10 bg-white"
-                    style={{ borderRadius: '8px' }}
-                  >
-                    <div className="w-12 h-12 bg-[#2A9D8F] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-black mb-2">
-                      Premium Feature
-                    </h3>
-                    <p className="text-black/60 mb-4">
-                      Upgrade to Premium to see{' '}
-                      {results.length -
-                        (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10)}{' '}
-                      more results
-                    </p>
-                    <a
-                      href="/pricing"
-                      className="inline-block bg-[#2A9D8F] text-white px-6 py-2 hover:bg-[#238B7E] transition-colors"
-                      style={{ borderRadius: '6px' }}
-                    >
-                      Upgrade Now
-                    </a>
-                  </div>
-                )}
-              </>
-            ) : (
-              // Empty state
-              <div className="text-center py-16">
-                <svg
-                  className="w-16 h-16 mx-auto text-black/10 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1}
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <h3 className="text-lg font-medium text-black mb-2">
-                  No results found for &quot;{query}&quot;
-                </h3>
-                <p className="text-black/50 mb-6">
-                  Try a different search term or browse popular categories.
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {['Headphones', 'Laptops', 'Running Shoes', 'Skincare', 'Kitchen', 'Watches', 'Backpacks'].map((term) => (
-                    <button
-                      key={term}
-                      onClick={() => handleSearch(term)}
-                      className="px-4 py-2 rounded-xl border border-black/10 text-sm text-black/60 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
-                    >
-                      {term}
-                    </button>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {visible.map((product, i) => (
+                <ProductCard key={`${product.name}-${product.retailer}-${i}`} product={product} />
+              ))}
+            </div>
+
+            {/* Show upgrade prompt if there are excess results */}
+            {excessResults.length > 0 && (
+              <div className="mt-8 relative">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 opacity-50 blur-sm pointer-events-none">
+                  {excessResults.slice(0, 8).map((product, i) => (
+                    <ProductCard key={`locked-${product.name}-${product.retailer}-${i}`} product={product} />
                   ))}
                 </div>
+                <BlurOverlay message={`Upgrade to Premium to see ${excessResults.length} more results`} />
               </div>
             )}
-          </section>
-        )}
 
-        {/* Divider */}
-        {!hasSearched && (
-          <>
-            <div className="max-w-5xl mx-auto px-6 py-8">
-              <div className="h-px bg-black/10" />
-            </div>
-
-            {/* Key differentiator section */}
-            <motion.section
-              initial={{ opacity: 0, x: -60 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="max-w-5xl mx-auto px-6 py-16"
-            >
-              <div className="max-w-3xl">
-                <div
-                  className="bg-white border border-black/10 p-8"
-                  style={{ borderRadius: '8px' }}
+            {visibleCount < limitedResults.length && (
+              <div className="text-center mt-8">
+                <button
+                  onClick={() => setVisibleCount((c) => c + 20)}
+                  className="px-6 py-2.5 bg-pick-teal text-white rounded-full hover:bg-opacity-90 transition text-sm font-medium"
                 >
-                  <div className="differentiator">
-                    <h2 className="text-2xl font-semibold mb-4 tracking-tight text-black">
-                      We don't just find your product cheaper—we find better alternatives others
-                      miss
-                    </h2>
-                    <p className="text-black leading-relaxed mb-4">
-                      Unlike Honey and other extensions that only check if your exact product is
-                      cheaper elsewhere, Pick goes further. We search for{' '}
-                      <strong>similar products with comparable reviews</strong> across{' '}
-                      {retailers.length} major retailers.
-                    </p>
-                    <p className="text-black/60 leading-relaxed">
-                      The best deal often isn't the same product at a lower price—it's a comparable
-                      alternative you didn't know existed.
-                    </p>
-                  </div>
-                </div>
+                  Load More ({limitedResults.length - visibleCount} remaining)
+                </button>
               </div>
-            </motion.section>
-
-            {/* Retailers grid */}
-            <section className="max-w-5xl mx-auto px-6 py-12">
-              <p className="text-sm text-black/60 mb-4">We search across</p>
-              <div className="flex flex-wrap gap-2">
-                {retailers.map((retailer) => (
-                  <span key={retailer} className="retailer-badge">
-                    {retailer}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <div className="max-w-5xl mx-auto px-6 py-4">
-              <div className="h-px bg-black/10" />
-            </div>
-
-            {/* How it works - clean asymmetric layout */}
-            <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20">
-              <div className="grid md:grid-cols-2 gap-16">
-                <motion.div
-                  initial={{ opacity: 0, x: -60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.7, ease: 'easeOut' }}
-                >
-                  <h2 className="text-3xl font-semibold mb-4 tracking-tight text-black">How it works</h2>
-                  <p className="text-black/60 mb-12 max-w-sm">
-                    We do the comparison shopping so you don&apos;t have to open a dozen browser
-                    tabs.
-                  </p>
-
-                  <div className="space-y-10">
-                    <div className="flex gap-4">
-                      <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">01</span>
-                      <div>
-                        <h3 className="font-medium mb-1.5 text-black">Enter what you&apos;re looking for</h3>
-                        <p className="text-sm text-black/60 leading-relaxed">
-                          Type a product name, brand, or category. Be as specific or general as you
-                          like.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">02</span>
-                      <div>
-                        <h3 className="font-medium mb-1.5 text-black">
-                          We query {retailers.length} retailers
-                        </h3>
-                        <p className="text-sm text-black/60 leading-relaxed">
-                          Pick checks Amazon, Walmart, Target, Best Buy, and more simultaneously for
-                          current prices and similar products.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">03</span>
-                      <div>
-                        <h3 className="font-medium mb-1.5 text-black">Compare and decide</h3>
-                        <p className="text-sm text-black/60 leading-relaxed">
-                          See prices side by side, including alternatives you might not have found.
-                          Click through to buy from whichever retailer has the best deal.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, x: 60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.7, ease: 'easeOut' }}
-                  className="flex items-end"
-                >
-                  <div
-                    className="w-full p-6 border border-black/10 bg-white card-hover"
-                    style={{ borderRadius: '8px' }}
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-[#2A9D8F]/10 flex items-center justify-center">
-                        <ShoppingBag size={18} className="text-[#2A9D8F]" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm text-black">Sony WH-1000XM5</p>
-                        <p className="text-xs text-black/60">Same product, different prices</p>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div
-                        className="flex justify-between items-center py-2 px-3 bg-black/5"
-                        style={{ borderRadius: '4px' }}
-                      >
-                        <span className="text-sm text-black/60">Amazon</span>
-                        <span className="text-sm font-medium text-[#2A9D8F]">$328.00</span>
-                      </div>
-                      <div
-                        className="flex justify-between items-center py-2 px-3 bg-black/5"
-                        style={{ borderRadius: '4px' }}
-                      >
-                        <span className="text-sm text-black/60">Walmart</span>
-                        <span className="text-sm font-medium text-black">$348.00</span>
-                      </div>
-                      <div
-                        className="flex justify-between items-center py-2 px-3 bg-black/5"
-                        style={{ borderRadius: '4px' }}
-                      >
-                        <span className="text-sm text-black/60">Best Buy</span>
-                        <span className="text-sm font-medium text-black">$349.99</span>
-                      </div>
-                      <div
-                        className="flex justify-between items-center py-2 px-3 bg-black/5"
-                        style={{ borderRadius: '4px' }}
-                      >
-                        <span className="text-sm text-black/60">Target</span>
-                        <span className="text-sm font-medium text-black">$349.99</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-[#2A9D8F] mt-4 font-medium">
-                      Save $21.99 buying from Amazon
-                    </p>
-                  </div>
-                </motion.div>
-              </div>
-            </section>
-
-            {/* Extension CTA */}
-            <motion.section
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              id="extension"
-              className="max-w-5xl mx-auto px-6 py-20"
-            >
-              <div
-                className="border border-black/10 bg-white p-10 md:p-14"
-                style={{ borderRadius: '8px' }}
-              >
-                <div className="max-w-lg">
-                  <h2 className="text-2xl md:text-3xl font-semibold mb-4 tracking-tight text-black">
-                    See price comparisons while you shop
-                  </h2>
-                  <p className="text-black/60 mb-8 leading-relaxed">
-                    Install our browser extension. When you visit a product page on any supported
-                    retailer, Pick automatically shows you if it&apos;s cheaper somewhere else—or if
-                    there&apos;s a better alternative.
-                  </p>
-                  <button
-                    onClick={() => setShowInstallModal(true)}
-                    className="btn-primary inline-flex items-center gap-2 px-6 py-3 bg-[#2A9D8F] text-white font-medium hover:bg-[#238B7E] cursor-pointer"
-                    style={{ borderRadius: '6px' }}
-                  >
-                    <span>Add to Chrome</span>
-                    <ArrowRight size={16} className="arrow" />
-                  </button>
-                  <p className="text-xs text-black/60 mt-4">
-                    Free forever. No account required.
-                  </p>
-                </div>
-              </div>
-            </motion.section>
+            )}
           </>
         )}
-
-        {/* Founder Story */}
-        <section className="py-20 px-6 border-t border-black/5">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-heading font-bold text-black mb-6">
-              Why I Built Pick
-            </h2>
-            <div className="text-black/60 space-y-4 text-base leading-relaxed">
-              <p>
-                I started Pick because I was tired of overpaying for things. Every time I found a product I wanted,
-                the price felt too high, and I knew there had to be a better deal somewhere, but I didn't have
-                the time to check every single retailer.
-              </p>
-              <p>
-                Even more frustrating was when a product was genuinely out of my budget. Instead of just being
-                bummed about it, I wanted a way to find similar products that I'd be just as happy with, but
-                at a price I could actually afford.
-              </p>
-              <p>
-                That's what Pick does. It searches across retailers to find you the best price on the exact product
-                you want, and helps you discover alternatives you might not have found on your own.
-                Save money without settling.
-              </p>
-            </div>
-            <p className="mt-8 text-sm text-black/40">Arjun Shah, Founder</p>
-          </div>
-        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-black/10 bg-white mt-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <ShoppingBag size={18} strokeWidth={1.5} className="text-[#2A9D8F]" />
-              <span className="text-sm font-medium text-black">pick</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-black/60">
-              <a href="/privacy" className="hover:text-black transition-colors">
-                Privacy
-              </a>
-              <a href="/terms" className="hover:text-black transition-colors">
-                Terms
-              </a>
-              <span>&copy; {new Date().getFullYear()}</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
+      <Chatbot onSearch={search} />
     </div>
   );
 }
