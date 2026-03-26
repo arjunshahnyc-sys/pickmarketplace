@@ -4,31 +4,31 @@ import Footer from '@/components/Footer';
 import { Search, Zap, ShoppingCart, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: "How It Works - Pick Marketplace",
-  description: "Learn how Pick Marketplace compares prices across 50+ retailers to help you find the best deals. Simple, fast, and free to use.",
+  title: 'How It Works - Pick Marketplace',
+  description: 'Learn how Pick Marketplace compares prices across 50+ retailers to help you find the best deals. Simple, fast, and free to use.',
 };
 
 export default function HowItWorksPage() {
   const steps = [
     {
       icon: Search,
-      title: "Search for Any Product",
-      description: "Type what you\'re looking for-headphones, running shoes, air fryer, laptop, dress-into the search bar. Be as specific or general as you want.",
+      title: 'Search for Any Product',
+      description: 'Type what you\'re looking for-headphones, running shoes, air fryer, laptop, dress-into the search bar. Be as specific or general as you want.',
     },
     {
       icon: Zap,
-      title: "We Check Prices Across Retailers",
-      description: "Pick Marketplace scans current prices from Amazon, Target, Best Buy, Walmart, Macy's, and 50+ other retailers. This happens in seconds.",
+      title: 'We Check Prices Across Retailers',
+      description: 'Pick Marketplace scans current prices from Amazon, Target, Best Buy, Walmart, Macy's, and 50+ other retailers. This happens in seconds.',
     },
     {
       icon: ShoppingCart,
-      title: "See Results Ranked by Price",
-      description: "We show you all available options sorted by total price (including shipping when available). Each result links directly to the retailer so you can buy immediately.",
+      title: 'See Results Ranked by Price',
+      description: 'We show you all available options sorted by total price (including shipping when available). Each result links directly to the retailer so you can buy immediately.',
     },
     {
       icon: CheckCircle,
-      title: "Click Through and Save Money",
-      description: "Choose the best deal for you and click through to complete your purchase on the retailer's site. That's it-no sign-up required, no hidden fees.",
+      title: 'Click Through and Save Money',
+      description: 'Choose the best deal for you and click through to complete your purchase on the retailer's site. That's it-no sign-up required, no hidden fees.',
     },
   ];
 

@@ -300,7 +300,7 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <Header onInstallClick={() => alert('Chrome extension coming soon to the Web Store!')} />
+      <Header />
 
       <main>
         {/* Usage Meter for Free Users */}

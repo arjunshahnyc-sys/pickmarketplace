@@ -115,10 +115,28 @@ async function performSearch(query: string): Promise<SearchResponse> {
       ? '1 minute ago'
       : `${minutesAgo} minutes ago`;
 
+  // Convert Product to ProductResult format
+  const results: ProductResult[] = products.map((p, index) => ({
+    id: `${p.retailer.toLowerCase().replace(/\s/g, '-')}-${index}`,
+    name: p.name,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    savings: p.originalPrice && p.originalPrice > p.price ? p.originalPrice - p.price : undefined,
+    currency: 'USD',
+    retailer: p.retailer,
+    url: p.url,
+    imageUrl: p.image,
+    rating: p.rating,
+    reviewCount: p.reviewCount,
+    category: p.category,
+    brand: p.brand,
+    inStock: true,
+  }));
+
   return {
     query,
-    results: products as ProductResult[],
-    totalResults: products.length,
+    results,
+    totalResults: results.length,
     sources,
     cachedAt,
     byRetailer: retailerCounts,

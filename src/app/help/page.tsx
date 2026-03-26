@@ -24,7 +24,7 @@ export default function HelpPage() {
     {
       icon: AlertCircle,
       title: 'Why Prices May Differ',
-      content: 'The price shown on Pick Marketplace may differ from the retailer's current price for several reasons: (1) The retailer changed the price after we last checked, (2) The retailer is running a time-limited sale, (3) Shipping costs or taxes aren't included in our displayed price, or (4) The product is marked as an "example" product for demo purposes. Always check the final price at checkout.',
+      content: 'The price shown on Pick Marketplace may differ from the retailer\'s current price for several reasons: (1) The retailer changed the price after we last checked, (2) The retailer is running a time-limited sale, (3) Shipping costs or taxes aren\'t included in our displayed price, or (4) The product is marked as an "example" product for demo purposes. Always check the final price at checkout.',
     },
     {
       icon: Flag,

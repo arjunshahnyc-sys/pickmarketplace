@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, ShoppingBag, ExternalLink } from 'lucide-react';
-import { getRelatedSearches } from '@/lib/scrapers';
+// import { getRelatedSearches } from '@/lib/scrapers'; // Removed - function no longer exists
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/lib/formatters';
 
@@ -240,7 +240,7 @@ export function ChatWidget() {
                 const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}${priceInfo}! Best price: $${formatPrice(bestPrice)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
 
                 // Get related searches
-                const relatedSearches = getRelatedSearches(searchQuery);
+                const relatedSearches: string[] = []; // getRelatedSearches removed
 
                 // Remove the searching message and add the results
                 setMessages(prev => {
@@ -477,7 +477,7 @@ export function ChatWidget() {
                                           const bestPrice = Math.min(...prices);
                                           const upgradeHint = user?.plan === 'free' ? '\n\n💎 Upgrade to Premium for more results!' : '';
                                           const message = `I found ${totalCount} result${totalCount === 1 ? '' : 's'}! Best price: $${formatPrice(bestPrice)}. Showing top ${formattedProducts.length}:${upgradeHint}`;
-                                          const relatedSearches = getRelatedSearches(relatedSearch);
+                                          const relatedSearches: string[] = []; // getRelatedSearches removed
 
                                           setMessages(prev => {
                                             const withoutSearching = prev.filter(m => !m.content.includes('🔍 Searching'));
