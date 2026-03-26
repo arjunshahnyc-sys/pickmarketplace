@@ -1,18 +1,57 @@
-export interface Product {
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  retailer: string;
-  url: string;
-  rating?: number;
-  reviewCount?: number;
-  category?: string;
-  brand?: string;
-  lastVerified?: string; // ISO timestamp when price was last verified
-}
+import { Product, RetailerSearchLink } from "./types";
 
-// User-Agent constants removed - no longer needed for API-based searches
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * TODO: Migrate to Official Retail APIs
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Current implementation: Only Target API works via official JSON endpoint.
+ * All other scrapers have been removed as they fail in production (bot protection,
+ * JS rendering requirements, frequent HTML changes).
+ *
+ * Recommended API integrations for production:
+ *
+ * 1. Best Buy Products API
+ *    - https://developer.bestbuy.com/
+ *    - FREE tier: 50,000 requests/day
+ *    - Requires API key (signup at developer.bestbuy.com)
+ *    - Reliable JSON responses with product details, pricing, availability
+ *
+ * 2. Walmart Affiliate API
+ *    - https://developer.walmart.com/
+ *    - FREE for approved affiliates via Impact Radius partnership
+ *    - Requires affiliate approval + API key
+ *    - Full product catalog access with real-time pricing
+ *
+ * 3. Amazon Product Advertising API (PA-API 5.0)
+ *    - https://affiliate-program.amazon.com/assoc_credentials/home
+ *    - Requires Amazon Associates account + 3 qualifying sales in first 180 days
+ *    - Rate limit: 1 request/second (scales with revenue)
+ *    - Access Key + Secret Key + Associate Tag required
+ *
+ * 4. SerpAPI Google Shopping
+ *    - https://serpapi.com/google-shopping-api
+ *    - $50/month for 5,000 searches (~$0.01/search)
+ *    - More reliable than scraping Google directly
+ *    - Returns structured JSON with prices, ratings, merchant info
+ *
+ * 5. Keepa API (Amazon price tracking & history)
+ *    - https://keepa.com/#!api
+ *    - ~$21/month for 200,000 tokens
+ *    - Historical price data for Amazon products
+ *    - Great for "price drop" alerts and price history charts
+ *
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+
+const HEADERS = {
+  "User-Agent": UA,
+  Accept: "application/json",
+  "Accept-Language": "en-US,en;q=0.9",
+};
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -21,28 +60,142 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+const KNOWN_BRANDS = [
+  "Apple", "Samsung", "Sony", "Nike", "Adidas", "Bose", "LG", "Dell", "HP", "Lenovo",
+  "Nintendo", "Microsoft", "Google", "Dyson", "KitchenAid", "Ninja", "Stanley",
+  "Asus", "Acer", "Canon", "Nikon", "JBL", "Beats", "Roku", "Amazon", "TCL",
+  "Vizio", "Hisense", "Philips", "Panasonic", "GE", "Whirlpool", "Frigidaire",
+  "Cuisinart", "Hamilton Beach", "Black+Decker", "DeWalt", "Ryobi", "Makita",
+  "Bosch", "Under Armour", "Puma", "Reebok", "New Balance", "Asics", "Vans",
+  "Converse", "Timberland", "North Face", "Patagonia", "Columbia", "Carhartt",
+  "Levi's", "Calvin Klein", "Tommy Hilfiger", "Ralph Lauren", "Gap", "Old Navy",
+];
+
+function guessBrand(name: string, retailer: string): string {
+  const upperName = name.toUpperCase();
+  for (const brand of KNOWN_BRANDS) {
+    if (upperName.includes(brand.toUpperCase())) {
+      return brand;
+    }
+  }
+  // If no known brand found, use retailer name
+  return retailer;
+}
+
 function guessCategory(name: string): string {
   const lower = name.toLowerCase();
-  if (/headphone|earbud|speaker|tv|monitor|laptop|tablet|phone|camera|charger|cable|keyboard|mouse/i.test(lower)) return "Electronics";
-  if (/shoe|sneaker|boot|sandal|slipper/i.test(lower)) return "Shoes";
-  if (/shirt|dress|jacket|coat|pant|jean|skirt|blouse|sweater|hoodie|top|shorts/i.test(lower)) return "Clothing";
-  if (/sofa|lamp|pillow|blanket|candle|rug|curtain|vase|furniture|decor/i.test(lower)) return "Home";
-  if (/moisturizer|serum|cream|makeup|lipstick|foundation|perfume|cologne|lotion|skincare/i.test(lower)) return "Beauty";
-  if (/pot|pan|knife|blender|air fryer|mixer|toaster|coffee|kitchen/i.test(lower)) return "Kitchen";
-  if (/yoga|running|fitness|gym|ball|racket|bike|camping|hiking|outdoor/i.test(lower)) return "Sports";
-  if (/toy|lego|doll|game|puzzle/i.test(lower)) return "Toys";
+  if (/headphone|earbud|speaker|tv|monitor|laptop|tablet|phone|camera|charger|cable|keyboard|mouse|gaming|console|playstation|xbox|nintendo/i.test(lower)) return "Electronics";
+  if (/shoe|sneaker|boot|sandal|slipper|footwear/i.test(lower)) return "Shoes";
+  if (/shirt|dress|jacket|coat|pant|jean|skirt|blouse|sweater|hoodie|top|shorts|clothing|apparel/i.test(lower)) return "Clothing";
+  if (/sofa|lamp|pillow|blanket|candle|rug|curtain|vase|furniture|decor|bed|mattress|chair|table/i.test(lower)) return "Home";
+  if (/moisturizer|serum|cream|makeup|lipstick|foundation|perfume|cologne|lotion|skincare|beauty|cosmetic/i.test(lower)) return "Beauty";
+  if (/pot|pan|knife|blender|air fryer|mixer|toaster|coffee|kitchen|cookware|appliance/i.test(lower)) return "Kitchen";
+  if (/yoga|running|fitness|gym|ball|racket|bike|camping|hiking|outdoor|sports|exercise|workout/i.test(lower)) return "Sports";
+  if (/toy|lego|doll|game|puzzle|kids|children|baby/i.test(lower)) return "Toys";
   return "Other";
 }
 
-// Amazon scraper removed - HTML scraping gets blocked by bot protection
-// To add Amazon support, use an official API or third-party service
+// ─── Relevance Filtering Helper ────────────────────────────────────────
+function isRelevantResult(title: string, query: string): boolean {
+  const titleLower = title.toLowerCase();
+  const queryWords = query.toLowerCase().split(/\s+/).filter(word => word.length > 2); // Ignore words <= 2 chars
 
-// ─── Target ────────────────────────────────────────────────────────────────
+  if (queryWords.length === 0) return true; // If no meaningful query words, accept all
+
+  const matchingWords = queryWords.filter(word => titleLower.includes(word));
+  const matchPercentage = matchingWords.length / queryWords.length;
+
+  return matchPercentage >= 0.5; // At least 50% of query words must appear in title
+}
+
+// ─── Google Shopping via Serper.dev API ────────────────────────────────────
+export async function searchGoogleShoppingAPI(query: string): Promise<Product[]> {
+  const products: Product[] = [];
+  const apiKey = process.env.SERPER_API_KEY;
+
+  if (!apiKey) {
+    console.log('[Serper] API key not configured, skipping Google Shopping results');
+    return products;
+  }
+
+  try {
+    const response = await withTimeout(
+      fetch('https://google.serper.dev/shopping', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: query,
+          gl: 'us',
+          hl: 'en',
+          num: 30, // Increased from 20 to get more results before filtering
+        }),
+      }),
+      8000
+    );
+
+    const data = await response.json();
+    const items = data?.shopping || [];
+
+    for (const item of items) {
+      const name = item.title || "";
+      const priceStr = item.price?.replace(/[^0-9.]/g, "") || "0";
+      const price = parseFloat(priceStr);
+      const retailer = item.source || "Google Shopping";
+      const img = item.imageUrl || item.thumbnail || "";
+      const rating = item.rating;
+      const reviewCount = item.ratingCount;
+      const delivery = item.delivery;
+
+      // Relevance filtering: check if product title matches query
+      if (!isRelevantResult(name, query)) {
+        continue; // Skip irrelevant results
+      }
+
+      // Price validation: drop obviously invalid prices
+      if (price <= 0 || price > 10000) {
+        continue; // Skip products with invalid prices
+      }
+
+      if (name) {
+        products.push({
+          name,
+          price,
+          image: img,
+          retailer,
+          url: item.link || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`,
+          rating,
+          reviewCount,
+          category: guessCategory(name),
+          brand: guessBrand(name, retailer),
+          lastVerified: new Date().toISOString(),
+        });
+      }
+    }
+  } catch (error) {
+    console.error('[Serper] API request failed:', error instanceof Error ? error.message : String(error));
+  }
+
+  return products;
+}
+
+// ─── Target (ONLY WORKING SCRAPER) ────────────────────────────────────────
 export async function searchTarget(query: string): Promise<Product[]> {
   const products: Product[] = [];
   try {
-    const apiUrl = `https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=9f36aeafbe60771e321a7cc95a78140772ab3e96&channel=WEB&count=20&keyword=${encodeURIComponent(query)}&offset=0&page=%2Fs%2F${encodeURIComponent(query)}&pricing_store_id=3991&scheduled_delivery_store_id=3991&store_ids=3991&visitor_id=web`;
-    const res = await withTimeout(fetch(apiUrl, { headers: { Accept: "application/json" } }), 8000);
+    // Use environment variable, fallback to hardcoded key only in development
+    const apiKey = process.env.TARGET_API_KEY ||
+      (process.env.NODE_ENV === 'development' ? '9f36aeafbe60771e321a7cc95a78140772ab3e96' : '');
+
+    if (!apiKey) {
+      console.error('[Target] API key not configured');
+      return products;
+    }
+
+    const apiUrl = `https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=${apiKey}&channel=WEB&count=20&keyword=${encodeURIComponent(query)}&offset=0&page=%2Fs%2F${encodeURIComponent(query)}&pricing_store_id=3991&scheduled_delivery_store_id=3991&store_ids=3991&visitor_id=web`;
+    const res = await withTimeout(fetch(apiUrl, { headers: HEADERS }), 8000);
     const data = await res.json();
 
     const items = data?.data?.search?.products || [];
@@ -56,6 +209,7 @@ export async function searchTarget(query: string): Promise<Product[]> {
       const rating = item.ratings_and_reviews?.statistics?.rating?.average;
       const reviewCount = item.ratings_and_reviews?.statistics?.rating?.count;
       const tcin = item.tcin || "";
+      const categoryFromAPI = item.item?.product_classification?.item_type_name || "";
 
       if (name && price) {
         products.push({
@@ -67,154 +221,53 @@ export async function searchTarget(query: string): Promise<Product[]> {
           url: `https://www.target.com/p/-/A-${tcin}`,
           rating,
           reviewCount,
-          category: guessCategory(name),
-          brand: item.item?.primary_brand?.name || name.split(" ")[0],
-        });
-      }
-    }
-  } catch {}
-  return products;
-}
-
-// ─── Best Buy (Official Products API) ─────────────────────────────────────
-export async function searchBestBuy(query: string): Promise<Product[]> {
-  const products: Product[] = [];
-  const apiKey = process.env.BESTBUY_API_KEY;
-
-  // Skip if no API key configured
-  if (!apiKey) {
-    console.log('[Best Buy] API key not configured, skipping');
-    return products;
-  }
-
-  try {
-    // Best Buy Products API search endpoint
-    // Docs: https://developer.bestbuy.com/documentation/products-api
-    const searchUrl = `https://api.bestbuy.com/v1/products((search=${encodeURIComponent(query)}))?apiKey=${apiKey}&format=json&show=sku,name,salePrice,regularPrice,image,url,customerReviewAverage,customerReviewCount,manufacturer&pageSize=20`;
-
-    const res = await withTimeout(fetch(searchUrl), 8000);
-    const data = await res.json();
-
-    const items = data?.products || [];
-    for (const item of items) {
-      const name = item.name || "";
-      const price = item.salePrice || item.regularPrice || 0;
-      const origPrice = item.regularPrice && item.salePrice && item.regularPrice > item.salePrice
-        ? item.regularPrice
-        : undefined;
-      const img = item.image || "";
-      const rating = item.customerReviewAverage;
-      const reviewCount = item.customerReviewCount;
-
-      if (name && price) {
-        products.push({
-          name,
-          price,
-          originalPrice: origPrice,
-          image: img,
-          retailer: "Best Buy",
-          url: item.url || `https://www.bestbuy.com/site/searchpage.jsp?st=${encodeURIComponent(query)}`,
-          rating,
-          reviewCount,
-          category: guessCategory(name),
-          brand: item.manufacturer || name.split(" ")[0],
+          category: categoryFromAPI || guessCategory(name),
+          brand: item.item?.primary_brand?.name || guessBrand(name, "Target"),
+          lastVerified: new Date().toISOString(),
         });
       }
     }
   } catch (error) {
-    console.error('[Best Buy API] Search failed:', error);
+    console.error('[Target] API request failed:', error instanceof Error ? error.message : String(error));
   }
-
   return products;
 }
 
-// ─── Walmart (Public Search API) ──────────────────────────────────────────
-export async function searchWalmart(query: string): Promise<Product[]> {
-  const products: Product[] = [];
-  try {
-    // Walmart's public search API (used by their website)
-    // This is a publicly accessible endpoint that returns JSON data
-    const searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(query)}`;
+// ─── Retailer Deep Links ────────────────────────────────────────────────
+// Provides direct search links to retailer websites with proper brand colors
+export function buildRetailerDeepLinks(query: string): RetailerSearchLink[] {
+  const encodedQuery = encodeURIComponent(query);
 
-    // Use Walmart's typeahead API for better structured data
-    const typeaheadUrl = `https://www.walmart.com/typeahead/v3/complete?query=${encodeURIComponent(query)}&type=all`;
-
-    // Try the search page API first
-    const apiUrl = `https://www.walmart.com/orchestra/home/graphql/search?query=${encodeURIComponent(query)}&page=1&prg=desktop`;
-
-    const res = await withTimeout(
-      fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        }
-      }),
-      8000
-    );
-
-    const data = await res.json();
-
-    // Walmart's API response structure varies, try to extract products
-    const itemStacks = data?.data?.search?.searchResult?.itemStacks || [];
-
-    for (const stack of itemStacks) {
-      const items = stack?.items || [];
-      for (const item of items) {
-        const name = item?.name || item?.title || "";
-        const priceInfo = item?.priceInfo || item?.price;
-        const price = priceInfo?.currentPrice?.price || priceInfo?.price || 0;
-        const origPrice = priceInfo?.wasPrice || undefined;
-        const img = item?.image || item?.imageInfo?.thumbnailUrl || "";
-        const rating = item?.averageRating || item?.rating;
-        const reviewCount = item?.numberOfReviews || item?.reviewCount;
-        const productId = item?.usItemId || item?.id || "";
-
-        if (name && price) {
-          products.push({
-            name,
-            price: typeof price === 'number' ? price : parseFloat(price),
-            originalPrice: origPrice ? (typeof origPrice === 'number' ? origPrice : parseFloat(origPrice)) : undefined,
-            image: img.startsWith('http') ? img : `https://i5.walmartimages.com${img}`,
-            retailer: "Walmart",
-            url: productId ? `https://www.walmart.com/ip/${productId}` : `https://www.walmart.com/search?q=${encodeURIComponent(query)}`,
-            rating,
-            reviewCount,
-            category: guessCategory(name),
-            brand: item?.brand || name.split(" ")[0],
-          });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('[Walmart API] Search failed:', error);
-  }
-
-  return products;
-}
-
-// Macy's scraper removed - HTML scraping gets blocked by bot protection
-
-// Google Shopping scraper removed - HTML scraping gets blocked by bot protection
-
-// Fallback products removed - we only return real search results now
-
-// ─── Cached Search: Search across all retailers ──────────────────────────
-export async function cachedSearch(query: string): Promise<Product[]> {
-  const results = await Promise.allSettled([
-    searchTarget(query),
-    searchBestBuy(query),
-    searchWalmart(query),
-  ]);
-
-  const products: Product[] = [];
-
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      products.push(...result.value);
-    }
-  }
-
-  // Add lastVerified timestamp to real products
-  const now = new Date().toISOString();
-  return products.map(p => ({ ...p, lastVerified: now }));
+  return [
+    {
+      retailer: "Amazon",
+      searchUrl: `https://www.amazon.com/s?k=${encodedQuery}`,
+      logo: "#FF9900", // Amazon orange
+    },
+    {
+      retailer: "Best Buy",
+      searchUrl: `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedQuery}`,
+      logo: "#0046BE", // Best Buy blue
+    },
+    {
+      retailer: "Walmart",
+      searchUrl: `https://www.walmart.com/search?q=${encodedQuery}`,
+      logo: "#0071CE", // Walmart blue
+    },
+    {
+      retailer: "Target",
+      searchUrl: `https://www.target.com/s?searchTerm=${encodedQuery}`,
+      logo: "#CC0000", // Target red
+    },
+    {
+      retailer: "Macy's",
+      searchUrl: `https://www.macys.com/shop/search?keyword=${encodedQuery}`,
+      logo: "#E21A2C", // Macy's red
+    },
+    {
+      retailer: "Google Shopping",
+      searchUrl: `https://www.google.com/search?tbm=shop&q=${encodedQuery}`,
+      logo: "#4285F4", // Google blue
+    },
+  ];
 }
