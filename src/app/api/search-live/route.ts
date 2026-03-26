@@ -84,55 +84,9 @@ async function performSearch(query: string): Promise<SearchResponse> {
     return true;
   });
 
-  // If no valid products found, return trending products
+  // If no products found, return empty array (no fake trending products)
   if (products.length === 0) {
-    console.log(`[API] No products found for "${query}", returning trending products`);
-    products = [
-      {
-        id: 'trending-1',
-        name: "Apple AirPods Pro 2nd Gen",
-        price: 189.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL1500_.jpg",
-        retailer: "Amazon",
-        url: "https://www.amazon.com/s?k=airpods+pro+2",
-        rating: 4.7,
-        reviewCount: 45000
-      },
-      {
-        id: 'trending-2',
-        name: "Stanley Quencher H2.0 40oz",
-        price: 35.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/71Ii9xjt+oL._AC_SL1500_.jpg",
-        retailer: "Target",
-        url: "https://www.target.com/s?searchTerm=stanley+quencher",
-        rating: 4.8,
-        reviewCount: 12000
-      },
-      {
-        id: 'trending-3',
-        name: "Sony WH-1000XM5",
-        price: 298.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/51aXvjzcukL._AC_SL1500_.jpg",
-        retailer: "Amazon",
-        url: "https://www.amazon.com/s?k=sony+wh1000xm5",
-        rating: 4.7,
-        reviewCount: 32000
-      },
-      {
-        id: 'trending-4',
-        name: "Ninja Creami Ice Cream Maker",
-        price: 149.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61nzEWnbk8L._AC_SL1500_.jpg",
-        retailer: "Walmart",
-        url: "https://www.walmart.com/search?q=ninja+creami",
-        rating: 4.6,
-        reviewCount: 18000
-      }
-    ];
+    console.log(`[API] No products found for "${query}"`);
   }
 
   // Update timestamp if this is a fresh search
