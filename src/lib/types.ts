@@ -18,3 +18,24 @@ export interface SearchResponse {
   results: ProductResult[];
   totalResults: number;
 }
+
+// Types for scraper functions
+export interface Product {
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  retailer: string;
+  url: string;
+  rating?: number;
+  reviewCount?: number;
+  category?: string;
+  brand?: string;
+  lastVerified?: string;
+}
+
+export interface RetailerSearchLink {
+  retailer: string;
+  searchUrl: string;
+  logo: string;
+}
