@@ -14,12 +14,12 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="24" height="24" rx="6" fill="#14b8a6"/>
-              <path d="M17 9H7C6.44772 9 6 9.44772 6 10V18C6 18.5523 6.44772 19 7 19H17C17.5523 19 18 18.5523 18 18V10C18 9.44772 17.5523 9 17 9Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <path d="M9 9V7C9 6.46957 9.21071 5.96086 9.58579 5.58579C9.96086 5.21071 10.4696 5 11 5H13C13.5304 5 14.0391 5.21071 14.4142 5.58579C14.7893 5.96086 15 6.46957 15 7V9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="20" height="20" rx="4" stroke="#14b8a6" strokeWidth="1.5" fill="none"/>
+              <path d="M16 10C16 8.89543 15.1046 8 14 8H10C8.89543 8 8 8.89543 8 10V10C8 10 8 10 8 10V18C8 18.5523 8.44772 19 9 19H15C15.5523 19 16 18.5523 16 18V10Z" stroke="#14b8a6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M10 8V7C10 6.44772 10.4477 6 11 6H13C13.5523 6 14 6.44772 14 7V8" stroke="#14b8a6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
             </svg>
-            <span className="text-2xl font-bold text-pick-teal font-heading tracking-tight">pick</span>
+            <span className="text-xl font-medium text-black">pick</span>
           </Link>
 
           {/* Desktop Navigation */}
