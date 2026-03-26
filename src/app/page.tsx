@@ -14,6 +14,7 @@ import RetailerMarquee from '@/components/RetailerMarquee';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HowItWorks } from '@/components/HowItWorks';
 import { StatsSection } from '@/components/StatsSection';
+import { ChatWidget } from '@/components/ChatWidget';
 
 // Animation variants for staggered product grid
 const gridVariants = {
@@ -834,6 +835,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Chatbot */}
+      <ChatWidget />
     </div>
   );
 }
