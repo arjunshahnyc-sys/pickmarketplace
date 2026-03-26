@@ -15,6 +15,7 @@ import { TrustedBy } from '@/components/TrustedBy';
 import { HowItWorks } from '@/components/HowItWorks';
 import { StatsSection } from '@/components/StatsSection';
 import { ChatWidget } from '@/components/ChatWidget';
+import { PickLogo } from '@/components/PickLogo';
 
 // Animation variants for staggered product grid
 const gridVariants = {
@@ -703,7 +704,7 @@ export default function Home() {
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-[#2A9D8F]/10 flex items-center justify-center">
-                        <ShoppingBag size={18} className="text-[#2A9D8F]" />
+                        <PickLogo size={20} />
                       </div>
                       <div>
                         <p className="font-medium text-sm text-black">Sony WH-1000XM5</p>
@@ -820,7 +821,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6 py-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <ShoppingBag size={18} strokeWidth={1.5} className="text-[#2A9D8F]" />
+              <PickLogo size={20} />
               <span className="text-sm font-medium text-black">pick</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-black/60">

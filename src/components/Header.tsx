@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import { ShoppingBag } from 'lucide-react';
+import { PickLogo } from './PickLogo';
 
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -15,7 +15,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <ShoppingBag size={24} strokeWidth={1.5} className="text-[#2A9D8F]" />
+            <PickLogo size={28} />
             <span className="text-xl font-medium text-black">pick</span>
           </Link>
 
