@@ -5,7 +5,10 @@ import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-
 import { motion } from 'motion/react';
 import { SearchBar } from '@/components/SearchBar';
 import ProductCard from '@/components/ProductCard';
-import type { SearchResponse } from '@/lib/types';
+import SearchSection from '@/components/SearchSection';
+import CompareDrawer from '@/components/CompareDrawer';
+import CompareModal from '@/components/CompareModal';
+import type { SearchResponse, Product } from '@/lib/types';
 // Removed getTrendingProducts - using static trending searches instead
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
@@ -40,6 +43,15 @@ export default function Home() {
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
   const [searchResponse, setSearchResponse] = useState<any>(null);
 
+  // Compare mode state
+  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
+  // Filter and sort state
+  const [sortBy, setSortBy] = useState('relevance');
+  const [showOnSaleOnly, setShowOnSaleOnly] = useState(false);
+
   // Cycling loading text
   useEffect(() => {
     if (!isLoading) return;
@@ -60,6 +72,55 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, [isLoading]);
+
+  // ESC key handler to exit compare mode
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isCompareMode) {
+        setIsCompareMode(false);
+        setSelectedProducts([]);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isCompareMode]);
+
+  // Compare mode handlers
+  const handleCompareClick = () => {
+    setIsCompareMode(!isCompareMode);
+    if (isCompareMode) {
+      setSelectedProducts([]);
+    }
+  };
+
+  const handleProductSelect = (product: Product) => {
+    setSelectedProducts((prev) => {
+      const isAlreadySelected = prev.some((p) => p.url === product.url);
+      if (isAlreadySelected) {
+        return prev.filter((p) => p.url !== product.url);
+      }
+      if (prev.length >= 2) {
+        return [prev[1], product];
+      }
+      return [...prev, product];
+    });
+  };
+
+  const handleRemoveProduct = (productUrl: string) => {
+    setSelectedProducts((prev) => prev.filter((p) => p.url !== productUrl));
+  };
+
+  const handleCompareNow = () => {
+    if (selectedProducts.length === 2) {
+      setShowCompareModal(true);
+    }
+  };
+
+  const handleCloseCompareMode = () => {
+    setIsCompareMode(false);
+    setSelectedProducts([]);
+  };
 
   const handleSearch = async (searchQuery: string) => {
     // Check if user has searches remaining (if authenticated and on free plan)
@@ -213,6 +274,49 @@ export default function Home() {
   const resultRetailers = results.length > 0
     ? Array.from(new Set(results.map((p: any) => p.retailer)))
     : [];
+
+  // Filter and sort results
+  const getFilteredAndSortedResults = () => {
+    let filtered = [...results];
+
+    // Apply "On Sale Only" filter
+    if (showOnSaleOnly) {
+      filtered = filtered.filter(
+        (p: Product) => p.originalPrice && p.originalPrice > p.price
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price-low':
+        filtered.sort((a: Product, b: Product) => a.price - b.price);
+        break;
+      case 'price-high':
+        filtered.sort((a: Product, b: Product) => b.price - a.price);
+        break;
+      case 'biggest-sale':
+        filtered.sort((a: Product, b: Product) => {
+          const discountA =
+            a.originalPrice && a.originalPrice > a.price
+              ? ((a.originalPrice - a.price) / a.originalPrice) * 100
+              : 0;
+          const discountB =
+            b.originalPrice && b.originalPrice > b.price
+              ? ((b.originalPrice - b.price) / b.originalPrice) * 100
+              : 0;
+          return discountB - discountA;
+        });
+        break;
+      case 'relevance':
+      default:
+        // Keep original order
+        break;
+    }
+
+    return filtered;
+  };
+
+  const filteredResults = getFilteredAndSortedResults();
 
   return (
     <div className="relative z-10 texture-bg min-h-screen">
@@ -473,11 +577,11 @@ export default function Home() {
             ) : results.length > 0 ? (
               <>
                 {/* Results header */}
-                <div className="mb-8">
+                <div className="mb-6">
                   <h2 className="text-2xl font-semibold mb-2 text-black">
                     Found {results.length} results for &quot;{query}&quot;
                   </h2>
-                  <p className="text-sm text-black/60">
+                  <p className="text-sm text-black/60 mb-4">
                     {resultRetailers.length > 0 && (
                       <>
                         Across {resultRetailers.join(', ')} •{' '}
@@ -487,6 +591,17 @@ export default function Home() {
                   </p>
                 </div>
 
+                {/* Search Section with Filters */}
+                <SearchSection
+                  resultsCount={filteredResults.length}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  showOnSaleOnly={showOnSaleOnly}
+                  onOnSaleToggle={() => setShowOnSaleOnly(!showOnSaleOnly)}
+                  onCompareClick={handleCompareClick}
+                  isCompareMode={isCompareMode}
+                />
+
                 {/* Product grid with stagger animation */}
                 <motion.div
                   variants={gridVariants}
@@ -495,20 +610,25 @@ export default function Home() {
                   viewport={{ once: true, amount: 0.05 }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                 >
-                  {results
+                  {filteredResults
                     .slice(
                       0,
                       isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10
                     )
                     .map((product, i) => (
                       <motion.div key={product.id || i} variants={cardVariants}>
-                        <ProductCard product={product} />
+                        <ProductCard
+                          product={product}
+                          isCompareMode={isCompareMode}
+                          isSelected={selectedProducts.some((p) => p.url === product.url)}
+                          onSelect={handleProductSelect}
+                        />
                       </motion.div>
                     ))}
                 </motion.div>
 
                 {/* Show upgrade prompt if there are more results */}
-                {results.length >
+                {filteredResults.length >
                   (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10) && (
                   <div
                     className="mt-12 text-center p-8 border border-black/10 bg-white"
@@ -534,7 +654,7 @@ export default function Home() {
                     </h3>
                     <p className="text-black/60 mb-4">
                       Upgrade to Premium to see{' '}
-                      {results.length -
+                      {filteredResults.length -
                         (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10)}{' '}
                       more results
                     </p>
@@ -839,6 +959,24 @@ export default function Home() {
 
       {/* Chatbot */}
       <ChatWidget />
+
+      {/* Compare Drawer */}
+      {isCompareMode && selectedProducts.length > 0 && (
+        <CompareDrawer
+          selectedProducts={selectedProducts}
+          onRemove={handleRemoveProduct}
+          onCompare={handleCompareNow}
+          onClose={handleCloseCompareMode}
+        />
+      )}
+
+      {/* Compare Modal */}
+      {showCompareModal && selectedProducts.length === 2 && (
+        <CompareModal
+          products={[selectedProducts[0], selectedProducts[1]]}
+          onClose={() => setShowCompareModal(false)}
+        />
+      )}
     </div>
   );
 }
