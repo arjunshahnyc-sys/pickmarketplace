@@ -4,6 +4,7 @@ import { Tag, ArrowUpDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import BlurOverlay from './gating/BlurOverlay';
 import { useState } from 'react';
+import { Product } from '@/lib/types';
 
 interface SearchSectionProps {
   resultsCount: number;
@@ -13,6 +14,9 @@ interface SearchSectionProps {
   onOnSaleToggle: () => void;
   onCompareClick: () => void;
   isCompareMode: boolean;
+  products?: Product[];
+  query?: string;
+  onSearch?: (query: string) => void;
 }
 
 export default function SearchSection({
@@ -23,6 +27,9 @@ export default function SearchSection({
   onOnSaleToggle,
   onCompareClick,
   isCompareMode,
+  products = [],
+  query = '',
+  onSearch,
 }: SearchSectionProps) {
   const { canUseFeature } = useAuth();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -35,73 +42,142 @@ export default function SearchSection({
     }
   };
 
-  return (
-    <div className="mb-6 space-y-4">
-      {/* Filter and Sort Bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* On Sale Only Toggle */}
-        <button
-          onClick={onOnSaleToggle}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-            showOnSaleOnly
-              ? 'bg-[#2A9D8F] text-white border-[#2A9D8F]'
-              : 'bg-white text-black border-black/10 hover:border-[#2A9D8F]'
-          }`}
-        >
-          <Tag size={16} />
-          <span className="text-sm font-medium">On Sale Only</span>
-        </button>
+  // PINCHPOINT 3 FIX - Calculate price range
+  const minPrice = products.length > 0 ? Math.min(...products.map(p => p.price)) : 0;
+  const maxPrice = products.length > 0 ? Math.max(...products.map(p => p.price)) : 0;
 
-        {/* Sort Dropdown */}
-        <div className="relative">
-          <select
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value)}
-            className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-black hover:border-[#2A9D8F] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+  // PINCHPOINT 8 FIX - Generate search refinements
+  const getSearchRefinements = (q: string): string[] => {
+    if (!q) return [];
+    const lower = q.toLowerCase();
+    const refinements: string[] = [];
+
+    // Price modifiers
+    if (!lower.includes('under') && !lower.includes('cheap')) {
+      refinements.push(`cheap ${q}`);
+      refinements.push(`${q} under $50`);
+      refinements.push(`${q} under $100`);
+    }
+
+    // Quality modifiers
+    if (!lower.includes('best') && !lower.includes('rated')) {
+      refinements.push(`best rated ${q}`);
+    }
+
+    if (!lower.includes('sale') && !lower.includes('discount')) {
+      refinements.push(`${q} on sale`);
+    }
+
+    // Category-specific modifiers
+    if (lower.includes('shoe') || lower.includes('sneaker')) {
+      if (!lower.includes('boys')) refinements.push(`boys ${q}`);
+      if (!lower.includes('girls')) refinements.push(`girls ${q}`);
+      if (!lower.includes('toddler')) refinements.push(`toddler ${q}`);
+      if (!lower.includes('running')) refinements.push(`running ${q}`);
+    }
+
+    if (lower.includes('laptop') || lower.includes('computer')) {
+      if (!lower.includes('gaming')) refinements.push(`gaming ${q}`);
+      if (!lower.includes('student')) refinements.push(`${q} for students`);
+    }
+
+    return refinements.slice(0, 6);
+  };
+
+  const refinements = getSearchRefinements(query);
+
+  return (
+    <div className="mb-6">
+      {/* PINCHPOINT 2 FIX - Sticky Filter Bar */}
+      <div className="sticky top-0 z-20 bg-white py-3 border-b border-pick-border mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* On Sale Only Toggle */}
+          <button
+            onClick={onOnSaleToggle}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+              showOnSaleOnly
+                ? 'bg-[#2A9D8F] text-white border-[#2A9D8F]'
+                : 'bg-white text-black border-black/10 hover:border-[#2A9D8F]'
+            }`}
           >
-            <option value="relevance">Sort by Relevance</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="biggest-sale">Biggest Sale</option>
-          </select>
-          <ArrowUpDown
-            size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-          />
+            <Tag size={16} />
+            <span className="text-sm font-medium">On Sale Only</span>
+          </button>
+
+          {/* Sort Dropdown with Label */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-black">Sort:</span>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => onSortChange(e.target.value)}
+                className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-black hover:border-[#2A9D8F] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="biggest-sale">Biggest Sale</option>
+              </select>
+              <ArrowUpDown
+                size={16}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
+              />
+            </div>
+          </div>
+
+          {/* Compare Button */}
+          <button
+            onClick={handleCompareClick}
+            className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+              isCompareMode
+                ? 'bg-[#2A9D8F] text-white border-[#2A9D8F]'
+                : 'bg-white text-black border-black/10 hover:border-[#2A9D8F] hover:text-[#2A9D8F]'
+            }`}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <span className="text-sm font-medium">
+              {isCompareMode ? 'Exit Compare' : 'Compare'}
+            </span>
+          </button>
         </div>
 
-        {/* Compare Button */}
-        <button
-          onClick={handleCompareClick}
-          className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-            isCompareMode
-              ? 'bg-[#2A9D8F] text-white border-[#2A9D8F]'
-              : 'bg-white text-black border-black/10 hover:border-[#2A9D8F] hover:text-[#2A9D8F]'
-          }`}
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <span className="text-sm font-medium">
-            {isCompareMode ? 'Exit Compare' : 'Compare'}
-          </span>
-        </button>
+        {/* Results Count with Price Range - PINCHPOINT 3 */}
+        <div className="text-sm text-black/60 mt-2">
+          {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
+          {products.length > 0 && (
+            <span className="ml-2 text-pick-teal font-semibold">
+              • ${minPrice.toFixed(2)} – ${maxPrice.toFixed(2)}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Results Count */}
-      <div className="text-sm text-black/60">
-        {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
-      </div>
+      {/* PINCHPOINT 8 - Search Refinement Suggestions */}
+      {refinements.length > 0 && onSearch && (
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+          {refinements.map((term) => (
+            <button
+              key={term}
+              onClick={() => onSearch(term)}
+              className="px-3 py-1.5 bg-white border border-pick-border rounded-full text-xs whitespace-nowrap hover:border-pick-teal hover:text-pick-teal transition"
+            >
+              {term}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Upgrade Prompt for Compare Feature */}
       {showUpgradePrompt && (

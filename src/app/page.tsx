@@ -453,25 +453,25 @@ export default function Home() {
         )}
 
         {/* Hero Section with animation */}
-        <section className="max-w-5xl mx-auto px-6 pt-24 pb-16">
+        <section className="max-w-5xl mx-auto px-6 pt-16 pb-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="max-w-2xl mb-12"
+            className="max-w-2xl mb-8"
           >
-            <h1 className="text-8xl md:text-9xl font-bold mb-6 tracking-tighter leading-[0.95] text-black">
+            {/* Search Bar First - PINCHPOINT 1 FIX */}
+            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+
+            {/* Hero Text Below Search - Smaller */}
+            <h1 className="text-3xl md:text-4xl font-bold mt-6 mb-3 tracking-tight text-black">
               FIND SIMILAR. PAY LESS.
             </h1>
-            <p
-              className="text-base text-black/60 leading-relaxed max-w-lg mb-8"
-            >
+            <p className="text-sm text-black/60 leading-relaxed max-w-lg">
               We don't just find your product cheaper—we find similar products with comparable
               reviews at better prices that others miss.
             </p>
           </motion.div>
-
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
 
           {/* Quick search hints */}
           {!hasSearched && (
@@ -548,9 +548,9 @@ export default function Home() {
           </motion.section>
         )}
 
-        {/* Results Section */}
+        {/* Results Section - PINCHPOINT 9 FIX - Added pb-24 for chatbot clearance */}
         {hasSearched && (
-          <section className="max-w-5xl mx-auto px-6 pb-24">
+          <section className="max-w-5xl mx-auto px-6 pb-32">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <div className="flex items-center gap-3 text-black/60 mb-4">
@@ -600,6 +600,9 @@ export default function Home() {
                   onOnSaleToggle={() => setShowOnSaleOnly(!showOnSaleOnly)}
                   onCompareClick={handleCompareClick}
                   isCompareMode={isCompareMode}
+                  products={filteredResults}
+                  query={query}
+                  onSearch={handleSearch}
                 />
 
                 {/* Product grid with stagger animation */}
@@ -608,23 +611,28 @@ export default function Home() {
                   initial="hidden"
                   whileInView="show"
                   viewport={{ once: true, amount: 0.05 }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
                 >
-                  {filteredResults
-                    .slice(
+                  {(() => {
+                    // PINCHPOINT 5 FIX - Calculate best deal
+                    const visible = filteredResults.slice(
                       0,
                       isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10
-                    )
-                    .map((product, i) => (
+                    );
+                    const bestDealPrice = visible.length > 0 ? Math.min(...visible.map(p => p.price)) : 0;
+
+                    return visible.map((product, i) => (
                       <motion.div key={product.id || i} variants={cardVariants}>
                         <ProductCard
                           product={product}
                           isCompareMode={isCompareMode}
                           isSelected={selectedProducts.some((p) => p.url === product.url)}
                           onSelect={handleProductSelect}
+                          isBestDeal={product.price === bestDealPrice && bestDealPrice > 0}
                         />
                       </motion.div>
-                    ))}
+                    ));
+                  })()}
                 </motion.div>
 
                 {/* Show upgrade prompt if there are more results */}

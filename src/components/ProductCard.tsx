@@ -28,13 +28,15 @@ interface ProductCardProps {
   isCompareMode?: boolean;
   isSelected?: boolean;
   onSelect?: (product: Product) => void;
+  isBestDeal?: boolean;
 }
 
 export default function ProductCard({
   product,
   isCompareMode = false,
   isSelected = false,
-  onSelect
+  onSelect,
+  isBestDeal = false
 }: ProductCardProps) {
   const savings = product.originalPrice ? product.originalPrice - product.price : 0;
   const pct = product.originalPrice ? Math.round((savings / product.originalPrice) * 100) : 0;
@@ -105,6 +107,12 @@ export default function ProductCard({
             EXAMPLE
           </span>
         )}
+        {/* PINCHPOINT 5 FIX - Best Deal Badge */}
+        {isBestDeal && !product.isFallback && (
+          <span className="absolute top-2 right-2 bg-pick-teal text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+            ★ Best Price
+          </span>
+        )}
       </div>
 
       <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${colorClass}`}>
@@ -115,10 +123,18 @@ export default function ProductCard({
         {product.name}
       </h3>
 
-      <div className="mt-2 flex items-baseline gap-2">
+      <div className="mt-2 flex items-baseline gap-2 flex-wrap">
         <span className="font-heading font-bold text-lg">${product.price.toFixed(2)}</span>
         {product.originalPrice && product.originalPrice > product.price && (
-          <span className="text-pick-muted text-xs line-through">${product.originalPrice.toFixed(2)}</span>
+          <>
+            <span className="text-pick-muted text-xs line-through">${product.originalPrice.toFixed(2)}</span>
+            {/* PINCHPOINT 6 FIX - SALE Badge */}
+            {savings > 0 && !product.isFallback && (
+              <span className="text-xs font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                SALE
+              </span>
+            )}
+          </>
         )}
       </div>
 

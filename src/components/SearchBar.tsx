@@ -36,7 +36,7 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           className="btn-primary absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 bg-[#2A9D8F] hover:bg-[#238B7E] text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 transition-colors"
           style={{ borderRadius: '6px' }}
         >
-          <span>{isLoading ? 'Searching' : 'Compare prices'}</span>
+          <span>{isLoading ? 'Searching' : 'Search deals'}</span>
           {!isLoading && <ArrowRight size={14} />}
           {isLoading && (
             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full spinner" />

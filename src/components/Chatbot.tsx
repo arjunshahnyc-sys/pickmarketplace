@@ -242,11 +242,11 @@ export default function Chatbot({ onSearch }: { onSearch?: (q: string) => void }
 
   return (
     <>
-      {/* Toggle */}
+      {/* Toggle - PINCHPOINT 9 FIX */}
       <button
         onClick={() => setOpen(!open)}
         aria-label={open ? "Close shopping assistant" : "Open shopping assistant"}
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 bg-pick-teal text-white rounded-full shadow-lg hover:scale-105 transition flex items-center justify-center"
+        className="fixed bottom-5 right-5 z-50 w-12 h-12 bg-pick-teal/80 hover:bg-pick-teal text-white rounded-full shadow-lg hover:scale-105 hover:shadow-xl transition-all flex items-center justify-center"
       >
         {open ? (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
