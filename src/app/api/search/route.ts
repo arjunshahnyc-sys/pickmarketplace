@@ -640,33 +640,33 @@ const mockProducts: Record<string, ProductResult[]> = {
   ],
 };
 
-// Search products by query
+// Populate missing URLs with search URLs
+function populateUrls(products: ProductResult[], query: string): ProductResult[] {
+  return products.map(product => ({
+    ...product,
+    prices: product.prices.map(price => ({
+      ...price,
+      url: price.url || getSearchUrl(price.retailer, product.name || query)
+    }))
+  }));
+}
+
+// Search products by query - ACTUALLY filter by the query param
 function searchProducts(query: string): ProductResult[] {
   const normalizedQuery = query.toLowerCase();
   const results: ProductResult[] = [];
   const addedIds = new Set<string>();
 
-  // Check category matches
-  for (const [category, products] of Object.entries(mockProducts)) {
-    if (normalizedQuery.includes(category) || category.includes(normalizedQuery)) {
-      for (const product of products) {
-        if (!addedIds.has(product.id)) {
-          results.push(product);
-          addedIds.add(product.id);
-        }
-      }
-    }
-  }
-
-  // Check product name matches
+  // First: Check product name matches against the actual query
   for (const products of Object.values(mockProducts)) {
     for (const product of products) {
       if (!addedIds.has(product.id)) {
         const productNameLower = product.name.toLowerCase();
-        const queryWords = normalizedQuery.split(' ');
-        const hasMatch = queryWords.some(word =>
-          word.length > 2 && productNameLower.includes(word)
-        );
+        const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 2);
+
+        // Match if any significant query word appears in product name
+        const hasMatch = queryWords.some(word => productNameLower.includes(word));
+
         if (hasMatch) {
           results.push(product);
           addedIds.add(product.id);
@@ -675,13 +675,22 @@ function searchProducts(query: string): ProductResult[] {
     }
   }
 
-  // If still no results, return sample products
+  // Second: If no direct name matches, check category matches
   if (results.length === 0) {
-    const allProducts = Object.values(mockProducts).flat();
-    return allProducts.slice(0, 4);
+    for (const [category, products] of Object.entries(mockProducts)) {
+      if (normalizedQuery.includes(category) || category.includes(normalizedQuery)) {
+        for (const product of products) {
+          if (!addedIds.has(product.id)) {
+            results.push(product);
+            addedIds.add(product.id);
+          }
+        }
+      }
+    }
   }
 
-  return results;
+  // ALWAYS populate URLs before returning
+  return populateUrls(results, query);
 }
 
 // Handle CORS preflight
@@ -723,7 +732,8 @@ export async function GET(request: NextRequest) {
           prices: [{
             retailer: product.retailer,
             amount: product.price,
-            url: product.url
+            // ALWAYS ensure URLs are populated, never empty
+            url: product.url || getSearchUrl(product.retailer, product.name || query)
           }],
           lowestPrice: product.price,
           highestPrice: product.price,
@@ -740,6 +750,9 @@ export async function GET(request: NextRequest) {
       allResults = [...allResults, ...mockResults];
     }
 
+    // Ensure ALL results have populated URLs before returning
+    allResults = populateUrls(allResults, query);
+
     const response: SearchResponse = {
       query,
       results: allResults,
@@ -750,7 +763,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Search API error:', error);
 
-    // Ultimate fallback - use mock products
+    // Ultimate fallback - use mock products (already has URLs populated)
     const mockResults = searchProducts(query);
     const response: SearchResponse = {
       query,
