@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'About Us - Pick Marketplace',
-  description: 'Pick Marketplace helps you find the best prices across Amazon, Target, Best Buy, Walmart, and 50+ retailers. Compare deals and save money on every purchase.',
+  description: 'Pick Marketplace helps you find the best prices from Target, Google Shopping, and more. Compare deals and save money on every purchase.',
 };
 
 export default function AboutPage() {
@@ -20,14 +20,14 @@ export default function AboutPage() {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-              Pick Marketplace is a price comparison tool that helps you find the best deals across major online retailers. We scan prices from Amazon, Target, Best Buy, Walmart, Macy's, Google Shopping, and more—so you don't have to.
+              Pick Marketplace is a price comparison tool that helps you find the best deals across major online retailers. We scan prices from Target directly, plus aggregated results from Google Shopping (which includes Amazon, Walmart, and other merchants)—so you don't have to.
             </p>
 
             <h2 className="text-2xl font-semibold text-black mt-12 mb-4">
               What We Do
             </h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              When you search for a product on Pick Marketplace, we check current prices and availability across 50+ retailers in real-time. Our system aggregates results, compares total costs (including shipping when available), and shows you the best options ranked by price.
+              When you search for a product on Pick Marketplace, we check Target and Google Shopping results. Our system aggregates results, compares total costs (including shipping when available), and shows you the best options ranked by price.
             </p>
             <p className="text-gray-700 mb-6 leading-relaxed">
               Whether you're shopping for electronics, clothing, home goods, kitchen appliances, or beauty products, Pick Marketplace makes it easy to find the lowest price without manually checking multiple retailer websites.
@@ -38,7 +38,7 @@ export default function AboutPage() {
             </h2>
             <ul className="list-disc pl-6 text-gray-700 space-y-3 mb-6">
               <li>
-                <strong>Multi-retailer coverage:</strong> We check prices across Amazon, Target, Best Buy, Walmart, and dozens of other major retailers—not just one or two.
+                <strong>Multi-retailer coverage:</strong> We check Target API directly, plus aggregated results from Google Shopping—not just one or two sources.
               </li>
               <li>
                 <strong>Direct product links:</strong> When available, we link directly to product pages so you can buy immediately. When we show example products, we clearly label them.

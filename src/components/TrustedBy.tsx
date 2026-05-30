@@ -6,7 +6,7 @@ export function TrustedBy() {
   return (
     <section className="py-8 border-y border-black/10 bg-white/50">
       <p className="text-center text-xs text-black/40 uppercase tracking-[0.2em] mb-6 font-medium">
-        Searching prices across 50+ retailers
+        Prices from Target, Google Shopping & more
       </p>
       <div className="flex justify-center items-center gap-10 flex-wrap max-w-4xl mx-auto opacity-40 grayscale hover:opacity-60 transition-opacity">
         {retailerLogos.map((retailer) => (

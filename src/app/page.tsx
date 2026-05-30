@@ -19,6 +19,9 @@ import { HowItWorks } from '@/components/HowItWorks';
 import { StatsSection } from '@/components/StatsSection';
 import { ChatWidget } from '@/components/ChatWidget';
 import { PickLogo } from '@/components/PickLogo';
+import SavingsCounter from '@/components/home/SavingsCounter';
+import Testimonials from '@/components/home/Testimonials';
+import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 
 // Animation variants for staggered product grid
 const gridVariants = {
@@ -57,12 +60,12 @@ export default function Home() {
     if (!isLoading) return;
 
     const retailers = [
-      'Searching Amazon...',
-      'Checking Target...',
-      'Scanning Best Buy...',
-      'Looking at Walmart...',
-      "Browsing Macy's...",
-      'Checking Nordstrom...',
+      'Searching Target...',
+      'Checking Google Shopping...',
+      'Finding best prices...',
+      'Comparing deals...',
+      'Analyzing products...',
+      'Loading results...',
     ];
     let i = 0;
     const interval = setInterval(() => {
@@ -313,7 +316,9 @@ export default function Home() {
         break;
     }
 
-    return filtered;
+    // Enhance with product grouping and savings info
+    const enhanced = enhanceProductsWithGroupInfo(filtered);
+    return enhanced;
   };
 
   const filteredResults = getFilteredAndSortedResults();
@@ -460,24 +465,28 @@ export default function Home() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="max-w-2xl mb-8"
           >
-            {/* Search Bar First - PINCHPOINT 1 FIX */}
-            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-
-            {/* Hero Text Below Search - Smaller */}
-            <h1 className="text-3xl md:text-4xl font-bold mt-6 mb-3 tracking-tight text-black">
-              FIND SIMILAR. PAY LESS.
+            {/* Hero Text First on Mobile, Search Second */}
+            <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight text-black">
+              Still broke. Still shopping.
             </h1>
-            <p className="text-sm text-black/60 leading-relaxed max-w-lg">
-              We don't just find your product cheaper—we find similar products with comparable
-              reviews at better prices that others miss.
+            <p className="text-sm text-black/60 leading-relaxed max-w-lg mb-6">
+              Pick searches every store at once so you stop getting robbed. Built for the people who counted change at CVS last week.
             </p>
+
+            {/* Savings Counter */}
+            {!hasSearched && <SavingsCounter />}
+
+            {/* Search Bar */}
+            <div className="mt-6">
+              <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+            </div>
           </motion.div>
 
           {/* Quick search hints */}
           {!hasSearched && (
             <div className="mt-8 flex items-center gap-3 flex-wrap">
               <span className="text-sm text-black/60">Try:</span>
-              {['Sony WH-1000XM5', 'MacBook Air M3', 'KitchenAid mixer', 'Dyson vacuum'].map(
+              {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Hoodies', 'Laptops', 'Going-Out Fits'].map(
                 (term) => (
                   <button
                     key={term}
@@ -498,8 +507,37 @@ export default function Home() {
         {/* Retailer Marquee */}
         {!hasSearched && <RetailerMarquee />}
 
-        {/* How It Works Section */}
-        {!hasSearched && <HowItWorks />}
+        {/* How It Works Section - Simple 3-card version */}
+        {!hasSearched && (
+          <section className="max-w-5xl mx-auto px-6 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
+                  1
+                </div>
+                <h3 className="font-semibold text-black mb-2">Paste or search</h3>
+                <p className="text-sm text-black/60">Drop in what you want. We'll take it from there.</p>
+              </div>
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
+                  2
+                </div>
+                <h3 className="font-semibold text-black mb-2">See every store</h3>
+                <p className="text-sm text-black/60">Compare prices from multiple online stores.</p>
+              </div>
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
+                  3
+                </div>
+                <h3 className="font-semibold text-black mb-2">Go where it's cheapest</h3>
+                <p className="text-sm text-black/60">Click. Buy. Move on with your day.</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Testimonials */}
+        {!hasSearched && <Testimonials />}
 
         {/* Stats Section */}
         {!hasSearched && <StatsSection />}
@@ -614,12 +652,13 @@ export default function Home() {
                   className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
                 >
                   {(() => {
-                    // PINCHPOINT 5 FIX - Calculate best deal
+                    // Show ALL results for unauthenticated users, limit for authenticated free users
                     const visible = filteredResults.slice(
                       0,
-                      isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10
+                      !isAuthenticated
+                        ? filteredResults.length  // No limit for anonymous first-time visitors
+                        : Number(getFeatureLimit('resultsPerSearch'))  // Limit for logged-in free users
                     );
-                    const bestDealPrice = visible.length > 0 ? Math.min(...visible.map(p => p.price)) : 0;
 
                     return visible.map((product, i) => (
                       <motion.div key={product.id || i} variants={cardVariants}>
@@ -628,16 +667,15 @@ export default function Home() {
                           isCompareMode={isCompareMode}
                           isSelected={selectedProducts.some((p) => p.url === product.url)}
                           onSelect={handleProductSelect}
-                          isBestDeal={product.price === bestDealPrice && bestDealPrice > 0}
                         />
                       </motion.div>
                     ));
                   })()}
                 </motion.div>
 
-                {/* Show upgrade prompt if there are more results */}
-                {filteredResults.length >
-                  (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10) && (
+                {/* Show upgrade prompt only for authenticated free users */}
+                {isAuthenticated && user?.plan === 'free' &&
+                  filteredResults.length > Number(getFeatureLimit('resultsPerSearch')) && (
                   <div
                     className="mt-12 text-center p-8 border border-black/10 bg-white"
                     style={{ borderRadius: '8px' }}
@@ -662,8 +700,7 @@ export default function Home() {
                     </h3>
                     <p className="text-black/60 mb-4">
                       Upgrade to Premium to see{' '}
-                      {filteredResults.length -
-                        (isAuthenticated ? Number(getFeatureLimit('resultsPerSearch')) : 10)}{' '}
+                      {filteredResults.length - Number(getFeatureLimit('resultsPerSearch'))}{' '}
                       more results
                     </p>
                     <a
@@ -674,6 +711,21 @@ export default function Home() {
                       Upgrade Now
                     </a>
                   </div>
+                )}
+
+                {/* Affiliate & Legal - collapsed below results */}
+                {!isLoading && results.length > 0 && (
+                  <details className="mt-8 border border-black/10 rounded-lg bg-white/50 text-xs text-black/50">
+                    <summary className="px-4 py-3 cursor-pointer hover:bg-black/5">
+                      Affiliate Disclosure & Legal
+                    </summary>
+                    <div className="px-4 pb-4 space-y-2">
+                      <p>Pick may earn a commission from purchases made through our links.
+                         This doesn&apos;t affect prices you pay.</p>
+                      <p>Prices shown are estimates from Target API and Google Shopping.
+                         Verify final pricing on retailer sites.</p>
+                    </div>
+                  </details>
                 )}
               </>
             ) : (
@@ -739,7 +791,7 @@ export default function Home() {
                       Unlike Honey and other extensions that only check if your exact product is
                       cheaper elsewhere, Pick goes further. We search for{' '}
                       <strong>similar products with comparable reviews</strong> across{' '}
-                      {retailers.length} major retailers.
+                      multiple stores.
                     </p>
                     <p className="text-black/60 leading-relaxed">
                       The best deal often isn't the same product at a lower price—it's a comparable
@@ -750,12 +802,15 @@ export default function Home() {
               </div>
             </motion.section>
 
-            {/* Retailers grid */}
+            {/* Retailers - Compact badges */}
             <section className="max-w-5xl mx-auto px-6 py-12">
-              <p className="text-sm text-black/60 mb-4">We search across</p>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="text-sm font-medium text-black mb-4 text-center">We check these stores</h3>
+              <div className="flex flex-wrap justify-center gap-2">
                 {retailers.map((retailer) => (
-                  <span key={retailer} className="retailer-badge">
+                  <span
+                    key={retailer}
+                    className="px-3 py-1.5 bg-white border border-black/10 rounded-full text-xs text-black/70"
+                  >
                     {retailer}
                   </span>
                 ))}
@@ -797,10 +852,10 @@ export default function Home() {
                       <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">02</span>
                       <div>
                         <h3 className="font-medium mb-1.5 text-black">
-                          We query {retailers.length} retailers
+                          We check Target directly and aggregate Google Shopping results from various merchants
                         </h3>
                         <p className="text-sm text-black/60 leading-relaxed">
-                          Pick checks Amazon, Walmart, Target, Best Buy, and more simultaneously for
+                          Pick queries Target API directly and aggregates results from Google Shopping for
                           current prices and similar products.
                         </p>
                       </div>

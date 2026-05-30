@@ -12,6 +12,10 @@ interface Product {
   brand?: string;
   isFallback?: boolean;
   lastVerified?: string;
+  isLowestInGroup?: boolean;
+  groupSavingsAmount?: number;
+  groupSavingsPercent?: number;
+  groupSize?: number;
 }
 
 const RETAILER_COLORS: Record<string, string> = {
@@ -29,6 +33,10 @@ interface ProductCardProps {
   isSelected?: boolean;
   onSelect?: (product: Product) => void;
   isBestDeal?: boolean;
+  isLowestInGroup?: boolean;
+  groupSavingsAmount?: number;
+  groupSavingsPercent?: number;
+  groupSize?: number;
 }
 
 export default function ProductCard({
@@ -36,8 +44,17 @@ export default function ProductCard({
   isCompareMode = false,
   isSelected = false,
   onSelect,
-  isBestDeal = false
+  isBestDeal = false,
+  isLowestInGroup,
+  groupSavingsAmount,
+  groupSavingsPercent,
+  groupSize
 }: ProductCardProps) {
+  // Use props first, fallback to product properties
+  const showLowestPrice = isLowestInGroup ?? product.isLowestInGroup;
+  const savingsAmount = groupSavingsAmount ?? product.groupSavingsAmount;
+  const savingsPercent = groupSavingsPercent ?? product.groupSavingsPercent;
+  const productGroupSize = groupSize ?? product.groupSize;
   const savings = product.originalPrice ? product.originalPrice - product.price : 0;
   const pct = product.originalPrice ? Math.round((savings / product.originalPrice) * 100) : 0;
   const colorClass = RETAILER_COLORS[product.retailer] || "bg-gray-100 text-gray-700";
@@ -112,6 +129,37 @@ export default function ProductCard({
           <span className="absolute top-2 right-2 bg-pick-teal text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
             ★ Best Price
           </span>
+        )}
+        {/* Lowest Price Badge - Savings Moment */}
+        {showLowestPrice && !product.isFallback && savingsAmount && savingsAmount > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-600 to-green-500 text-white px-3 py-2 rounded-b-lg">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <svg
+                  className="w-4 h-4 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold leading-tight">Lowest Price</div>
+                  {savingsPercent && savingsPercent > 5 && productGroupSize && productGroupSize > 1 && (
+                    <div className="text-[10px] opacity-90 leading-tight">
+                      {Math.round(savingsPercent)}% less than {productGroupSize - 1} other {productGroupSize === 2 ? 'store' : 'stores'}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-xs font-bold whitespace-nowrap">
+                Save ${savingsAmount.toFixed(2)}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

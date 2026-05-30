@@ -14,7 +14,7 @@ export default function RetailerMarquee() {
       className="py-10 border-y border-black/10 bg-white/50"
     >
       <p className="text-center text-xs text-black/40 mb-6 uppercase tracking-[0.2em] font-medium">
-        Searching across 50+ retailers in real time
+        Comparing prices from top online stores
       </p>
       <Marquee
         speed={35}

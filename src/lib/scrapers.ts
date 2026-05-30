@@ -108,6 +108,89 @@ function isRelevantResult(title: string, query: string): boolean {
   return matchPercentage >= 0.5; // At least 50% of query words must appear in title
 }
 
+// ─── Direct Retailer Search URL Builder ────────────────────────────────
+/**
+ * Maps a retailer source name to a direct search URL for a product.
+ * This avoids Google intermediary pages and sends users directly to the retailer.
+ */
+function buildDirectRetailerUrl(retailerSource: string, productTitle: string): string | null {
+  const encodedTitle = encodeURIComponent(productTitle);
+  const retailerLower = retailerSource.toLowerCase();
+
+  // Amazon
+  if (retailerLower.includes('amazon')) {
+    return `https://www.amazon.com/s?k=${encodedTitle}`;
+  }
+
+  // Walmart
+  if (retailerLower.includes('walmart')) {
+    return `https://www.walmart.com/search?q=${encodedTitle}`;
+  }
+
+  // Best Buy
+  if (retailerLower.includes('best buy') || retailerLower.includes('bestbuy')) {
+    return `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedTitle}`;
+  }
+
+  // Target
+  if (retailerLower.includes('target')) {
+    return `https://www.target.com/s?searchTerm=${encodedTitle}`;
+  }
+
+  // Macy's
+  if (retailerLower.includes('macy') || retailerLower.includes("macy's")) {
+    return `https://www.macys.com/shop/search?keyword=${encodedTitle}`;
+  }
+
+  // eBay
+  if (retailerLower.includes('ebay')) {
+    return `https://www.ebay.com/sch/i.html?_nkw=${encodedTitle}`;
+  }
+
+  // Nordstrom
+  if (retailerLower.includes('nordstrom')) {
+    return `https://www.nordstrom.com/sr?origin=keywordsearch&keyword=${encodedTitle}`;
+  }
+
+  // Home Depot
+  if (retailerLower.includes('home depot') || retailerLower.includes('homedepot')) {
+    return `https://www.homedepot.com/s/${encodedTitle}`;
+  }
+
+  // Lowe's
+  if (retailerLower.includes('lowe') || retailerLower.includes("lowe's")) {
+    return `https://www.lowes.com/search?searchTerm=${encodedTitle}`;
+  }
+
+  // Costco
+  if (retailerLower.includes('costco')) {
+    return `https://www.costco.com/CatalogSearch?keyword=${encodedTitle}`;
+  }
+
+  // Wayfair
+  if (retailerLower.includes('wayfair')) {
+    return `https://www.wayfair.com/keyword.php?keyword=${encodedTitle}`;
+  }
+
+  // Etsy
+  if (retailerLower.includes('etsy')) {
+    return `https://www.etsy.com/search?q=${encodedTitle}`;
+  }
+
+  // Nike
+  if (retailerLower.includes('nike')) {
+    return `https://www.nike.com/w?q=${encodedTitle}`;
+  }
+
+  // Kohl's
+  if (retailerLower.includes('kohl') || retailerLower.includes("kohl's")) {
+    return `https://www.kohls.com/search.jsp?submit-search=web-regular&search=${encodedTitle}`;
+  }
+
+  // No direct mapping found
+  return null;
+}
+
 // ─── Google Shopping via Serper.dev API ────────────────────────────────────
 export async function searchGoogleShoppingAPI(query: string): Promise<Product[]> {
   const products: Product[] = [];
@@ -160,12 +243,16 @@ export async function searchGoogleShoppingAPI(query: string): Promise<Product[]>
       }
 
       if (name) {
+        // Build direct retailer URL instead of using Google intermediary link
+        const directUrl = buildDirectRetailerUrl(retailer, name);
+        const productUrl = directUrl || item.link || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`;
+
         products.push({
           name,
           price,
           image: img,
           retailer,
-          url: item.link || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`,
+          url: productUrl,
           rating,
           reviewCount,
           category: guessCategory(name),
