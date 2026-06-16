@@ -158,7 +158,7 @@ export default function SearchSection({
           {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
           {products.length > 0 && (
             <span className="ml-2 text-pick-teal font-semibold">
-              • ${minPrice.toFixed(2)} – ${maxPrice.toFixed(2)}
+              • ${minPrice.toFixed(2)} to ${maxPrice.toFixed(2)}
             </span>
           )}
         </div>

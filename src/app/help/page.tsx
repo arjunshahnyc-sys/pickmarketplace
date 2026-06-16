@@ -14,12 +14,12 @@ export default function HelpPage() {
     {
       icon: Search,
       title: 'How to Search for Products',
-      content: 'Type any product name into the search bar and press Enter. Be specific for better results—for example, "Sony WH-1000XM5 headphones" instead of just "headphones." You can search for brands, product names, or general categories. Pick Marketplace will check prices across all supported retailers and show you results ranked by price.',
+      content: 'Type any product name into the search bar and press Enter. Be specific for better results. For example, "Sony WH-1000XM5 headphones" instead of just "headphones." You can search for brands, product names, or general categories. Pick Marketplace will check prices across all supported retailers and show you results ranked by price.',
     },
     {
       icon: TrendingDown,
       title: 'How Price Comparison Works',
-      content: 'When you search, we check current prices from Amazon, Target, Best Buy, Walmart, and 50+ other retailers. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices update regularly but may not reflect real-time changes—always verify the final price on the retailer\'s site before purchasing.',
+      content: 'When you search, we check current prices from Amazon, Target, Best Buy, Walmart, and 50+ other retailers. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices update regularly but may not reflect real-time changes. Always verify the final price on the retailer\'s site before purchasing.',
     },
     {
       icon: AlertCircle,

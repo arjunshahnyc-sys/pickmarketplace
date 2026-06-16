@@ -35,7 +35,7 @@ const GREETINGS: Record<string, string[]> = {
     "Here's what I'm great at:\n🔍 Finding any product across retailers\n💰 Comparing prices for the best deal\n👗 Finding dupes and similar items\n💬 Answering shopping questions\n\nJust type what you're looking for!",
   ],
   "who are you|what is pick": [
-    "I'm Pick — your shopping assistant! I search across major retailers to help you find the best prices.",
+    "I'm Pick, your shopping assistant! I search across major retailers to help you find the best prices.",
   ],
 };
 
@@ -200,7 +200,7 @@ export default function Chatbot({ onSearch }: { onSearch?: (q: string) => void }
           ...prev,
           {
             role: "bot",
-            text: `🔍 Found ${results.length}+ results for "${searchQuery}" — here are the top deals:${upgradeHint}`,
+            text: `🔍 Found ${results.length}+ results for "${searchQuery}". Here are the top deals:${upgradeHint}`,
             products: results,
             time: getTime(),
             quickReplies: isPremium
@@ -227,7 +227,7 @@ export default function Chatbot({ onSearch }: { onSearch?: (q: string) => void }
       return;
     }
 
-    // Fallback — never error
+    // Fallback, never error
     setTyping(false);
     setMessages((prev) => [
       ...prev,
@@ -246,7 +246,7 @@ export default function Chatbot({ onSearch }: { onSearch?: (q: string) => void }
       <button
         onClick={() => setOpen(!open)}
         aria-label={open ? "Close shopping assistant" : "Open shopping assistant"}
-        className="fixed bottom-5 right-5 z-50 w-12 h-12 bg-pick-teal/80 hover:bg-pick-teal text-white rounded-full shadow-lg hover:scale-105 hover:shadow-xl transition-all flex items-center justify-center"
+        className="hidden md:flex fixed bottom-5 right-5 z-50 w-12 h-12 bg-pick-teal/80 hover:bg-pick-teal text-white rounded-full shadow-lg hover:scale-105 hover:shadow-xl transition-all items-center justify-center"
       >
         {open ? (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -365,7 +365,7 @@ export default function Chatbot({ onSearch }: { onSearch?: (q: string) => void }
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything — 'Find me sneakers under $80'"
+                placeholder="Ask me anything, like 'Find me sneakers under $80'"
                 disabled={typing}
                 className="flex-1 text-sm px-3 py-2 bg-pick-bg rounded-full border border-pick-border focus:outline-none focus:ring-1 focus:ring-pick-teal disabled:opacity-50"
               />

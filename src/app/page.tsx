@@ -174,7 +174,7 @@ export default function Home() {
         name: "Stanley Quencher H2.0 40oz",
         price: 35.00,
         currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/71Ii9xjt+oL._AC_SL1500_.jpg",
+        imageUrl: "https://i5.walmartimages.com/seo/Stanley-Quencher-H2-0-FlowState-Stainless-Steel-Vacuum-Insulated-Tumbler-with-Lid-and-Straw-for-Water-Coffee-or-Tea-40-oz-Dune_a6e6f858-e41a-4d40-8b4e-9e685d4e7e51.62d4e27aefbc2a7a2e4ccee6eb417ead.jpeg",
         retailer: "Target",
         url: "https://www.target.com/s?searchTerm=stanley+quencher",
         rating: 4.8,
@@ -185,7 +185,7 @@ export default function Home() {
         name: "Nike Dunk Low",
         price: 110.00,
         currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/71hAMWJCuLL._AC_SL1500_.jpg",
+        imageUrl: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/dd9e1f0d-b5e5-45d0-9e67-b06d5c1f2ec0/dunk-low-retro-shoes-66RGBl.png",
         retailer: "Nike",
         url: "https://www.nike.com/w/dunk-shoes-90aohZ8y3qp",
         rating: 4.6,
@@ -196,7 +196,7 @@ export default function Home() {
         name: "Dyson Airwrap Complete",
         price: 499.99,
         currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61dwFIzICML._SL1500_.jpg",
+        imageUrl: "https://dyson-h.assetsadobe2.com/is/image/content/dam/dyson/images/products/hero/447889-01.png",
         retailer: "Best Buy",
         url: "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+airwrap",
         rating: 4.5,
@@ -218,7 +218,7 @@ export default function Home() {
         name: "Lululemon Align Leggings",
         price: 98.00,
         currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/51VZPNmEXJL._AC_SL1500_.jpg",
+        imageUrl: "https://images.lululemon.com/is/image/lululemon/LW5CUXS_0001_1",
         retailer: "Nordstrom",
         url: "https://www.nordstrom.com/sr?origin=keywordsearch&keyword=lululemon+align",
         rating: 4.8,
@@ -240,7 +240,7 @@ export default function Home() {
         name: "Ninja Creami Ice Cream Maker",
         price: 149.99,
         currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61nzEWnbk8L._AC_SL1500_.jpg",
+        imageUrl: "https://i5.walmartimages.com/seo/Ninja-NC301-CREAMi-Ice-Cream-Maker-for-Gelato-Mix-ins-Milkshakes-Sorbet-Smoothie-Bowls-More-7-One-Touch-Programs-Compact-Size-Perfect-for-Kids-Silver_c2f94614-8e7e-4816-9941-e664051b8d4a.3dd2b9f218459fc34bbfb7cd3c678e08.jpeg",
         retailer: "Walmart",
         url: "https://www.walmart.com/search?q=ninja+creami",
         rating: 4.6,
@@ -784,7 +784,7 @@ export default function Home() {
                 >
                   <div className="differentiator">
                     <h2 className="text-2xl font-semibold mb-4 tracking-tight text-black">
-                      We don't just find your product cheaper—we find better alternatives others
+                      We don't just find your product cheaper. We find better alternatives others
                       miss
                     </h2>
                     <p className="text-black leading-relaxed mb-4">
@@ -794,7 +794,7 @@ export default function Home() {
                       multiple stores.
                     </p>
                     <p className="text-black/60 leading-relaxed">
-                      The best deal often isn't the same product at a lower price—it's a comparable
+                      The best deal often isn't the same product at a lower price. It's a comparable
                       alternative you didn't know existed.
                     </p>
                   </div>
@@ -951,7 +951,7 @@ export default function Home() {
                   </h2>
                   <p className="text-black/60 mb-8 leading-relaxed">
                     Install our browser extension. When you visit a product page on any supported
-                    retailer, Pick automatically shows you if it&apos;s cheaper somewhere else—or if
+                    retailer, Pick automatically shows you if it&apos;s cheaper somewhere else, or if
                     there&apos;s a better alternative.
                   </p>
                   <button

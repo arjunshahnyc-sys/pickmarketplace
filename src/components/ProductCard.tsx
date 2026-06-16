@@ -111,7 +111,23 @@ export default function ProductCard({
           alt={product.name}
           className="w-full h-full object-contain group-hover:scale-105 transition-transform"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://placehold.co/300x300/FAFAF8/6B6B6B?text=${encodeURIComponent(product.retailer)}`;
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent && !parent.querySelector('.image-fallback')) {
+              const fallback = document.createElement('div');
+              fallback.className = 'image-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-4';
+              fallback.innerHTML = `
+                <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
+                  <svg class="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <span class="text-xs text-black/40 font-medium">${product.name.substring(0, 30)}${product.name.length > 30 ? '...' : ''}</span>
+              `;
+              parent.appendChild(fallback);
+            }
           }}
         />
         {savings > 0 && !product.isFallback && (

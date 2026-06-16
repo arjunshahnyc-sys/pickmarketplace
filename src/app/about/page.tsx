@@ -20,7 +20,7 @@ export default function AboutPage() {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-              Pick Marketplace is a price comparison tool that helps you find the best deals across major online retailers. We scan prices from Target directly, plus aggregated results from Google Shopping (which includes Amazon, Walmart, and other merchants)—so you don't have to.
+              Pick Marketplace is a price comparison tool that helps you find the best deals across major online retailers. We scan prices from Target directly, plus aggregated results from Google Shopping (which includes Amazon, Walmart, and other merchants) so you don't have to.
             </p>
 
             <h2 className="text-2xl font-semibold text-black mt-12 mb-4">
@@ -38,7 +38,7 @@ export default function AboutPage() {
             </h2>
             <ul className="list-disc pl-6 text-gray-700 space-y-3 mb-6">
               <li>
-                <strong>Multi-retailer coverage:</strong> We check Target API directly, plus aggregated results from Google Shopping—not just one or two sources.
+                <strong>Multi-retailer coverage:</strong> We check Target API directly, plus aggregated results from Google Shopping, not just one or two sources.
               </li>
               <li>
                 <strong>Direct product links:</strong> When available, we link directly to product pages so you can buy immediately. When we show example products, we clearly label them.
