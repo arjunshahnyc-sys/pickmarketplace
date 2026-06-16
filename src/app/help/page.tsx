@@ -19,7 +19,7 @@ export default function HelpPage() {
     {
       icon: TrendingDown,
       title: 'How Price Comparison Works',
-      content: 'When you search, we check current prices from Amazon, Target, Best Buy, Walmart, and 50+ other retailers. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices update regularly but may not reflect real-time changes. Always verify the final price on the retailer\'s site before purchasing.',
+      content: 'When you search, we check current prices from 12 major retailers including Amazon, Target, Best Buy, and Walmart, plus aggregated results through Google Shopping. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices are checked throughout the day. Always verify the final price on the retailer\'s site before purchasing.',
     },
     {
       icon: AlertCircle,
@@ -29,7 +29,7 @@ export default function HelpPage() {
     {
       icon: Flag,
       title: 'How to Report Issues',
-      content: 'Found a broken link, incorrect price, or other issue? We want to know! Use the contact form or email us directly at support@pickmarketplace.com. Include the product name, retailer, and a description of the problem. We review all reports and work to fix issues as quickly as possible.',
+      content: 'Found a broken link, incorrect price, or other issue? We want to know! Use the contact form or email us directly at support@pickmarketplace.app. Include the product name, retailer, and a description of the problem. We review all reports and work to fix issues as quickly as possible.',
     },
   ];
 

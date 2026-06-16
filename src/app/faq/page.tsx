@@ -11,7 +11,7 @@ export default function FAQPage() {
   const faqs = [
     {
       question: "Is Pick Marketplace free to use?",
-      answer: "Yes, Pick Marketplace is completely free. You don\'t need to create an account, provide payment information, or pay any subscription fees. We earn affiliate commissions when you purchase through our links, which allows us to keep the service free for everyone.",
+      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. We also offer a Premium plan ($3.33/month) with unlimited searches, more results per search, and advanced features. We earn affiliate commissions when you purchase through our links.",
     },
     {
       question: "How does Pick Marketplace make money?",
@@ -27,7 +27,7 @@ export default function FAQPage() {
     },
     {
       question: "Which retailers does Pick Marketplace support?",
-      answer: "We currently support 50+ retailers including Amazon, Target, Best Buy, Walmart, Macy's, and Google Shopping. We're continuously adding more retailers. Visit our Supported Retailers page for the complete list and details about what product categories each retailer covers.",
+      answer: "We check 12 major retailers directly: Amazon, Walmart, Target, Best Buy, Costco, eBay, Nordstrom, Macy's, and others. Through Google Shopping integration, you may also see results from 50+ additional merchants. Visit our Supported Retailers page for the complete list.",
     },
     {
       question: "Can I set price alerts for products I'm watching?",
@@ -39,7 +39,7 @@ export default function FAQPage() {
     },
     {
       question: "How do I report an incorrect price or broken link?",
-      answer: "If you find a price that's incorrect, a link that doesn't work, or any other issue, please contact us via our contact form or email support@pickmarketplace.com. Include the product name, retailer, and a description of the problem. We review all reports and work to fix issues quickly.",
+      answer: "If you find a price that's incorrect, a link that doesn't work, or any other issue, please contact us via our contact form or email support@pickmarketplace.app. Include the product name, retailer, and a description of the problem. We review all reports and work to fix issues quickly.",
     },
     {
       question: "Do you guarantee I'll get the lowest price?",
@@ -47,7 +47,7 @@ export default function FAQPage() {
     },
     {
       question: "Why do some products say \\\"EXAMPLE\\\" or show placeholder images?",
-      answer: "When our price-checking system can't retrieve real-time data from retailers (due to anti-bot protections or technical issues), we sometimes show example products to demonstrate how the platform works. These are clearly labeled with an \\\"EXAMPLE\\\" badge and disclaimer. The links go to retailer search pages rather than specific product pages.",
+      answer: "When our price-checking system can't retrieve current data from retailers (due to anti-bot protections or technical issues), we sometimes show example products to demonstrate how the platform works. These are clearly labeled with an \\\"EXAMPLE\\\" badge and disclaimer. The links go to retailer search pages rather than specific product pages.",
     },
   ];
 

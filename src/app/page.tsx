@@ -470,7 +470,7 @@ export default function Home() {
               Still broke. Still shopping.
             </h1>
             <p className="text-sm text-black/60 leading-relaxed max-w-lg mb-6">
-              Pick searches every store at once so you stop getting robbed. Built for the people who counted change at CVS last week.
+              Find the same item for less, or a near-identical one that costs less. We compare prices across major retailers so you stop overpaying.
             </p>
 
             {/* Savings Counter */}
@@ -713,19 +713,24 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Affiliate & Legal - collapsed below results */}
+                {/* Affiliate Disclosure */}
                 {!isLoading && results.length > 0 && (
-                  <details className="mt-8 border border-black/10 rounded-lg bg-white/50 text-xs text-black/50">
-                    <summary className="px-4 py-3 cursor-pointer hover:bg-black/5">
-                      Affiliate Disclosure & Legal
-                    </summary>
-                    <div className="px-4 pb-4 space-y-2">
-                      <p>Pick may earn a commission from purchases made through our links.
-                         This doesn&apos;t affect prices you pay.</p>
-                      <p>Prices shown are estimates from Target API and Google Shopping.
-                         Verify final pricing on retailer sites.</p>
-                    </div>
-                  </details>
+                  <>
+                    <p className="mt-6 text-xs text-black/40 text-center">
+                      Pick may earn affiliate commissions from purchases. Rankings based on price, not commission amount.
+                    </p>
+                    <details className="mt-4 border border-black/10 rounded-lg bg-white/50 text-xs text-black/50">
+                      <summary className="px-4 py-3 cursor-pointer hover:bg-black/5">
+                        Full Disclosure & Legal
+                      </summary>
+                      <div className="px-4 pb-4 space-y-2">
+                        <p>Pick may earn a commission from purchases made through our links.
+                           This doesn&apos;t affect prices you pay or how we rank results.</p>
+                        <p>Prices shown are current as of the last check from Target API and Google Shopping.
+                           Always verify final pricing on retailer sites before purchasing.</p>
+                      </div>
+                    </details>
+                  </>
                 )}
               </>
             ) : (
@@ -784,18 +789,14 @@ export default function Home() {
                 >
                   <div className="differentiator">
                     <h2 className="text-2xl font-semibold mb-4 tracking-tight text-black">
-                      We don't just find your product cheaper. We find better alternatives others
-                      miss
+                      Same product, lower price. Plus alternatives you might prefer.
                     </h2>
                     <p className="text-black leading-relaxed mb-4">
-                      Unlike Honey and other extensions that only check if your exact product is
-                      cheaper elsewhere, Pick goes further. We search for{' '}
-                      <strong>similar products with comparable reviews</strong> across{' '}
-                      multiple stores.
+                      First, we show you where your exact product costs less. Then we search for{' '}
+                      <strong>similar products with comparable reviews</strong> that might save you even more.
                     </p>
                     <p className="text-black/60 leading-relaxed">
-                      The best deal often isn't the same product at a lower price. It's a comparable
-                      alternative you didn't know existed.
+                      The best deal is often the same item at a different retailer, but sometimes it's a near-identical alternative you didn't know existed.
                     </p>
                   </div>
                 </div>
@@ -939,7 +940,7 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               id="extension"
-              className="max-w-5xl mx-auto px-6 py-20"
+              className="max-w-5xl mx-auto px-6 py-20 hidden md:block"
             >
               <div
                 className="border border-black/10 bg-white p-10 md:p-14"
@@ -963,7 +964,7 @@ export default function Home() {
                     <ArrowRight size={16} className="arrow" />
                   </button>
                   <p className="text-xs text-black/60 mt-4">
-                    Free forever. No account required.
+                    Free browser extension. Desktop only.
                   </p>
                 </div>
               </div>

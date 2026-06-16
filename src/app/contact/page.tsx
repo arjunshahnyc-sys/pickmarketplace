@@ -96,10 +96,10 @@ export default function ContactPage() {
                   <div>
                     <p className="font-medium text-black">Email</p>
                     <a
-                      href="mailto:support@pickmarketplace.com"
+                      href="mailto:support@pickmarketplace.app"
                       className="text-teal-600 hover:text-teal-700"
                     >
-                      support@pickmarketplace.com
+                      support@pickmarketplace.app
                     </a>
                   </div>
                 </div>

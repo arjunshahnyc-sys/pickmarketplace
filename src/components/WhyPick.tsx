@@ -13,9 +13,9 @@ export function WhyPick() {
     },
     {
       icon: Zap,
-      title: 'Real-Time Comparison',
-      description: 'Live prices from 50+ retailers updated every minute.',
-      highlight: 'vs Honey: Always current prices',
+      title: 'Current Price Checks',
+      description: 'Prices checked from 12 major retailers throughout the day.',
+      highlight: 'vs Honey: Regular updates',
     },
     {
       icon: Lock,
@@ -140,7 +140,7 @@ export function WhyPick() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black">Real-time price updates</td>
+                  <td className="py-4 px-6 text-sm text-black">Regular price checks</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
@@ -166,7 +166,7 @@ export function WhyPick() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black">50+ retailers</td>
+                  <td className="py-4 px-6 text-sm text-black">12 major retailers</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>
@@ -208,7 +208,7 @@ export function WhyPick() {
             href="#search"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#2A9D8F] text-white text-lg font-semibold rounded-xl hover:bg-[#238B7E] transition-all hover:scale-105 shadow-lg"
           >
-            Try Pick Now, It's Free
+            Try Pick Free
             <Search className="w-5 h-5" aria-hidden="true" />
           </a>
           <p className="text-sm text-black/60 mt-4">

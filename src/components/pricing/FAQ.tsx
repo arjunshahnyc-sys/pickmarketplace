@@ -24,7 +24,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: 'Is Pick like Honey?',
-    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick uses AI to compare prices across 50+ retailers and find similar products at better prices. We also prioritize privacy.we don\'t track your browsing or sell your data.',
+    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick compares prices across 12 major retailers plus Google Shopping and helps you find similar products at better prices. We also prioritize privacy.we don\'t track your browsing or sell your data.',
   },
   {
     question: 'What payment methods do you accept?',

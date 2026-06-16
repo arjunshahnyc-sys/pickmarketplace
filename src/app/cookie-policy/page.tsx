@@ -128,10 +128,10 @@ export default function CookiePolicyPage() {
               <p className="text-gray-700 leading-relaxed">
                 If you have questions about how we use cookies, please contact us at{' '}
                 <a
-                  href="mailto:support@pickmarketplace.com"
+                  href="mailto:support@pickmarketplace.app"
                   className="text-teal-600 hover:text-teal-700 underline"
                 >
-                  support@pickmarketplace.com
+                  support@pickmarketplace.app
                 </a>.
               </p>
             </section>

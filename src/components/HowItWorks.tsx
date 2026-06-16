@@ -9,19 +9,19 @@ export function HowItWorks() {
       icon: Search,
       number: '1',
       title: 'Search Any Product',
-      description: 'Type in what you\'re looking for, from headphones to laptops, and we\'ll find it across 50+ retailers.',
+      description: 'Type in what you\'re looking for, from headphones to laptops, and we\'ll find it across 12 major retailers.',
     },
     {
       icon: Zap,
       number: '2',
-      title: 'AI Scans in Real-Time',
-      description: 'Our AI instantly compares prices, ratings, and availability from Amazon, Target, Best Buy, and more.',
+      title: 'We Check Current Prices',
+      description: 'We compare prices, ratings, and availability from Amazon, Target, Best Buy, and more.',
     },
     {
       icon: TrendingDown,
       number: '3',
       title: 'Pick the Best Deal',
-      description: 'See all options ranked by price with direct links. Save money on every purchase, guaranteed.',
+      description: 'See all options ranked by price with direct links. Compare prices to find a better deal.',
     },
   ];
 
@@ -104,7 +104,7 @@ export function HowItWorks() {
             <Search className="w-5 h-5" aria-hidden="true" />
           </a>
           <p className="text-sm text-black/60 mt-4">
-            No credit card required • Always free to search
+            No credit card required • Free to search
           </p>
         </motion.div>
       </div>

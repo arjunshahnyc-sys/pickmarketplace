@@ -36,10 +36,10 @@ export default function PricingPage() {
       <div className="max-w-6xl mx-auto px-4 py-16">
         <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-black mb-4">
-            Choose Your Plan
+            Pick a plan.
           </h1>
           <p className="text-xl text-black/60">
-            Start free, upgrade anytime
+            Free works. Premium works harder.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-black">$0</span>
                 <span className="text-black/60 ml-2">/month</span>
               </div>
-              <p className="text-black/60">Perfect to get started</p>
+              <p className="text-black/60">For when you're just trying to survive the semester.</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -130,7 +130,7 @@ export default function PricingPage() {
               {billingPeriod === 'annual' && (
                 <p className="text-white/70 text-sm mb-2">Billed annually at $39.99</p>
               )}
-              <p className="text-white/80">Everything you need</p>
+              <p className="text-white/80">For when you're done overpaying.</p>
             </div>
 
             <ul className="space-y-4 mb-8">

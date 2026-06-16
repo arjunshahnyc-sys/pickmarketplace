@@ -154,10 +154,10 @@ export default function SignupPage() {
               <span className="text-2xl font-heading font-bold text-black">Pick</span>
             </Link>
             <h2 className="text-2xl font-heading font-bold text-black mt-4">
-              Create your account
+              Let's go.
             </h2>
             <p className="text-sm text-black/60 mt-1">
-              Free forever. No credit card required.
+              Free forever. No card. No tricks.
             </p>
           </div>
 
@@ -203,7 +203,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onBlur={() => handleBlur('name')}
@@ -230,7 +230,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <input
                     type="email"
-                    placeholder="john@example.com"
+                    placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => handleBlur('email')}

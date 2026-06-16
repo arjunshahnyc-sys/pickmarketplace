@@ -110,10 +110,10 @@ export default function CompliancePage() {
               <p className="text-gray-700 leading-relaxed mt-4">
                 To exercise these rights, contact us at{' '}
                 <a
-                  href="mailto:support@pickmarketplace.com"
+                  href="mailto:support@pickmarketplace.app"
                   className="text-teal-600 hover:text-teal-700 underline"
                 >
-                  support@pickmarketplace.com
+                  support@pickmarketplace.app
                 </a>{' '}
                 with "CCPA Request" in the subject line.
               </p>
@@ -137,10 +137,10 @@ export default function CompliancePage() {
               <p className="text-gray-700 leading-relaxed mt-4">
                 To exercise GDPR rights, contact us at{' '}
                 <a
-                  href="mailto:support@pickmarketplace.com"
+                  href="mailto:support@pickmarketplace.app"
                   className="text-teal-600 hover:text-teal-700 underline"
                 >
-                  support@pickmarketplace.com
+                  support@pickmarketplace.app
                 </a>.
               </p>
             </section>
@@ -168,10 +168,10 @@ export default function CompliancePage() {
               <p className="text-gray-700 leading-relaxed">
                 If you have questions about our compliance policies, data practices, or affiliate relationships, please contact us at{' '}
                 <a
-                  href="mailto:support@pickmarketplace.com"
+                  href="mailto:support@pickmarketplace.app"
                   className="text-teal-600 hover:text-teal-700 underline"
                 >
-                  support@pickmarketplace.com
+                  support@pickmarketplace.app
                 </a>.
               </p>
             </section>

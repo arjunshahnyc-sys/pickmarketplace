@@ -23,7 +23,7 @@ export function OrganizationSchema({ name, url, logo, description }: Organizatio
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
-      email: 'support@pickmarketplace.com',
+      email: 'support@pickmarketplace.app',
     },
   };
 

@@ -58,7 +58,7 @@ export default function LoginPage() {
             Your deals await.
           </h1>
           <p className="text-lg text-white/80 mb-10">
-            Continue saving money on every purchase with Pick's AI-powered price comparison.
+            Continue saving money on every purchase with Pick's multi-store search.
           </p>
 
           {/* Feature highlights */}
@@ -69,7 +69,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="font-semibold">Instant Price Comparison</p>
-                <p className="text-sm text-white/60">Compare 50+ retailers in seconds</p>
+                <p className="text-sm text-white/60">Compare prices across major retailers</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -115,10 +115,10 @@ export default function LoginPage() {
               <span className="text-2xl font-heading font-bold text-black">Pick</span>
             </Link>
             <h2 className="text-2xl font-heading font-bold text-black mt-4">
-              Welcome back
+              Welcome back.
             </h2>
             <p className="text-sm text-black/60 mt-1">
-              Sign in to continue saving
+              Pick up where you left off.
             </p>
           </div>
 
@@ -163,7 +163,7 @@ export default function LoginPage() {
                 </label>
                 <input
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl border ${

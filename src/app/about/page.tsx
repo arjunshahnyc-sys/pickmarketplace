@@ -44,7 +44,7 @@ export default function AboutPage() {
                 <strong>Direct product links:</strong> When available, we link directly to product pages so you can buy immediately. When we show example products, we clearly label them.
               </li>
               <li>
-                <strong>No hidden fees:</strong> Pick Marketplace is free to use. We may earn affiliate commissions when you purchase through our links, but this doesn't affect the prices you see.
+                <strong>Honest pricing:</strong> Pick offers a free tier (5 searches/day) and Premium ($3.33/month). We earn affiliate commissions when you purchase through our links, but this doesn't affect the prices you see.
               </li>
               <li>
                 <strong>Honest about limitations:</strong> We display price verification timestamps and clearly indicate when prices may not be current. We believe in transparency over fake urgency.
@@ -55,10 +55,20 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              We built Pick Marketplace because comparison shopping shouldn't require opening 10 browser tabs. Our goal is simple: help you make informed buying decisions by showing you all available options in one place, sorted by price.
+              We built Pick because comparison shopping shouldn't require opening 10 browser tabs. Our goal is simple: help you make informed buying decisions by showing you all available options in one place, sorted by price.
             </p>
             <p className="text-gray-700 mb-8 leading-relaxed">
-              We're committed to building a tool that respects your time, provides accurate information, and helps you save money on purchases you were planning to make anyway.
+              We're committed to building a tool that respects your time, provides accurate information, and helps you compare prices on purchases you were planning to make anyway.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-black mt-12 mb-4">
+              Who We Are
+            </h2>
+            <p className="text-gray-700 mb-6 leading-relaxed">
+              Pick was founded by <strong>Arjun Shah</strong>, who got tired of overpaying for products and manually checking multiple retailers. Every time he found something he wanted, the price felt too high, and he knew there had to be a better deal somewhere but didn't have time to check every single store.
+            </p>
+            <p className="text-gray-700 mb-8 leading-relaxed">
+              What started as a personal tool to save money became Pick Marketplace. We make money through affiliate commissions (when you buy through our links, retailers pay us a small percentage) and optional Premium subscriptions for unlimited searches. This lets us keep the core service accessible while building better features.
             </p>
 
             <div className="mt-12 p-6 bg-gray-50 border border-gray-200 rounded-lg">
@@ -68,10 +78,10 @@ export default function AboutPage() {
               <p className="text-gray-700 mb-4">
                 We'd love to hear from you. Reach out to our team at{' '}
                 <a
-                  href="mailto:support@pickmarketplace.com"
+                  href="mailto:support@pickmarketplace.app"
                   className="text-teal-600 hover:text-teal-700 underline"
                 >
-                  support@pickmarketplace.com
+                  support@pickmarketplace.app
                 </a>
                 {' '}or visit our{' '}
                 <Link

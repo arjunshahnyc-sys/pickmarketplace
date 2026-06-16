@@ -249,23 +249,23 @@ function handleGeneralQuestion(question: string): { message: string } {
 
   if (lowerQuestion.includes('how') && (lowerQuestion.includes('work') || lowerQuestion.includes('pick'))) {
     return {
-      message: "Pick helps you save money in 3 ways:\n\n1. **Price Comparison** - We search 7 major retailers (Amazon, Walmart, Target, Best Buy, Costco, eBay, Nordstrom) to find the lowest price\n\n2. **Similar Products** - We find alternative products with comparable reviews that might be better deals\n\n3. **Smart Search** - Just tell me what you're looking for, and I'll find the best options!\n\nTry asking me to find a product!"
+      message: "Pick helps you save money in 3 ways:\n\n1. **Price Comparison** - We search 12 major retailers (Amazon, Walmart, Target, Best Buy, Costco, eBay, Nordstrom, and more) to help you find a better price\n\n2. **Similar Products** - We find alternative products with comparable reviews that might be better deals\n\n3. **Smart Search** - Just tell me what you're looking for, and I'll find the best options!\n\nTry asking me to find a product!"
     };
   }
 
   if (lowerQuestion.includes('retailers') || lowerQuestion.includes('stores')) {
     return {
-      message: "We search across 7 major retailers:\n\n• Amazon\n• Walmart\n• Target\n• Best Buy\n• Costco\n• eBay\n• Nordstrom\n\nWe compare prices in real-time to find you the best deal!"
+      message: "We search across 12 major retailers including:\n\n• Amazon\n• Walmart\n• Target\n• Best Buy\n• Costco\n• eBay\n• Nordstrom\n• Macy's\n\n...plus Google Shopping for more options. We check current prices to help you find a better deal!"
     };
   }
 
   if (lowerQuestion.includes('free') || lowerQuestion.includes('cost') || lowerQuestion.includes('price')) {
     return {
-      message: "Pick is completely free! No subscriptions, no hidden fees. We make money through affiliate commissions when you purchase through our links, but it never costs you extra. You always get the same price or better!"
+      message: "Pick offers a free tier with 5 searches per day. Premium is $3.33/month for unlimited searches and more results. We make money through affiliate commissions when you purchase through our links, which doesn't affect the prices you see!"
     };
   }
 
   return {
-    message: "I'm here to help you find the best deals! I can:\n\n• Find products across 7 retailers\n• Compare prices instantly\n• Recommend similar products\n• Find items within your budget\n\nWhat are you shopping for today?"
+    message: "I'm here to help you find better deals! I can:\n\n• Find products across 12 major retailers\n• Compare current prices\n• Recommend similar products\n• Find items within your budget\n\nWhat are you shopping for today?"
   };
 }

@@ -5,7 +5,7 @@ import { Search, Zap, ShoppingCart, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: "How It Works - Pick Marketplace",
-  description: "Learn how Pick Marketplace compares prices across 50+ retailers to help you find the best deals. Simple, fast, and free to use.",
+  description: "Learn how Pick Marketplace compares prices across 12 major retailers plus Google Shopping. Free to search with optional Premium upgrade.",
 };
 
 export default function HowItWorksPage() {
@@ -18,7 +18,7 @@ export default function HowItWorksPage() {
     {
       icon: Zap,
       title: "We Check Prices Across Retailers",
-      description: "Pick Marketplace scans current prices from Amazon, Target, Best Buy, Walmart, Macy's, and 50+ other retailers. This happens in seconds.",
+      description: "Pick checks current prices from 12 major retailers including Amazon, Target, Best Buy, Walmart, and more, plus aggregated results through Google Shopping. This happens in seconds.",
     },
     {
       icon: ShoppingCart,
@@ -28,7 +28,7 @@ export default function HowItWorksPage() {
     {
       icon: CheckCircle,
       title: "Click Through and Save Money",
-      description: "Choose the best deal for you and click through to complete your purchase on the retailer's site. That's it-no sign-up required, no hidden fees.",
+      description: "Choose the best deal for you and click through to complete your purchase on the retailer's site. No sign-up required for basic searches.",
     },
   ];
 
@@ -42,7 +42,7 @@ export default function HowItWorksPage() {
               How Pick Marketplace Works
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Finding the best price across dozens of retailers should be easy. Here's how we make it happen.
+              Finding the best price across multiple retailers should be easy. Here's how we make it happen.
             </p>
           </div>
 
@@ -98,10 +98,10 @@ export default function HowItWorksPage() {
 
             <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
               <h3 className="text-lg font-semibold text-black mb-3">
-                Always Free
+                Free to Search
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Pick Marketplace is completely free to use. We earn affiliate commissions when you purchase through our links, but this doesn't affect the prices you pay.
+                Start with 5 free searches per day. Optional Premium upgrade available for unlimited searches and more features. We earn affiliate commissions when you purchase through our links.
               </p>
             </div>
           </div>
