@@ -1,6 +1,7 @@
 'use client';
 
-import { retailerLogos } from './RetailerLogos';
+import Marquee from 'react-fast-marquee';
+import { extendedRetailerLogos } from './RetailerLogos';
 
 export function TrustedBy() {
   return (
@@ -8,9 +9,19 @@ export function TrustedBy() {
       <p className="text-center text-xs text-black/40 uppercase tracking-[0.2em] mb-6 font-medium">
         Prices from Target, Google Shopping & more
       </p>
-      <div className="flex justify-center items-center gap-10 flex-wrap max-w-4xl mx-auto opacity-40 grayscale hover:opacity-60 transition-opacity">
-        {retailerLogos.map((retailer) => (
-          <div key={retailer.name} className="h-8 flex items-center">
+      <Marquee
+        speed={35}
+        pauseOnHover
+        gradient
+        gradientWidth={100}
+        gradientColor="#FAFAF8"
+        autoFill
+      >
+        {extendedRetailerLogos.map((retailer) => (
+          <div
+            key={retailer.name}
+            className="mx-10 h-8 flex items-center opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500 cursor-default"
+          >
             <img
               src={retailer.src}
               alt={`${retailer.name} logo`}
@@ -18,7 +29,7 @@ export function TrustedBy() {
             />
           </div>
         ))}
-      </div>
+      </Marquee>
     </section>
   );
 }
