@@ -2,21 +2,21 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
-  User,
-  Session,
-  getUser,
-  saveUser,
-  getSession,
-  saveSession,
-  clearSession,
-  updateUserPlan,
   getSearchCount,
   incrementSearchCount as incrementSearchCountStorage,
-  hashPassword
 } from '@/lib/storage';
 
+// Server-backed user (accounts sync across devices via /api/auth/*)
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  plan: 'free' | 'premium';
+  createdAt: string;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -37,7 +37,6 @@ const FEATURE_LIMITS = {
   free: {
     searchesPerDay: 5,
     resultsPerSearch: 10,
-    retailers: ['amazon', 'target'],
     chatbot: 'limited',
     priceComparison: false,
     priceHistory: false,
@@ -47,7 +46,6 @@ const FEATURE_LIMITS = {
   premium: {
     searchesPerDay: Infinity,
     resultsPerSearch: 100,
-    retailers: 'all',
     chatbot: 'full',
     priceComparison: true,
     priceHistory: true,
@@ -56,25 +54,55 @@ const FEATURE_LIMITS = {
   },
 };
 
+async function authRequest(
+  path: string,
+  body?: object
+): Promise<{ ok: boolean; user?: AuthUser; error?: string }> {
+  try {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: data.error || 'Something went wrong. Please try again.' };
+    }
+    return { ok: true, user: data.user };
+  } catch {
+    return { ok: false, error: 'Network error. Check your connection and try again.' };
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchesRemaining, setSearchesRemaining] = useState(0);
 
-  // Load session on mount
+  // Restore session from the server on mount (httpOnly cookie carries it)
   useEffect(() => {
-    const session = getSession();
-    if (session) {
-      const userData = getUser(session.email);
-      if (userData) {
-        setUser(userData);
-        updateSearchesRemaining(userData.plan);
-      }
-    }
-    setIsLoading(false);
+    let cancelled = false;
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.user) {
+          setUser(data.user);
+          updateSearchesRemaining(data.user.plan);
+        }
+      })
+      .catch(() => {
+        // Treat a failed session lookup as logged out
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Update searches remaining
+  // Update searches remaining (search counting stays per-device for now)
   const updateSearchesRemaining = (plan: 'free' | 'premium') => {
     if (plan === 'premium') {
       setSearchesRemaining(Infinity);
@@ -86,92 +114,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const userData = getUser(email);
-
-    if (!userData) {
-      return { success: false, error: 'Invalid email or password' };
+    const result = await authRequest('/api/auth/login', { email, password });
+    if (!result.ok || !result.user) {
+      return { success: false, error: result.error };
     }
-
-    const passwordHash = hashPassword(password);
-    if (userData.passwordHash !== passwordHash) {
-      return { success: false, error: 'Invalid email or password' };
-    }
-
-    // Create session (expires in 30 days)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-
-    const session: Session = {
-      userId: userData.id,
-      email: userData.email,
-      expiresAt: expiresAt.toISOString(),
-    };
-
-    saveSession(session);
-    setUser(userData);
-    updateSearchesRemaining(userData.plan);
-
+    setUser(result.user);
+    updateSearchesRemaining(result.user.plan);
     return { success: true };
   };
 
   const signup = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Check if user already exists
-    const existingUser = getUser(email);
-    if (existingUser) {
-      return { success: false, error: 'An account with this email already exists' };
+    const result = await authRequest('/api/auth/signup', { name, email, password });
+    if (!result.ok || !result.user) {
+      return { success: false, error: result.error };
     }
-
-    // Create new user
-    const newUser: User = {
-      id: Math.random().toString(36).substring(2, 15),
-      name,
-      email,
-      passwordHash: hashPassword(password),
-      plan: 'free',
-      createdAt: new Date().toISOString(),
-    };
-
-    saveUser(newUser);
-
-    // Auto-login
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-
-    const session: Session = {
-      userId: newUser.id,
-      email: newUser.email,
-      expiresAt: expiresAt.toISOString(),
-    };
-
-    saveSession(session);
-    setUser(newUser);
-    updateSearchesRemaining('free');
-
+    setUser(result.user);
+    updateSearchesRemaining(result.user.plan);
     return { success: true };
   };
 
   const logout = () => {
-    clearSession();
+    authRequest('/api/auth/logout');
     setUser(null);
     setSearchesRemaining(0);
   };
 
-  const upgradeToPremium = () => {
-    if (user) {
-      updateUserPlan(user.email, 'premium');
-      const updatedUser = { ...user, plan: 'premium' as const };
-      setUser(updatedUser);
-      updateSearchesRemaining('premium');
+  const setPlan = async (plan: 'free' | 'premium') => {
+    if (!user) return;
+    // Optimistic update; server is the source of truth on next load
+    setUser({ ...user, plan });
+    updateSearchesRemaining(plan);
+    const result = await authRequest('/api/auth/plan', { plan });
+    if (result.ok && result.user) {
+      setUser(result.user);
+      updateSearchesRemaining(result.user.plan);
     }
   };
 
+  const upgradeToPremium = () => {
+    setPlan('premium');
+  };
+
   const downgradToFree = () => {
-    if (user) {
-      updateUserPlan(user.email, 'free');
-      const updatedUser = { ...user, plan: 'free' as const };
-      setUser(updatedUser);
-      updateSearchesRemaining('free');
-    }
+    setPlan('free');
   };
 
   const canUseFeature = (feature: string): boolean => {
