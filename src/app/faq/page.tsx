@@ -11,7 +11,7 @@ export default function FAQPage() {
   const faqs = [
     {
       question: "Is Pick Marketplace free to use?",
-      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. We also offer a Premium plan ($4.99/month, or $3.33/month billed annually at $39.99) with unlimited searches, more results per search, and advanced features. We earn affiliate commissions when you purchase through our links.",
+      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. There's also a Premium plan with unlimited searches, more results per search, and advanced features — free to activate while we're in beta (planned pricing: $4.99/month, or $3.33/month billed annually). We earn affiliate commissions when you purchase through our links.",
     },
     {
       question: "How does Pick Marketplace make money?",

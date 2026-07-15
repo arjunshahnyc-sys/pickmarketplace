@@ -12,46 +12,16 @@ interface CheckoutModalProps {
 
 export default function CheckoutModal({ isOpen, onClose, plan = 'monthly' }: CheckoutModalProps) {
   const { upgradeToPremium } = useAuth();
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
   if (!isOpen) return null;
 
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || '';
-    const parts = [];
-
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return value;
-    }
-  };
-
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    return v;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleActivate = async () => {
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     upgradeToPremium();
     setIsProcessing(false);
@@ -64,9 +34,6 @@ export default function CheckoutModal({ isOpen, onClose, plan = 'monthly' }: Che
       setTimeout(() => {
         onClose();
         setShowSuccess(false);
-        setCardNumber('');
-        setExpiry('');
-        setCvc('');
       }, 500);
     }, 3000);
   };
@@ -110,6 +77,7 @@ export default function CheckoutModal({ isOpen, onClose, plan = 'monthly' }: Che
           <button
             onClick={onClose}
             className="text-black/400 hover:text-black/600"
+            aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -119,85 +87,30 @@ export default function CheckoutModal({ isOpen, onClose, plan = 'monthly' }: Che
 
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg mb-4">
           <div className="flex items-center justify-between">
-            <span className="text-black/700 font-medium">
-              Premium Plan {plan === 'annual' ? '(annual)' : '(monthly)'}
-            </span>
+            <span className="text-black/700 font-medium">Premium Plan</span>
             <span className="text-2xl font-bold text-black/900">
-              {plan === 'annual' ? '$39.99' : '$4.99'}
-              <span className="text-base font-normal text-black/600">{plan === 'annual' ? '/yr' : '/mo'}</span>
+              Free
+              <span className="text-base font-normal text-black/600"> during beta</span>
             </span>
           </div>
-          {plan === 'annual' && (
-            <p className="text-xs text-black/600 mt-1">Works out to $3.33/month</p>
-          )}
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
-          <p className="text-xs text-yellow-800">
-            <strong>Demo checkout:</strong> payments aren't live yet, and no real
-            charges will be made. Don't enter a real card — any numbers work.
+          <p className="text-xs text-black/600 mt-1 line-through">
+            {plan === 'annual' ? '$39.99/yr' : '$4.99/mo'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-black/700 mb-2">
-              Card Number
-            </label>
-            <input
-              type="text"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-              placeholder="1234 5678 9012 3456"
-              maxLength={19}
-              required
-              className="w-full px-4 py-2 border border-black/300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
+        <p className="text-sm text-black/60 mb-6 leading-relaxed">
+          Pick is in beta, so Premium is free to activate — no card, no charge.
+          When paid billing launches, you'll be asked before anything changes.
+        </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-black/700 mb-2">
-                Expiry
-              </label>
-              <input
-                type="text"
-                value={expiry}
-                onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                placeholder="MM/YY"
-                maxLength={5}
-                required
-                className="w-full px-4 py-2 border border-black/300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-black/700 mb-2">
-                CVC
-              </label>
-              <input
-                type="text"
-                value={cvc}
-                onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').substring(0, 3))}
-                placeholder="123"
-                maxLength={3}
-                required
-                className="w-full px-4 py-2 border border-black/300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isProcessing}
-            className="w-full bg-[#2A9D8F] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isProcessing ? 'Processing...' : plan === 'annual' ? 'Pay $39.99/year' : 'Pay $4.99/month'}
-          </button>
-
-          <p className="text-xs text-black/500 text-center mt-4">
-            This is a simulated payment. No real charges will be made.
-          </p>
-        </form>
+        <button
+          type="button"
+          onClick={handleActivate}
+          disabled={isProcessing}
+          className="w-full bg-[#2A9D8F] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isProcessing ? 'Activating...' : 'Activate Premium — Free'}
+        </button>
       </div>
     </div>
   );

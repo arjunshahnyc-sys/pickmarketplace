@@ -119,15 +119,16 @@ export default function PricingPage() {
 
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Premium</h2>
-              <div className="flex items-baseline mb-4">
-                <span className="text-4xl font-bold text-white">
-                  ${billingPeriod === 'monthly' ? '4.99' : '3.33'}
+              <div className="flex items-baseline gap-3 mb-2">
+                <span className="text-4xl font-bold text-white">Free</span>
+                <span className="text-white/70 text-lg line-through">
+                  ${billingPeriod === 'monthly' ? '4.99' : '3.33'}/mo
                 </span>
-                <span className="text-white/80 ml-2">/month</span>
               </div>
-              {billingPeriod === 'annual' && (
-                <p className="text-white/70 text-sm mb-2">Billed annually at $39.99</p>
-              )}
+              <p className="text-white/70 text-sm mb-2">
+                Free while we're in beta — no card required.
+                {billingPeriod === 'annual' ? ' Later: $39.99/yr.' : ' Later: $4.99/mo.'}
+              </p>
               <p className="text-white/80">For when you're done overpaying.</p>
             </div>
 
@@ -175,7 +176,7 @@ export default function PricingPage() {
               disabled={isAuthenticated && user?.plan === 'premium'}
               className="w-full bg-white text-[#2A9D8F] py-3 rounded-lg font-semibold hover:bg-black/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-[#2A9D8F]"
             >
-              {isAuthenticated && user?.plan === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
+              {isAuthenticated && user?.plan === 'premium' ? 'Current Plan' : 'Get Premium Free (Beta)'}
             </button>
           </div>
         </div>

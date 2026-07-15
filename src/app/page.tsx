@@ -21,7 +21,8 @@ import { ChatWidget } from '@/components/ChatWidget';
 import { PickLogo } from '@/components/PickLogo';
 // SavingsCounter intentionally unmounted: it fabricated an ever-growing "users
 // have saved $X" figure client-side. Re-add once /api/stats serves real data.
-import Testimonials from '@/components/home/Testimonials';
+// Testimonials intentionally unmounted pre-launch: the quotes were invented.
+// Re-add once there are real user quotes to show.
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 
 // Animation variants for staggered product grid
@@ -553,8 +554,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* Testimonials */}
-        {!hasSearched && <Testimonials />}
 
         {/* Stats Section */}
         {!hasSearched && <StatsSection />}

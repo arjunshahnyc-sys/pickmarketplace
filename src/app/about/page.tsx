@@ -44,7 +44,7 @@ export default function AboutPage() {
                 <strong>Direct product links:</strong> When available, we link directly to product pages so you can buy immediately. When we show example products, we clearly label them.
               </li>
               <li>
-                <strong>Honest pricing:</strong> Pick offers a free tier (5 searches/day) and Premium ($4.99/month, or $3.33/month billed annually). We earn affiliate commissions when you purchase through our links, but this doesn't affect the prices you see.
+                <strong>Honest pricing:</strong> Pick offers a free tier (5 searches/day) and a Premium tier that's free to activate during our beta (planned pricing: $4.99/month, or $3.33/month billed annually). We earn affiliate commissions when you purchase through our links, but this doesn't affect the prices you see.
               </li>
               <li>
                 <strong>Honest about limitations:</strong> We display price verification timestamps and clearly indicate when prices may not be current. We believe in transparency over fake urgency.

@@ -98,13 +98,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Different testimonial */}
-          <div className="mt-12 p-4 rounded-xl bg-white/10 border border-white/10">
-            <p className="text-sm italic">
-              "Saved $200 on a new laptop by using Pick. Can't believe I was about to overpay!"
-            </p>
-            <p className="text-xs text-white/50 mt-2">Mike R., Pick user since 2024</p>
-          </div>
         </div>
 
         {/* Animated gradient orbs */}

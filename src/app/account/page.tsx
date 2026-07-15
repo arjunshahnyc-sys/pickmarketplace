@@ -91,7 +91,7 @@ export default function AccountPage() {
                 {user.plan === 'premium' ? 'Premium' : 'Pick Basic'}
               </span>
               <p className="text-black/60 mt-2">
-                {user.plan === 'premium' ? '$4.99/month' : 'Free forever'}
+                {user.plan === 'premium' ? 'Free during beta' : 'Free forever'}
               </p>
             </div>
 
@@ -107,7 +107,7 @@ export default function AccountPage() {
                 onClick={downgradToFree}
                 className="border border-black/20 text-black px-6 py-2 rounded-lg font-medium hover:bg-black/5 transition-colors"
               >
-                Cancel Subscription
+                Deactivate Premium
               </button>
             )}
           </div>

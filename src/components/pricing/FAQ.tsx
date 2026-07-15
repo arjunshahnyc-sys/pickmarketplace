@@ -28,7 +28,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: 'What payment methods do you accept?',
-    answer: 'Premium billing isn\'t live yet — while we\'re in beta, upgrading uses a demo checkout and you won\'t be charged. When billing launches, we\'ll accept all major credit cards through a secure payment processor.',
+    answer: 'None needed right now — Premium is free to activate while we\'re in beta, no card required. When billing launches, we\'ll accept all major credit cards through a secure payment processor.',
   },
 ];
 

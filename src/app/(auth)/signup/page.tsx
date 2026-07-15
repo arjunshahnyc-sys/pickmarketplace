@@ -97,17 +97,17 @@ export default function SignupPage() {
             Start saving.
           </h1>
           <p className="text-lg text-white/80 mb-10">
-            Join 10,000+ smart shoppers who save an average of $47 per purchase with Pick.
+            One search compares prices across major retailers — free, no card required.
           </p>
 
-          {/* Animated stats */}
+          {/* Feature highlights */}
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
                 🔍
               </div>
               <div>
-                <p className="font-semibold">50+ Retailers Searched</p>
+                <p className="font-semibold">One Search, Every Major Store</p>
                 <p className="text-sm text-white/60">Amazon, Target, Best Buy, Walmart & more</p>
               </div>
             </div>
@@ -116,8 +116,8 @@ export default function SignupPage() {
                 💰
               </div>
               <div>
-                <p className="font-semibold">$2M+ Saved by Users</p>
-                <p className="text-sm text-white/60">Real savings on real products</p>
+                <p className="font-semibold">Same Product, Lower Price</p>
+                <p className="text-sm text-white/60">Plus near-identical alternatives that cost less</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -129,14 +129,6 @@ export default function SignupPage() {
                 <p className="text-sm text-white/60">Find deals, discover dupes, compare prices</p>
               </div>
             </div>
-          </div>
-
-          {/* Testimonial */}
-          <div className="mt-12 p-4 rounded-xl bg-white/10 border border-white/10">
-            <p className="text-sm italic">
-              "Found my AirPods for $60 less than Amazon's listed price. This tool is insane."
-            </p>
-            <p className="text-xs text-white/50 mt-2">Sarah M., Pick Premium member</p>
           </div>
         </div>
 

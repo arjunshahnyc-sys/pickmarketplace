@@ -261,7 +261,7 @@ function handleGeneralQuestion(question: string): { message: string } {
 
   if (lowerQuestion.includes('free') || lowerQuestion.includes('cost') || lowerQuestion.includes('price')) {
     return {
-      message: "Pick offers a free tier with 5 searches per day. Premium is $3.33/month for unlimited searches and more results. We make money through affiliate commissions when you purchase through our links, which doesn't affect the prices you see!"
+      message: "Pick offers a free tier with 5 searches per day. Premium adds unlimited searches and more results — and it's free to activate while we're in beta. We make money through affiliate commissions when you purchase through our links, which doesn't affect the prices you see!"
     };
   }
 
