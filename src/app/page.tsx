@@ -19,7 +19,8 @@ import { HowItWorks } from '@/components/HowItWorks';
 import { StatsSection } from '@/components/StatsSection';
 import { ChatWidget } from '@/components/ChatWidget';
 import { PickLogo } from '@/components/PickLogo';
-import SavingsCounter from '@/components/home/SavingsCounter';
+// SavingsCounter intentionally unmounted: it fabricated an ever-growing "users
+// have saved $X" figure client-side. Re-add once /api/stats serves real data.
 import Testimonials from '@/components/home/Testimonials';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 
@@ -34,6 +35,15 @@ const cardVariants = {
   show: { opacity: 1, y: 0, scale: 1 },
 };
 
+// Honest freshness label: results can be served from a 30-minute server cache
+function formatCheckedAt(checkedAt?: string): string {
+  if (!checkedAt) return 'just now';
+  const ageMin = Math.floor((Date.now() - new Date(checkedAt).getTime()) / 60000);
+  if (ageMin < 1) return 'just now';
+  if (ageMin === 1) return '1 minute ago';
+  return `${ageMin} minutes ago`;
+}
+
 export default function Home() {
   const { user, isAuthenticated, searchesRemaining, incrementSearchCount, getFeatureLimit } =
     useAuth();
@@ -45,6 +55,7 @@ export default function Home() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
   const [searchResponse, setSearchResponse] = useState<any>(null);
+  const [searchError, setSearchError] = useState(false);
 
   // Compare mode state
   const [isCompareMode, setIsCompareMode] = useState(false);
@@ -136,12 +147,17 @@ export default function Home() {
     setQuery(searchQuery);
     setHasSearched(true);
     setResults([]);
+    setSearchError(false);
 
     try {
       const response = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
       const data: any = await response.json();
       setResults(data.results || []);
+      // Even error responses carry retailerSearchLinks we can offer as a fallback
       setSearchResponse(data);
+      if (!response.ok || data.error) {
+        setSearchError(true);
+      }
 
       // Increment search count for authenticated free users
       if (isAuthenticated && user?.plan === 'free') {
@@ -150,6 +166,8 @@ export default function Home() {
     } catch (error) {
       console.error('Search failed:', error);
       setResults([]);
+      setSearchResponse(null);
+      setSearchError(true);
     } finally {
       setIsLoading(false);
     }
@@ -174,7 +192,7 @@ export default function Home() {
         name: "Stanley Quencher H2.0 40oz",
         price: 35.00,
         currency: 'USD',
-        imageUrl: "https://i5.walmartimages.com/seo/Stanley-Quencher-H2-0-FlowState-Stainless-Steel-Vacuum-Insulated-Tumbler-with-Lid-and-Straw-for-Water-Coffee-or-Tea-40-oz-Dune_a6e6f858-e41a-4d40-8b4e-9e685d4e7e51.62d4e27aefbc2a7a2e4ccee6eb417ead.jpeg",
+        imageUrl: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTY1hB8Jy9sKeePkORMfRQ2uki2WnDWLglkr8hq_KOrQShA_VIKXdc0HN3wm6s2d50WjaeugWFLU6EuXDP-mgkm7NOU3M7YmDJdoxBdTUfVvOljy1td6nKHPw",
         retailer: "Target",
         url: "https://www.target.com/s?searchTerm=stanley+quencher",
         rating: 4.8,
@@ -185,7 +203,7 @@ export default function Home() {
         name: "Nike Dunk Low",
         price: 110.00,
         currency: 'USD',
-        imageUrl: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/dd9e1f0d-b5e5-45d0-9e67-b06d5c1f2ec0/dunk-low-retro-shoes-66RGBl.png",
+        imageUrl: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcS4K2IMnIFmWcj2D0hzrwAx-t8W_GPiwM_ipNdIVwuItmho5atWVA1AaZAvpXG67Ks5hK6mpwVqoaxS5j0jayDARTI-cEtfxRZxIECJ29c",
         retailer: "Nike",
         url: "https://www.nike.com/w/dunk-shoes-90aohZ8y3qp",
         rating: 4.6,
@@ -196,7 +214,7 @@ export default function Home() {
         name: "Dyson Airwrap Complete",
         price: 499.99,
         currency: 'USD',
-        imageUrl: "https://dyson-h.assetsadobe2.com/is/image/content/dam/dyson/images/products/hero/447889-01.png",
+        imageUrl: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcR_sr_aR_BCSPZX5qr-8ZnCvFa_jOQzcL5Oid0pbR4KqNNRXP8LnzExKWGAiO-e8jc3z12pVYxLxSJt-BHwu8HAU0_gi7Pst96Ndcoqr4bP1u4xCTZG_S48kg",
         retailer: "Best Buy",
         url: "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+airwrap",
         rating: 4.5,
@@ -205,7 +223,7 @@ export default function Home() {
       {
         id: 'trending-5',
         name: "Sony WH-1000XM5",
-        price: 298.00,
+        price: 328.00,
         currency: 'USD',
         imageUrl: "https://m.media-amazon.com/images/I/51aXvjzcukL._AC_SL1500_.jpg",
         retailer: "Amazon",
@@ -218,7 +236,7 @@ export default function Home() {
         name: "Lululemon Align Leggings",
         price: 98.00,
         currency: 'USD',
-        imageUrl: "https://images.lululemon.com/is/image/lululemon/LW5CUXS_0001_1",
+        imageUrl: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcRSZBZFDswbhXsfgcscQ7KamBr6lFoHklbdPf_9XjiJRPSveAEYitlUxX53o0aB0avGrVt3A2qrBVwUM1BAXq6B7fvCeeIr5amE9lzOSKtISLJuH5dGUkrRdA",
         retailer: "Nordstrom",
         url: "https://www.nordstrom.com/sr?origin=keywordsearch&keyword=lululemon+align",
         rating: 4.8,
@@ -240,7 +258,7 @@ export default function Home() {
         name: "Ninja Creami Ice Cream Maker",
         price: 149.99,
         currency: 'USD',
-        imageUrl: "https://i5.walmartimages.com/seo/Ninja-NC301-CREAMi-Ice-Cream-Maker-for-Gelato-Mix-ins-Milkshakes-Sorbet-Smoothie-Bowls-More-7-One-Touch-Programs-Compact-Size-Perfect-for-Kids-Silver_c2f94614-8e7e-4816-9941-e664051b8d4a.3dd2b9f218459fc34bbfb7cd3c678e08.jpeg",
+        imageUrl: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcR58LO9Il2TZTUZXpkBzzWdMBo1Ui67ny3FQABxpEsdbbrXrE3DZ8RAXCmVry9dNVTIiLxBlbk6PNEuYb1Je5JlyPRn0b71FkTfOA5irieccUiwo04scuKCZA",
         retailer: "Walmart",
         url: "https://www.walmart.com/search?q=ninja+creami",
         rating: 4.6,
@@ -474,7 +492,6 @@ export default function Home() {
             </p>
 
             {/* Savings Counter */}
-            {!hasSearched && <SavingsCounter />}
 
             {/* Search Bar */}
             <div className="mt-6">
@@ -486,7 +503,7 @@ export default function Home() {
           {!hasSearched && (
             <div className="mt-8 flex items-center gap-3 flex-wrap">
               <span className="text-sm text-black/60">Try:</span>
-              {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Hoodies', 'Laptops', 'Going-Out Fits'].map(
+              {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Oversized Hoodie', 'Laptops', 'Mini Dresses'].map(
                 (term) => (
                   <button
                     key={term}
@@ -564,12 +581,31 @@ export default function Home() {
                   rel="noopener noreferrer"
                   className="group bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
                 >
-                  <div className="aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
+                  <div className="relative aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
                     <img
                       src={product.imageUrl}
                       alt={product.name}
                       className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
                       loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('.image-fallback')) {
+                          const fallback = document.createElement('div');
+                          fallback.className = 'image-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-4';
+                          fallback.innerHTML = `
+                            <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
+                              <svg class="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                              </svg>
+                            </div>
+                            <span class="text-xs text-black/40 font-medium">${product.name.substring(0, 30)}${product.name.length > 30 ? '...' : ''}</span>
+                          `;
+                          parent.appendChild(fallback);
+                        }
+                      }}
                     />
                   </div>
                   <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem] text-black">
@@ -622,10 +658,11 @@ export default function Home() {
                   <p className="text-sm text-black/60 mb-4">
                     {resultRetailers.length > 0 && (
                       <>
-                        Across {resultRetailers.join(', ')} •{' '}
+                        Across {resultRetailers.slice(0, 5).join(', ')}
+                        {resultRetailers.length > 5 && ` and ${resultRetailers.length - 5} more stores`} •{' '}
                       </>
                     )}
-                    Prices checked {searchResponse?.cachedAt || 'just now'}
+                    Prices checked {formatCheckedAt(searchResponse?.checkedAt)}
                   </p>
                 </div>
 
@@ -734,7 +771,7 @@ export default function Home() {
                 )}
               </>
             ) : (
-              // Empty state
+              // Empty state — a failed search is not the same as zero matches
               <div className="text-center py-16">
                 <svg
                   className="w-16 h-16 mx-auto text-black/10 mb-4"
@@ -746,22 +783,56 @@ export default function Home() {
                   <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <h3 className="text-lg font-medium text-black mb-2">
-                  No results found for &quot;{query}&quot;
+                  {searchError
+                    ? 'Something went wrong on our end'
+                    : <>No results found for &quot;{query}&quot;</>}
                 </h3>
                 <p className="text-black/50 mb-6">
-                  Try a different search term or browse popular categories.
+                  {searchError
+                    ? 'Our price check failed — it’s not you. Try again, or search the stores directly below.'
+                    : 'Try a different search term, browse popular categories, or search the stores directly below.'}
                 </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {['Headphones', 'Laptops', 'Running Shoes', 'Skincare', 'Kitchen', 'Watches', 'Backpacks'].map((term) => (
-                    <button
-                      key={term}
-                      onClick={() => handleSearch(term)}
-                      className="px-4 py-2 rounded-xl border border-black/10 text-sm text-black/60 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
-                    >
-                      {term}
-                    </button>
-                  ))}
-                </div>
+                {searchError && (
+                  <button
+                    onClick={() => handleSearch(query)}
+                    className="mb-8 px-6 py-2.5 rounded-xl bg-[#2A9D8F] text-white text-sm font-medium hover:bg-[#238B7E] transition"
+                  >
+                    Try again
+                  </button>
+                )}
+                {searchResponse?.retailerSearchLinks?.length > 0 && (
+                  <div className="mb-8">
+                    <p className="text-xs uppercase tracking-wide text-black/40 mb-3">
+                      Search &quot;{query}&quot; on
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {searchResponse.retailerSearchLinks.slice(0, 8).map((link: any) => (
+                        <a
+                          key={link.retailer}
+                          href={link.searchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 rounded-xl border border-black/10 text-sm text-black/70 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
+                        >
+                          {link.retailer} ↗
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {!searchError && (
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {['Headphones', 'Laptops', 'Running Shoes', 'Skincare', 'Kitchen', 'Watches', 'Backpacks'].map((term) => (
+                      <button
+                        key={term}
+                        onClick={() => handleSearch(term)}
+                        className="px-4 py-2 rounded-xl border border-black/10 text-sm text-black/60 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </section>

@@ -78,6 +78,7 @@ export async function GET(req: NextRequest) {
       retailerSearchLinks: retailerLinks,
       message,
       retailersFound, // For frontend to display dynamic header
+      checkedAt: new Date().toISOString(), // preserved in cache so the UI can show real freshness
     };
 
     // Cache eviction: if cache is too large, delete oldest entries

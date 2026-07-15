@@ -16,7 +16,7 @@ export default function Privacy() {
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-5xl font-bold mb-8">Privacy Policy</h1>
-        <p className="text-sm text-black/60 mb-12">Last updated: {new Date().toLocaleDateString()}</p>
+        <p className="text-sm text-black/60 mb-12">Last updated: July 14, 2026</p>
 
         <div className="prose prose-lg max-w-none space-y-8">
           <section>
@@ -116,7 +116,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-black/80 leading-relaxed">
-              If you have questions about this Privacy Policy or our privacy practices, please contact us at privacy@pick.com
+              If you have questions about this Privacy Policy or our privacy practices, please contact us at support@pickmarketplace.com
             </p>
           </section>
         </div>

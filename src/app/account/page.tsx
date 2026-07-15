@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
@@ -9,13 +9,30 @@ import { getSearchCount } from '@/lib/storage';
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout, downgradToFree, getFeatureLimit, searchesRemaining } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, downgradToFree, getFeatureLimit, searchesRemaining } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
 
-  // Redirect if not authenticated (client-side only)
-  if (typeof window !== 'undefined' && !isAuthenticated) {
-    router.push('/login');
-    return null;
+  // Redirect only after the session has been restored, or a hard refresh
+  // bounces logged-in users to /login before AuthContext finishes loading
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <div className="h-8 w-56 bg-black/5 rounded animate-pulse mb-8" />
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="h-5 w-40 bg-black/5 rounded animate-pulse mb-4" />
+            <div className="h-4 w-64 bg-black/5 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -114,7 +131,7 @@ export default function AccountPage() {
                 <p className="text-2xl font-bold text-green-900">
                   {user.plan === 'premium' ? '∞' : searchesRemaining}
                 </p>
-                <p className="text-xs text-green-600 mt-1">Resets daily at midnight</p>
+                <p className="text-xs text-green-600 mt-1">Resets daily at midnight UTC</p>
               </div>
 
               <div className="bg-purple-50 p-4 rounded-lg">

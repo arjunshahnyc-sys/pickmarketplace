@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,14 +10,20 @@ import { ShoppingBag, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Already signed in? Go to the account page instead of showing the form
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/account');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,22 +134,26 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Social Login Buttons */}
+          {/* Social Login Buttons (not wired up yet — shown disabled) */}
           <button
             type="button"
-            onClick={() => alert('Google sign-in coming soon! Log in with email for now.')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-3"
+            disabled
+            title="Google sign-in is coming soon"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl mb-3 opacity-50 cursor-not-allowed"
           >
             <GoogleIcon />
             <span className="text-sm font-medium">Continue with Google</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide bg-black/5 text-black/50 px-2 py-0.5 rounded-full">Soon</span>
           </button>
           <button
             type="button"
-            onClick={() => alert('Apple sign-in coming soon! Log in with email for now.')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-6"
+            disabled
+            title="Apple sign-in is coming soon"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl mb-6 opacity-50 cursor-not-allowed"
           >
             <AppleIcon />
             <span className="text-sm font-medium">Continue with Apple</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide bg-black/5 text-black/50 px-2 py-0.5 rounded-full">Soon</span>
           </button>
 
           {/* Divider */}
@@ -204,17 +214,8 @@ export default function LoginPage() {
                 {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
               </div>
 
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-black/20 text-[#2A9D8F] focus:ring-[#2A9D8F]"
-                  />
-                  <span className="text-sm text-black/60">Remember me</span>
-                </label>
+              {/* Forgot Password */}
+              <div className="flex items-center justify-end">
                 <Link
                   href="/forgot-password"
                   className="text-sm text-[#2A9D8F] hover:underline font-medium"

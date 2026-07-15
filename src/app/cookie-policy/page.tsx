@@ -8,11 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function CookiePolicyPage() {
-  const lastUpdated = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const lastUpdated = 'July 14, 2026';
 
   return (
     <>

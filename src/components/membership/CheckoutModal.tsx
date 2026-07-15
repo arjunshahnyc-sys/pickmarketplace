@@ -7,9 +7,10 @@ import ConfettiCelebration from './ConfettiCelebration';
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
+  plan?: 'monthly' | 'annual';
 }
 
-export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
+export default function CheckoutModal({ isOpen, onClose, plan = 'monthly' }: CheckoutModalProps) {
   const { upgradeToPremium } = useAuth();
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -116,11 +117,26 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           </button>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg mb-6">
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg mb-4">
           <div className="flex items-center justify-between">
-            <span className="text-black/700 font-medium">Premium Plan</span>
-            <span className="text-2xl font-bold text-black/900">$4.99<span className="text-base font-normal text-black/600">/mo</span></span>
+            <span className="text-black/700 font-medium">
+              Premium Plan {plan === 'annual' ? '(annual)' : '(monthly)'}
+            </span>
+            <span className="text-2xl font-bold text-black/900">
+              {plan === 'annual' ? '$39.99' : '$4.99'}
+              <span className="text-base font-normal text-black/600">{plan === 'annual' ? '/yr' : '/mo'}</span>
+            </span>
           </div>
+          {plan === 'annual' && (
+            <p className="text-xs text-black/600 mt-1">Works out to $3.33/month</p>
+          )}
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+          <p className="text-xs text-yellow-800">
+            <strong>Demo checkout:</strong> payments aren't live yet, and no real
+            charges will be made. Don't enter a real card — any numbers work.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -175,7 +191,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             disabled={isProcessing}
             className="w-full bg-[#2A9D8F] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing ? 'Processing...' : 'Pay $4.99/month'}
+            {isProcessing ? 'Processing...' : plan === 'annual' ? 'Pay $39.99/year' : 'Pay $4.99/month'}
           </button>
 
           <p className="text-xs text-black/500 text-center mt-4">

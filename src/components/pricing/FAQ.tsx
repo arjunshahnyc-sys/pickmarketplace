@@ -12,7 +12,7 @@ interface FAQItem {
 const faqData: FAQItem[] = [
   {
     question: 'Can I cancel anytime?',
-    answer: 'Yes! You can cancel your Premium subscription at any time from your Account page. Your access will continue until the end of your billing period.',
+    answer: 'Yes! You can cancel your Premium subscription at any time from your Account page, no questions asked.',
   },
   {
     question: 'Is there a free trial?',
@@ -20,15 +20,15 @@ const faqData: FAQItem[] = [
   },
   {
     question: 'How does Pick make money?',
-    answer: 'We earn a small affiliate commission when you purchase through some of our retailer links. This doesn\'t affect your price.you always get the best deal we find. Premium subscriptions help us keep the service fast and ad-free.',
+    answer: 'We earn a small affiliate commission when you purchase through some of our retailer links. This doesn\'t affect your price — you always get the best deal we find. Premium subscriptions help us keep the service fast and ad-free.',
   },
   {
     question: 'Is Pick like Honey?',
-    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick compares prices across 12 major retailers plus Google Shopping and helps you find similar products at better prices. We also prioritize privacy.we don\'t track your browsing or sell your data.',
+    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick compares prices across major retailers via Google Shopping and helps you find similar products at better prices. We also prioritize privacy — we don\'t track your browsing or sell your data.',
   },
   {
     question: 'What payment methods do you accept?',
-    answer: 'We accept all major credit cards (Visa, Mastercard, American Express, Discover), Apple Pay, and Google Pay. All payments are processed securely through Stripe.',
+    answer: 'Premium billing isn\'t live yet — while we\'re in beta, upgrading uses a demo checkout and you won\'t be charged. When billing launches, we\'ll accept all major credit cards through a secure payment processor.',
   },
 ];
 

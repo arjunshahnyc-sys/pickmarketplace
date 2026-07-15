@@ -345,7 +345,7 @@ export function ChatWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-[380px] h-[600px] bg-white border border-[#E5E5E3] rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden">
+        <div className="fixed bottom-6 right-6 w-[calc(100vw-3rem)] max-w-[380px] h-[min(600px,calc(100dvh-6rem))] bg-white border border-[#E5E5E3] rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-[#2A9D8F] text-white border-b border-[#238579]">
             <div className="flex items-center gap-3">

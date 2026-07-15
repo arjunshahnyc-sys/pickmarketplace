@@ -167,22 +167,26 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Social Login Buttons */}
+          {/* Social Login Buttons (not wired up yet — shown disabled) */}
           <button
             type="button"
-            onClick={() => alert('Google sign-in coming soon! Sign up with email for now.')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-3"
+            disabled
+            title="Google sign-in is coming soon"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl mb-3 opacity-50 cursor-not-allowed"
           >
             <GoogleIcon />
             <span className="text-sm font-medium">Continue with Google</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide bg-black/5 text-black/50 px-2 py-0.5 rounded-full">Soon</span>
           </button>
           <button
             type="button"
-            onClick={() => alert('Apple sign-in coming soon! Sign up with email for now.')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl hover:bg-black/5 transition mb-6"
+            disabled
+            title="Apple sign-in is coming soon"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-xl mb-6 opacity-50 cursor-not-allowed"
           >
             <AppleIcon />
             <span className="text-sm font-medium">Continue with Apple</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide bg-black/5 text-black/50 px-2 py-0.5 rounded-full">Soon</span>
           </button>
 
           {/* Divider */}

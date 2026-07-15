@@ -11,7 +11,7 @@ export default function FAQPage() {
   const faqs = [
     {
       question: "Is Pick Marketplace free to use?",
-      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. We also offer a Premium plan ($3.33/month) with unlimited searches, more results per search, and advanced features. We earn affiliate commissions when you purchase through our links.",
+      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. We also offer a Premium plan ($4.99/month, or $3.33/month billed annually at $39.99) with unlimited searches, more results per search, and advanced features. We earn affiliate commissions when you purchase through our links.",
     },
     {
       question: "How does Pick Marketplace make money?",
@@ -23,11 +23,11 @@ export default function FAQPage() {
     },
     {
       question: "Why does the price on the retailer site differ from what Pick Marketplace shows?",
-      answer: "This happens for a few reasons: (1) The retailer changed their price after we last checked, (2) The product is on a flash sale or limited-time promotion, (3) Shipping costs or taxes aren't included in our displayed price, (4) The product shown is marked as an \\\"example\\\" for demonstration purposes, or (5) The retailer's price varies by location. Always check the final price at checkout.",
+      answer: "This happens for a few reasons: (1) The retailer changed their price after we last checked, (2) The product is on a flash sale or limited-time promotion, (3) Shipping costs or taxes aren't included in our displayed price, (4) The product shown is marked as an \"example\" for demonstration purposes, or (5) The retailer's price varies by location. Always check the final price at checkout.",
     },
     {
       question: "Which retailers does Pick Marketplace support?",
-      answer: "We check 12 major retailers directly: Amazon, Walmart, Target, Best Buy, Costco, eBay, Nordstrom, Macy's, and others. Through Google Shopping integration, you may also see results from 50+ additional merchants. Visit our Supported Retailers page for the complete list.",
+      answer: "We check Target's catalog directly and aggregate live results from Google Shopping, which covers major retailers like Amazon, Walmart, Best Buy, Costco, eBay, Nordstrom, and Macy's, plus many additional merchants. Visit our Supported Retailers page for more detail.",
     },
     {
       question: "Can I set price alerts for products I'm watching?",
@@ -46,8 +46,8 @@ export default function FAQPage() {
       answer: "We show you prices from multiple retailers to help you compare options, but we can't guarantee that we always show the absolute lowest price available online. Prices change frequently, some retailers aren't included in our system, and flash sales or promotional codes may not be reflected. We do our best to help you find a great deal.",
     },
     {
-      question: "Why do some products say \\\"EXAMPLE\\\" or show placeholder images?",
-      answer: "When our price-checking system can't retrieve current data from retailers (due to anti-bot protections or technical issues), we sometimes show example products to demonstrate how the platform works. These are clearly labeled with an \\\"EXAMPLE\\\" badge and disclaimer. The links go to retailer search pages rather than specific product pages.",
+      question: "Why do some products say \"EXAMPLE\" or show placeholder images?",
+      answer: "When our price-checking system can't retrieve current data from retailers (due to anti-bot protections or technical issues), we sometimes show example products to demonstrate how the platform works. These are clearly labeled with an \"EXAMPLE\" badge and disclaimer. The links go to retailer search pages rather than specific product pages.",
     },
   ];
 

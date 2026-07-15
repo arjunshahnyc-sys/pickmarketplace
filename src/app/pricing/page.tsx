@@ -74,7 +74,7 @@ export default function PricingPage() {
                 <svg className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span className="text-black">2 retailers (Amazon, Target)</span>
+                <span className="text-black">Searches all supported stores</span>
               </li>
               <li className="flex items-start">
                 <svg className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -92,22 +92,20 @@ export default function PricingPage() {
                 <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
-                <span className="text-black/40 line-through">Price history & alerts</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
                 <span className="text-black/40 line-through">Similar products</span>
               </li>
             </ul>
 
             <button
               onClick={handleGetStarted}
-              disabled={isAuthenticated && user?.plan === 'free'}
+              disabled={isAuthenticated}
               className="w-full bg-black/10 text-black py-3 rounded-lg font-semibold hover:bg-black/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isAuthenticated && user?.plan === 'free' ? 'Current Plan' : 'Get Started Free'}
+              {isAuthenticated
+                ? user?.plan === 'free'
+                  ? 'Current Plan'
+                  : 'Included with Premium'
+                : 'Get Started Free'}
             </button>
           </div>
 
@@ -144,7 +142,7 @@ export default function PricingPage() {
                 <svg className="w-5 h-5 text-white mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span className="text-white font-medium">100+ results per search</span>
+                <span className="text-white font-medium">Up to 100 results per search</span>
               </li>
               <li className="flex items-start">
                 <svg className="w-5 h-5 text-white mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -168,12 +166,6 @@ export default function PricingPage() {
                 <svg className="w-5 h-5 text-white mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span className="text-white font-medium">Price history & alerts</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-white mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
                 <span className="text-white font-medium">Similar products</span>
               </li>
             </ul>
@@ -192,7 +184,7 @@ export default function PricingPage() {
       <TrustedBy />
       <FAQ />
 
-      <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} />
+      <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} plan={billingPeriod} />
     </div>
   );
 }

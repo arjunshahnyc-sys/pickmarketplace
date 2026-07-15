@@ -31,14 +31,19 @@ export function getAllUsers(): Record<string, User> {
   return data ? JSON.parse(data) : {};
 }
 
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 export function getUser(email: string): User | null {
   const users = getAllUsers();
-  return users[email] || null;
+  // Fall back to the raw key for accounts created before emails were normalized
+  return users[normalizeEmail(email)] || users[email] || null;
 }
 
 export function saveUser(user: User): void {
   const users = getAllUsers();
-  users[user.email] = user;
+  users[normalizeEmail(user.email)] = user;
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 

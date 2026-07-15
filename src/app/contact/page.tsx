@@ -194,7 +194,12 @@ export default function ContactPage() {
                 {status === 'success' && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
-                      Message sent successfully! We'll get back to you soon.
+                      Message recorded — thanks! Our contact form is still in beta,
+                      so for anything urgent please also email{' '}
+                      <a href="mailto:support@pickmarketplace.com" className="underline font-medium">
+                        support@pickmarketplace.com
+                      </a>{' '}
+                      directly.
                     </p>
                   </div>
                 )}
