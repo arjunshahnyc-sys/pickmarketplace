@@ -12,18 +12,9 @@ export function TrustedBy() {
         {retailerLogos.map((retailer) => (
           <div key={retailer.name} className="h-8 flex items-center">
             <img
-              src={`https://logo.clearbit.com/${retailer.domain}`}
+              src={retailer.src}
               alt={`${retailer.name} logo`}
-              className="h-8 w-auto object-contain"
-              loading="lazy"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                if (!img.src.includes('google.com')) {
-                  img.src = `https://www.google.com/s2/favicons?domain=${retailer.domain}&sz=64`;
-                } else {
-                  img.style.display = 'none';
-                }
-              }}
+              className="h-6 w-auto max-w-[110px] object-contain"
             />
           </div>
         ))}

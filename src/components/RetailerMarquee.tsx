@@ -30,22 +30,10 @@ export default function RetailerMarquee() {
             className="mx-10 flex items-center gap-3 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500 cursor-default"
           >
             <img
-              src={`https://logo.clearbit.com/${logo.domain}`}
+              src={logo.src}
               alt={`${logo.name} logo`}
-              className="h-7 w-7 object-contain"
-              loading="lazy"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                if (!img.src.includes('google.com')) {
-                  img.src = `https://www.google.com/s2/favicons?domain=${logo.domain}&sz=64`;
-                } else {
-                  img.style.display = 'none';
-                }
-              }}
+              className="h-6 w-auto max-w-[110px] object-contain"
             />
-            <span className="text-sm font-medium text-black/50 whitespace-nowrap">
-              {logo.name}
-            </span>
           </div>
         ))}
       </Marquee>

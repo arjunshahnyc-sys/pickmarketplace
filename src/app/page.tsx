@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
+import Footer from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
 import ProductCard from '@/components/ProductCard';
 import SearchSection from '@/components/SearchSection';
@@ -13,7 +14,6 @@ import type { SearchResponse, Product } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import { formatPrice } from '@/lib/formatters';
-import RetailerMarquee from '@/components/RetailerMarquee';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HowItWorks } from '@/components/HowItWorks';
 import { StatsSection } from '@/components/StatsSection';
@@ -21,6 +21,8 @@ import { ChatWidget } from '@/components/ChatWidget';
 import { PickLogo } from '@/components/PickLogo';
 // SavingsCounter intentionally unmounted: it fabricated an ever-growing "users
 // have saved $X" figure client-side. Re-add once /api/stats serves real data.
+import { useSavedList } from '@/contexts/SavedListContext';
+import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 // Testimonials intentionally unmounted pre-launch: the quotes were invented.
 // Re-add once there are real user quotes to show.
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
@@ -48,6 +50,7 @@ function formatCheckedAt(checkedAt?: string): string {
 export default function Home() {
   const { user, isAuthenticated, searchesRemaining, incrementSearchCount, getFeatureLimit } =
     useAuth();
+  const { isSaved, toggleItem } = useSavedList();
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -341,6 +344,9 @@ export default function Home() {
   };
 
   const filteredResults = getFilteredAndSortedResults();
+  const saleCount = results.filter(
+    (p: Product) => p.originalPrice && p.originalPrice > p.price
+  ).length;
 
   return (
     <div className="relative z-10 texture-bg min-h-screen">
@@ -477,7 +483,7 @@ export default function Home() {
         )}
 
         {/* Hero Section with animation */}
-        <section className="max-w-5xl mx-auto px-6 pt-16 pb-8">
+        <section className="max-w-5xl mx-auto px-6 pt-20 md:pt-28 pb-16">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -485,31 +491,30 @@ export default function Home() {
             className="max-w-2xl mb-8"
           >
             {/* Hero Text First on Mobile, Search Second */}
-            <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight text-black">
-              Still broke. Still shopping.
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
+              Don't waste your money.
             </h1>
-            <p className="text-sm text-black/60 leading-relaxed max-w-lg mb-6">
-              Find the same item for less, or a near-identical one that costs less. We compare prices across major retailers so you stop overpaying.
+            <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6">
+              Buy the same product for less. One search compares prices across
+              major retailers — same item, or a near-identical one that costs less.
             </p>
 
-            {/* Savings Counter */}
-
             {/* Search Bar */}
-            <div className="mt-6">
+            <div className="mt-8">
               <SearchBar onSearch={handleSearch} isLoading={isLoading} />
             </div>
           </motion.div>
 
           {/* Quick search hints */}
           {!hasSearched && (
-            <div className="mt-8 flex items-center gap-3 flex-wrap">
-              <span className="text-sm text-black/60">Try:</span>
+            <div className="mt-8 flex items-center gap-2.5 flex-wrap">
+              <span className="text-sm text-neutral-500">Try:</span>
               {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Oversized Hoodie', 'Laptops', 'Mini Dresses'].map(
                 (term) => (
                   <button
                     key={term}
                     onClick={() => handleSearch(term)}
-                    className="btn text-sm text-black/60 hover:text-black transition-colors link-underline"
+                    className="rounded-full bg-gray-100 px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 transition-colors"
                   >
                     {term}
                   </button>
@@ -522,33 +527,38 @@ export default function Home() {
         {/* Trusted By Section */}
         {!hasSearched && <TrustedBy />}
 
-        {/* Retailer Marquee */}
-        {!hasSearched && <RetailerMarquee />}
-
         {/* How It Works Section - Simple 3-card version */}
         {!hasSearched && (
-          <section className="max-w-5xl mx-auto px-6 py-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
-                  1
+          <section className="max-w-5xl mx-auto px-6 py-16 md:py-20">
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-[#2A9D8F] mb-3">
+              How it works
+            </p>
+            <h2 className="text-center text-3xl font-bold tracking-tight text-neutral-900 mb-10">
+              Three steps to the best price
+            </h2>
+            <div className="bg-gray-50 rounded-2xl p-8 md:p-12">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
+                    1
+                  </div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Paste or search</h3>
+                  <p className="text-sm text-neutral-600">Drop in what you want. We'll take it from there.</p>
                 </div>
-                <h3 className="font-semibold text-black mb-2">Paste or search</h3>
-                <p className="text-sm text-black/60">Drop in what you want. We'll take it from there.</p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
-                  2
+                <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
+                    2
+                  </div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">See every store</h3>
+                  <p className="text-sm text-neutral-600">Compare prices from multiple online stores.</p>
                 </div>
-                <h3 className="font-semibold text-black mb-2">See every store</h3>
-                <p className="text-sm text-black/60">Compare prices from multiple online stores.</p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
-                  3
+                <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
+                    3
+                  </div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Go where it's cheapest</h3>
+                  <p className="text-sm text-neutral-600">Click. Buy. Move on with your day.</p>
                 </div>
-                <h3 className="font-semibold text-black mb-2">Go where it's cheapest</h3>
-                <p className="text-sm text-black/60">Click. Buy. Move on with your day.</p>
               </div>
             </div>
           </section>
@@ -581,6 +591,29 @@ export default function Home() {
                   className="group bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
                 >
                   <div className="relative aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleItem({
+                          name: product.name,
+                          price: product.price,
+                          image: product.imageUrl,
+                          retailer: product.retailer,
+                          url: product.url,
+                        });
+                      }}
+                      aria-label={isSaved(product.url) ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
+                      title={isSaved(product.url) ? 'Remove from saved items' : 'Save to your list'}
+                      className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
+                        isSaved(product.url)
+                          ? 'bg-[#2A9D8F] text-white'
+                          : 'bg-white/90 text-black/50 hover:text-[#2A9D8F] hover:bg-white'
+                      }`}
+                    >
+                      {isSaved(product.url) ? <Check className="w-4 h-4" /> : <ShoppingBagIcon className="w-4 h-4" />}
+                    </button>
                     <img
                       src={product.imageUrl}
                       alt={product.name}
@@ -651,10 +684,13 @@ export default function Home() {
               <>
                 {/* Results header */}
                 <div className="mb-6">
-                  <h2 className="text-2xl font-semibold mb-2 text-black">
-                    Found {results.length} results for &quot;{query}&quot;
+                  <h2 className="text-3xl font-bold tracking-tight mb-2 text-neutral-900">
+                    Results for &quot;{query}&quot;{' '}
+                    <span className="text-lg font-normal text-neutral-500">
+                      ({results.length})
+                    </span>
                   </h2>
-                  <p className="text-sm text-black/60 mb-4">
+                  <p className="text-sm text-neutral-500 mb-4">
                     {resultRetailers.length > 0 && (
                       <>
                         Across {resultRetailers.slice(0, 5).join(', ')}
@@ -677,7 +713,24 @@ export default function Home() {
                   products={filteredResults}
                   query={query}
                   onSearch={handleSearch}
+                  saleCount={saleCount}
                 />
+
+                {/* Sale filter active but nothing qualifies */}
+                {showOnSaleOnly && filteredResults.length === 0 && (
+                  <div className="text-center py-12 border border-dashed border-black/10 rounded-xl mb-6">
+                    <p className="text-sm text-black/60 mb-4">
+                      None of these results include sale-price data, so there's
+                      nothing to show with this filter on.
+                    </p>
+                    <button
+                      onClick={() => setShowOnSaleOnly(false)}
+                      className="px-5 py-2.5 rounded-xl bg-[#2A9D8F] text-white text-sm font-medium hover:bg-[#238B7E] transition"
+                    >
+                      Show all {results.length} results
+                    </button>
+                  </div>
+                )}
 
                 {/* Product grid with stagger animation */}
                 <motion.div
@@ -1071,25 +1124,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-black/10 bg-white mt-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <PickLogo size={20} />
-              <span className="text-sm font-medium text-black">pick</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-black/60">
-              <a href="/privacy" className="hover:text-black transition-colors">
-                Privacy
-              </a>
-              <a href="/terms" className="hover:text-black transition-colors">
-                Terms
-              </a>
-              <span>&copy; {new Date().getFullYear()}</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Chatbot */}
       <ChatWidget />

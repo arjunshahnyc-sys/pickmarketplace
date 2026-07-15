@@ -17,6 +17,7 @@ interface SearchSectionProps {
   products?: Product[];
   query?: string;
   onSearch?: (query: string) => void;
+  saleCount?: number;
 }
 
 export default function SearchSection({
@@ -30,6 +31,7 @@ export default function SearchSection({
   products = [],
   query = '',
   onSearch,
+  saleCount = 0,
 }: SearchSectionProps) {
   const { canUseFeature } = useAuth();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -91,17 +93,27 @@ export default function SearchSection({
       {/* PINCHPOINT 2 FIX - Sticky Filter Bar */}
       <div className="sticky top-0 z-20 bg-white py-3 border-b border-pick-border mb-4">
         <div className="flex flex-wrap items-center gap-3">
-          {/* On Sale Only Toggle */}
+          {/* On Sale Only Toggle — disabled when no result carries sale-price data */}
           <button
             onClick={onOnSaleToggle}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+            disabled={saleCount === 0 && !showOnSaleOnly}
+            title={
+              saleCount === 0 && !showOnSaleOnly
+                ? 'None of these results include sale-price data'
+                : undefined
+            }
+            className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
               showOnSaleOnly
-                ? 'bg-[#2A9D8F] text-white border-[#2A9D8F]'
-                : 'bg-white text-black border-black/10 hover:border-[#2A9D8F]'
+                ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
+                : saleCount === 0
+                  ? 'bg-gray-100 text-neutral-400 cursor-not-allowed'
+                  : 'bg-gray-100 text-neutral-700 hover:bg-gray-200'
             }`}
           >
             <Tag size={16} />
-            <span className="text-sm font-medium">On Sale Only</span>
+            <span className="text-sm font-medium">
+              On Sale Only{saleCount > 0 && !showOnSaleOnly ? ` (${saleCount})` : ''}
+            </span>
           </button>
 
           {/* Sort Dropdown with Label */}
@@ -111,7 +123,7 @@ export default function SearchSection({
               <select
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value)}
-                className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-black hover:border-[#2A9D8F] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+                className="appearance-none h-10 bg-gray-100 rounded-full px-4 pr-10 text-sm font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
               >
                 <option value="relevance">Relevance</option>
                 <option value="price-low">Price: Low to High</option>
@@ -128,10 +140,10 @@ export default function SearchSection({
           {/* Compare Button */}
           <button
             onClick={handleCompareClick}
-            className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+            className={`ml-auto flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
               isCompareMode
-                ? 'bg-[#2A9D8F] text-white border-[#2A9D8F]'
-                : 'bg-white text-black border-black/10 hover:border-[#2A9D8F] hover:text-[#2A9D8F]'
+                ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
+                : 'bg-gray-100 text-neutral-700 hover:bg-gray-200'
             }`}
           >
             <svg

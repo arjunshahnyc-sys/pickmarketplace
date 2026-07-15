@@ -102,7 +102,12 @@ function isRelevantResult(title: string, query: string): boolean {
 
   if (queryWords.length === 0) return true; // If no meaningful query words, accept all
 
-  const matchingWords = queryWords.filter(word => titleLower.includes(word));
+  // Match singular/plural variants: "laptops" should match a title saying "laptop"
+  const matchingWords = queryWords.filter(word => {
+    if (titleLower.includes(word)) return true;
+    const singular = word.replace(/(ses|xes|zes|ches|shes)$/, (m) => m.slice(0, -2)).replace(/s$/, '');
+    return singular.length > 2 && titleLower.includes(singular);
+  });
   const matchPercentage = matchingWords.length / queryWords.length;
 
   return matchPercentage >= 0.5; // At least 50% of query words must appear in title
