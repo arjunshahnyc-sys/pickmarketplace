@@ -37,7 +37,6 @@ const FEATURE_LIMITS = {
   free: {
     searchesPerDay: 5,
     resultsPerSearch: 10,
-    chatbot: 'limited',
     priceComparison: false,
     priceHistory: false,
     priceAlerts: false,
@@ -46,7 +45,6 @@ const FEATURE_LIMITS = {
   premium: {
     searchesPerDay: Infinity,
     resultsPerSearch: 100,
-    chatbot: 'full',
     priceComparison: true,
     priceHistory: true,
     priceAlerts: true,
@@ -173,8 +171,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return limits.priceAlerts;
       case 'similarProducts':
         return limits.similarProducts;
-      case 'fullChatbot':
-        return limits.chatbot === 'full';
       default:
         return true;
     }

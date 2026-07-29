@@ -17,7 +17,6 @@ import { formatPrice } from '@/lib/formatters';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HowItWorks } from '@/components/HowItWorks';
 import { StatsSection } from '@/components/StatsSection';
-import { ChatWidget } from '@/components/ChatWidget';
 import { PickLogo } from '@/components/PickLogo';
 // SavingsCounter intentionally unmounted: it fabricated an ever-growing "users
 // have saved $X" figure client-side. Re-add once /api/stats serves real data.
@@ -654,7 +653,7 @@ export default function Home() {
           </motion.section>
         )}
 
-        {/* Results Section - PINCHPOINT 9 FIX - Added pb-24 for chatbot clearance */}
+        {/* Results Section */}
         {hasSearched && (
           <section className="max-w-5xl mx-auto px-6 pb-32">
             {isLoading ? (
@@ -1125,9 +1124,6 @@ export default function Home() {
 
       {/* Footer */}
       <Footer />
-
-      {/* Chatbot */}
-      <ChatWidget />
 
       {/* Compare Drawer */}
       {isCompareMode && selectedProducts.length > 0 && (
