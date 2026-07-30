@@ -97,6 +97,21 @@
     };
   }
 
+  // Only allow http(s) links from API data — anything else (javascript:,
+  // data:, malformed) is dropped so it can never end up in an href.
+  function safeHttpUrl(url) {
+    if (typeof url !== 'string' || !url) return null;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return parsed.href;
+      }
+    } catch (e) {
+      // fall through
+    }
+    return null;
+  }
+
   // Call the Pick API to find alternatives
   async function findAlternatives(product) {
     try {
@@ -110,8 +125,10 @@
 
       const response = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(searchTerms)}`);
 
+      // Rate-limited (429) or failing API: show nothing rather than invent
+      // savings — fabricated prices would mislead the user.
       if (!response.ok) {
-        throw new Error('API request failed');
+        return [];
       }
 
       const data = await response.json();
@@ -124,12 +141,17 @@
           // Skip the current site
           if (priceData.retailer === product.site) continue;
 
+          // API data is third-party (retailer feeds) — validate before use.
+          const price = Number(priceData.amount);
+          const site = typeof priceData.retailer === 'string' ? priceData.retailer.trim() : '';
+          if (!site || !Number.isFinite(price) || price <= 0) continue;
+
           // Only include if cheaper than current price
-          if (priceData.amount < product.price) {
+          if (price < product.price) {
             alternatives.push({
-              site: priceData.retailer,
-              price: priceData.amount,
-              url: priceData.url,
+              site,
+              price,
+              url: safeHttpUrl(priceData.url) || getSearchUrl(site, searchTerms),
               productName: result.name
             });
           }
@@ -143,8 +165,8 @@
 
     } catch (error) {
       console.error('[Pick] API error:', error);
-      // Fallback to mock data if API fails
-      return generateMockAlternatives(product);
+      // No fabricated fallback prices — an empty list just hides the widget.
+      return [];
     }
   }
 
@@ -157,80 +179,97 @@
       'Target': `https://www.target.com/s?searchTerm=${encodedQuery}`,
       'Best Buy': `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedQuery}`
     };
-    return urls[site] || `https://www.google.com/search?q=${encodedQuery}+${site}`;
+    // site can be third-party text from the API — encode it so it can't
+    // smuggle extra URL parameters into the fallback link.
+    return urls[site] || `https://www.google.com/search?q=${encodedQuery}+${encodeURIComponent(site)}`;
   }
 
-  // Fallback mock data generator
-  function generateMockAlternatives(product) {
-    const retailers = ['Amazon', 'Walmart', 'Target', 'Best Buy'];
-    const currentSite = product.site;
-
-    // Extract clean search terms from product name
-    const searchTerms = product.name
-      .replace(/[^\w\s]/g, ' ')
-      .split(' ')
-      .filter(word => word.length > 2)
-      .slice(0, 5)
-      .join(' ');
-
-    return retailers
-      .filter(r => r !== currentSite)
-      .map(site => ({
-        site,
-        price: product.price * (0.85 + Math.random() * 0.1), // 5-15% cheaper
-        url: getSearchUrl(site, searchTerms)
-      }))
-      .filter(alt => alt.price < product.price)
-      .sort((a, b) => a.price - b.price)
-      .slice(0, 3);
+  // DOM-building helper — text always goes through textContent, never markup.
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
   }
 
-  // Create and show the Pick widget
+  // Create and show the Pick widget.
+  // Built with createElement/textContent (not innerHTML) because retailer
+  // names and URLs come from third-party API data and must never be
+  // interpreted as markup inside the host page.
   function showPickWidget(product, alternatives) {
     // Remove existing widget
     const existing = document.getElementById('pick-widget');
     if (existing) existing.remove();
 
     const bestSavings = (product.price - alternatives[0].price).toFixed(2);
-    const bestPercent = Math.round((1 - alternatives[0].price / product.price) * 100);
 
     // Create widget container
     const widget = document.createElement('div');
     widget.id = 'pick-widget';
-    widget.innerHTML = `
-      <div class="pick-header">
-        <div class="pick-logo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2A9D8F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <path d="M16 10a4 4 0 0 1-8 0"></path>
-          </svg>
-          <span>Save $${bestSavings} with Pick</span>
-        </div>
-        <button class="pick-close" id="pick-close">×</button>
-      </div>
-      <div class="pick-current">
-        <span class="pick-label">Current price at ${product.site}</span>
-        <span class="pick-current-price">$${product.price.toFixed(2)}</span>
-      </div>
-      <div class="pick-alternatives">
-        ${alternatives.map((alt, index) => `
-          <a href="${alt.url}" target="_blank" class="pick-alt" data-savings="${(product.price - alt.price).toFixed(2)}">
-            <div class="pick-alt-info">
-              <span class="pick-alt-site">${alt.site}${index === 0 ? '<span class="pick-best-badge">Best</span>' : ''}</span>
-              <span class="pick-alt-price">$${alt.price.toFixed(2)}</span>
-            </div>
-            <div class="pick-alt-savings">
-              Save $${(product.price - alt.price).toFixed(2)}
-              <span class="pick-alt-percent">-${Math.round((1 - alt.price / product.price) * 100)}%</span>
-            </div>
-          </a>
-        `).join('')}
-      </div>
-      <div class="pick-footer">
-        <a href="${API_BASE}" target="_blank">Search more on Pick →</a>
-      </div>
-    `;
+
+    // Header
+    const header = el('div', 'pick-header');
+    const logo = el('div', 'pick-logo');
+    // Static SVG markup only — nothing interpolated.
+    logo.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2A9D8F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <path d="M16 10a4 4 0 0 1-8 0"></path>
+      </svg>`;
+    logo.appendChild(el('span', null, `Save $${bestSavings} with Pick`));
+    const closeButton = el('button', 'pick-close', '×');
+    closeButton.id = 'pick-close';
+    header.appendChild(logo);
+    header.appendChild(closeButton);
+    widget.appendChild(header);
+
+    // Current price
+    const current = el('div', 'pick-current');
+    current.appendChild(el('span', 'pick-label', `Current price at ${product.site}`));
+    current.appendChild(el('span', 'pick-current-price', `$${product.price.toFixed(2)}`));
+    widget.appendChild(current);
+
+    // Alternatives
+    const list = el('div', 'pick-alternatives');
+    alternatives.forEach((alt, index) => {
+      const url = safeHttpUrl(alt.url);
+      if (!url) return;
+
+      const savings = (product.price - alt.price).toFixed(2);
+      const percent = Math.round((1 - alt.price / product.price) * 100);
+
+      const link = el('a', 'pick-alt');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.dataset.savings = savings;
+
+      const info = el('div', 'pick-alt-info');
+      const siteLabel = el('span', 'pick-alt-site', alt.site);
+      if (index === 0) {
+        siteLabel.appendChild(el('span', 'pick-best-badge', 'Best'));
+      }
+      info.appendChild(siteLabel);
+      info.appendChild(el('span', 'pick-alt-price', `$${alt.price.toFixed(2)}`));
+      link.appendChild(info);
+
+      const savingsRow = el('div', 'pick-alt-savings', `Save $${savings} `);
+      savingsRow.appendChild(el('span', 'pick-alt-percent', `-${percent}%`));
+      link.appendChild(savingsRow);
+
+      list.appendChild(link);
+    });
+    widget.appendChild(list);
+
+    // Footer
+    const footer = el('div', 'pick-footer');
+    const footerLink = el('a', null, 'Search more on Pick →');
+    footerLink.href = API_BASE;
+    footerLink.target = '_blank';
+    footerLink.rel = 'noopener noreferrer';
+    footer.appendChild(footerLink);
+    widget.appendChild(footer);
 
     document.body.appendChild(widget);
 

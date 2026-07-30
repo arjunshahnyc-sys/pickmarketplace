@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = checkRateLimit(request, RATE_LIMITS.contact);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSeconds);
+    }
+
     const body = await request.json();
     const { name, email, subject, message } = body;
 

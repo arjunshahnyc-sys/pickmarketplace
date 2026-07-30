@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser, toPublicUser } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, RATE_LIMITS.plan);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSeconds);
+    }
+
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not signed in' }, { status: 401 });

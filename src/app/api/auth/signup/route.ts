@@ -3,9 +3,15 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createSession, normalizeEmail, toPublicUser } from '@/lib/auth';
 import { validateEmail, validatePassword, validateName } from '@/lib/validation';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, RATE_LIMITS.signup);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSeconds);
+    }
+
     const body = await req.json().catch(() => null);
     if (!body) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });

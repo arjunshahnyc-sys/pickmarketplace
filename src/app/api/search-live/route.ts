@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks } from "@/lib/scrapers";
-
-const cache = new Map<string, { data: any; ts: number }>();
-const TTL = 30 * 60 * 1000;
-const MAX_CACHE_SIZE = 100;
-const CACHE_EVICTION_COUNT = 20;
+import { buildRetailerDeepLinks } from "@/lib/scrapers";
+import { performLiveSearch } from "@/lib/searchService";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,74 +24,23 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const key = q.toLowerCase().trim();
-
-    // Check cache
-    const cached = cache.get(key);
-    if (cached && Date.now() - cached.ts < TTL) {
-      return NextResponse.json(cached.data);
+    // Rate limit after validation so malformed requests don't consume budget,
+    // but before the (paid) live search runs. Body keeps the same fallback
+    // fields as the other error paths — the homepage renders them.
+    const rl = checkRateLimit(req, RATE_LIMITS.search);
+    if (!rl.ok) {
+      return NextResponse.json(
+        {
+          error: "Too many searches. Please wait a moment and try again.",
+          results: [],
+          retailerSearchLinks: buildRetailerDeepLinks(q),
+          message: "Search retailers directly:",
+        },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+      );
     }
 
-    // Search both APIs in parallel
-    const [googleResults, targetResults] = await Promise.all([
-      searchGoogleShoppingAPI(q),
-      searchTarget(q),
-    ]);
-
-    // Combine and deduplicate results (prefer Target results for same products)
-    const allResults = [...googleResults, ...targetResults];
-
-    // Deduplicate by product name (case-insensitive)
-    const seen = new Set<string>();
-    const uniqueResults = allResults.filter((product) => {
-      const normalizedName = product.name.toLowerCase().trim();
-      if (seen.has(normalizedName)) {
-        return false;
-      }
-      seen.add(normalizedName);
-      return true;
-    });
-
-    // Always generate retailer search links
-    const retailerLinks = buildRetailerDeepLinks(q);
-
-    // Get unique retailers from results
-    const retailersFound = Array.from(new Set(uniqueResults.map(p => p.retailer)));
-
-    // Determine message based on results
-    let message = "";
-    if (uniqueResults.length > 0) {
-      if (retailersFound.length > 1) {
-        message = `Showing results from ${retailersFound.slice(0, -1).join(', ')} and ${retailersFound[retailersFound.length - 1]}. Search more retailers below.`;
-      } else {
-        message = `Showing results from ${retailersFound[0]}. Search other retailers directly below.`;
-      }
-    } else {
-      message = "No exact product matches found. Search retailers directly:";
-    }
-
-    const data = {
-      results: uniqueResults,
-      retailerSearchLinks: retailerLinks,
-      message,
-      retailersFound, // For frontend to display dynamic header
-      checkedAt: new Date().toISOString(), // preserved in cache so the UI can show real freshness
-    };
-
-    // Cache eviction: if cache is too large, delete oldest entries
-    if (cache.size > MAX_CACHE_SIZE) {
-      const entries = Array.from(cache.entries());
-      // Sort by timestamp (oldest first)
-      entries.sort((a, b) => a[1].ts - b[1].ts);
-      // Delete oldest entries
-      for (let i = 0; i < CACHE_EVICTION_COUNT && i < entries.length; i++) {
-        cache.delete(entries[i][0]);
-      }
-    }
-
-    // Add to cache
-    cache.set(key, { data, ts: Date.now() });
-
+    const data = await performLiveSearch(q);
     return NextResponse.json(data);
   } catch (error) {
     // Log error for debugging

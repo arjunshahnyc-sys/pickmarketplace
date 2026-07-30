@@ -42,64 +42,112 @@ function showNoProduct() {
   `;
 }
 
+// DOM-building helper — text always goes through textContent, never markup.
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+// Only allow http(s) URLs from stored/scraped data — anything else is dropped.
+function safeHttpUrl(url) {
+  if (typeof url !== 'string' || !url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return parsed.href;
+    }
+  } catch (e) {
+    // fall through
+  }
+  return null;
+}
+
+// Product name/image come from scraped retailer pages and alternatives from
+// API data — all built with createElement/textContent so none of it is ever
+// interpreted as markup.
+function buildProductInfo(product, nameMaxLength) {
+  const info = el('div', 'product-info');
+  const imageUrl = safeHttpUrl(product.image);
+  if (imageUrl) {
+    const img = el('img', 'product-image');
+    img.src = imageUrl;
+    img.alt = '';
+    info.appendChild(img);
+  }
+  const details = el('div', 'product-details');
+  const name = nameMaxLength ? truncate(product.name, nameMaxLength) : product.name;
+  details.appendChild(el('div', 'product-name', name));
+  details.appendChild(el('div', 'product-price', `$${product.price.toFixed(2)}`));
+  info.appendChild(details);
+  return info;
+}
+
 function showNoDeals(product) {
   const content = document.getElementById('content');
-  content.innerHTML = `
-    <div class="product-info">
-      ${product.image ? `<img src="${product.image}" alt="" class="product-image">` : ''}
-      <div class="product-details">
-        <div class="product-name">${product.name}</div>
-        <div class="product-price" style="text-decoration: none; color: #2A9D8F;">$${product.price.toFixed(2)}</div>
-      </div>
-    </div>
-    <div class="no-deals">
-      <div class="no-deals-icon">✓</div>
-      <h3>You've got the best price!</h3>
-      <p>We checked other retailers and couldn't find this product cheaper.</p>
-    </div>
-  `;
+  content.textContent = '';
+
+  const info = buildProductInfo(product);
+  const price = info.querySelector('.product-price');
+  price.style.textDecoration = 'none';
+  price.style.color = '#2A9D8F';
+  content.appendChild(info);
+
+  const noDeals = el('div', 'no-deals');
+  noDeals.appendChild(el('div', 'no-deals-icon', '✓'));
+  noDeals.appendChild(el('h3', null, "You've got the best price!"));
+  noDeals.appendChild(el('p', null, "We checked other retailers and couldn't find this product cheaper."));
+  content.appendChild(noDeals);
 }
 
 function showProductWithAlternatives(product, alternatives) {
   const content = document.getElementById('content');
+  content.textContent = '';
 
-  const bestSavings = product.price - alternatives[0].price;
+  content.appendChild(buildProductInfo(product, 60));
 
-  content.innerHTML = `
-    <div class="product-info">
-      ${product.image ? `<img src="${product.image}" alt="" class="product-image">` : ''}
-      <div class="product-details">
-        <div class="product-name">${truncate(product.name, 60)}</div>
-        <div class="product-price">$${product.price.toFixed(2)}</div>
-      </div>
-    </div>
-    <div class="alternatives-section">
-      <div class="alternatives-header">
-        <h3>Cheaper options found</h3>
-        <span class="alternatives-count">${alternatives.length} ${alternatives.length === 1 ? 'deal' : 'deals'}</span>
-      </div>
-      ${alternatives.map((alt, index) => `
-        <a href="${alt.url}" target="_blank" class="alternative" data-savings="${product.price - alt.price}">
-          <div class="alt-left">
-            <span class="alt-site">${alt.site}${index === 0 ? ' <span style="background:#2A9D8F;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:6px;">BEST</span>' : ''}</span>
-            <span class="alt-savings">Save $${(product.price - alt.price).toFixed(2)}</span>
-          </div>
-          <div class="alt-right">
-            <div class="alt-price">$${alt.price.toFixed(2)}</div>
-            <div class="alt-percent">-${Math.round((1 - alt.price / product.price) * 100)}%</div>
-          </div>
-        </a>
-      `).join('')}
-    </div>
-  `;
+  const section = el('div', 'alternatives-section');
+  const header = el('div', 'alternatives-header');
+  header.appendChild(el('h3', null, 'Cheaper options found'));
+  header.appendChild(el('span', 'alternatives-count',
+    `${alternatives.length} ${alternatives.length === 1 ? 'deal' : 'deals'}`));
+  section.appendChild(header);
 
-  // Add click handlers to track savings
-  document.querySelectorAll('.alternative').forEach(el => {
-    el.addEventListener('click', () => {
-      const savings = parseFloat(el.dataset.savings);
-      trackSavings(savings);
+  alternatives.forEach((alt, index) => {
+    const url = safeHttpUrl(alt.url);
+    if (!url) return;
+
+    const link = el('a', 'alternative');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.dataset.savings = product.price - alt.price;
+
+    const left = el('div', 'alt-left');
+    const site = el('span', 'alt-site', alt.site);
+    if (index === 0) {
+      const badge = el('span', null, 'BEST');
+      badge.style.cssText = 'background:#2A9D8F;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:6px;';
+      site.appendChild(badge);
+    }
+    left.appendChild(site);
+    left.appendChild(el('span', 'alt-savings', `Save $${(product.price - alt.price).toFixed(2)}`));
+    link.appendChild(left);
+
+    const right = el('div', 'alt-right');
+    right.appendChild(el('div', 'alt-price', `$${alt.price.toFixed(2)}`));
+    right.appendChild(el('div', 'alt-percent', `-${Math.round((1 - alt.price / product.price) * 100)}%`));
+    link.appendChild(right);
+
+    link.addEventListener('click', () => {
+      trackSavings(product.price - alt.price);
     });
+
+    section.appendChild(link);
   });
+
+  content.appendChild(section);
 }
 
 function trackSavings(amount) {

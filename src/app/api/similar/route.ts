@@ -1,42 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// CORS headers for extension access
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-// Helper to generate proper search URLs
-function getSearchUrl(retailer: string, productName: string): string {
-  const query = encodeURIComponent(productName);
-  const urls: Record<string, string> = {
-    'Amazon': `https://www.amazon.com/s?k=${query}`,
-    'Walmart': `https://www.walmart.com/search?q=${query}`,
-    'Target': `https://www.target.com/s?searchTerm=${query}`,
-    'Best Buy': `https://www.bestbuy.com/site/searchpage.jsp?st=${query}`,
-    'Costco': `https://www.costco.com/CatalogSearch?keyword=${query}`,
-    'eBay': `https://www.ebay.com/sch/i.html?_nkw=${query}`,
-    'Nordstrom': `https://www.nordstrom.com/sr?keyword=${query}`,
-  };
-  return urls[retailer] || `https://www.google.com/search?q=${query}+${retailer}`;
-}
+import { searchWithFallback } from '@/lib/searchService';
+import { getSearchUrl } from '@/lib/retailerUrls';
+import { extensionCorsHeaders } from '@/lib/cors';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Handle CORS preflight
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, { headers: extensionCorsHeaders(request.headers.get('origin')) });
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get('q');
+  const corsHeaders = extensionCorsHeaders(request.headers.get('origin'));
 
-    if (!query) {
+  try {
+    const query = request.nextUrl.searchParams.get('q');
+
+    if (!query || query.length > 200) {
       return NextResponse.json(
         { similar: [], count: 0 },
         { status: 200, headers: corsHeaders }
       );
+    }
+
+    const rl = checkRateLimit(request, RATE_LIMITS.search);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSeconds, corsHeaders);
     }
 
     // Extract key terms from the query
@@ -47,24 +35,9 @@ export async function GET(request: NextRequest) {
       .filter(term => term.length > 2)
       .slice(0, 5);
 
-    // Call internal search API to get products
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
+    const results = await searchWithFallback(query);
 
-    const searchUrl = `${baseUrl}/api/search?q=${encodeURIComponent(query)}`;
-    const response = await fetch(searchUrl);
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { similar: [], count: 0 },
-        { status: 200, headers: corsHeaders }
-      );
-    }
-
-    const data = await response.json();
-
-    if (!data.results || data.results.length === 0) {
+    if (results.length === 0) {
       return NextResponse.json(
         { similar: [], count: 0 },
         { status: 200, headers: corsHeaders }
@@ -72,14 +45,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform products into similar products format (4-8 items)
-    const similar = data.results.slice(0, 8).map((product: any) => {
+    const similar = results.slice(0, 8).map((product) => {
       // Calculate similarity score based on how many search terms match
       const nameLower = product.name.toLowerCase();
       const matchedTerms = searchTerms.filter(term => nameLower.includes(term));
-      const similarityScore = matchedTerms.length / searchTerms.length;
+      const similarityScore = searchTerms.length > 0 ? matchedTerms.length / searchTerms.length : 0;
 
       // Get the lowest price and its corresponding retailer
-      const lowestPriceEntry = product.prices.find((p: any) => p.amount === product.lowestPrice) || product.prices[0];
+      const lowestPriceEntry = product.prices.find((p) => p.amount === product.lowestPrice) || product.prices[0];
 
       return {
         id: product.id,
@@ -94,7 +67,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Sort by similarity score (highest first)
-    similar.sort((a: any, b: any) => b.similarityScore - a.similarityScore);
+    similar.sort((a, b) => b.similarityScore - a.similarityScore);
 
     return NextResponse.json(
       { similar, count: similar.length },
@@ -106,7 +79,7 @@ export async function GET(request: NextRequest) {
     // NEVER throw 500 - always return graceful response with CORS
     return NextResponse.json(
       { similar: [], count: 0 },
-      { status: 200, headers: corsHeaders }
+      { status: 200, headers: extensionCorsHeaders(request.headers.get('origin')) }
     );
   }
 }

@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// CORS headers for extension access
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-// Helper to generate proper search URLs
-function getSearchUrl(retailer: string, productName: string): string {
-  const query = encodeURIComponent(productName);
-  const urls: Record<string, string> = {
-    'Amazon': `https://www.amazon.com/s?k=${query}`,
-    'Walmart': `https://www.walmart.com/search?q=${query}`,
-    'Target': `https://www.target.com/s?searchTerm=${query}`,
-    'Best Buy': `https://www.bestbuy.com/site/searchpage.jsp?st=${query}`,
-    'Costco': `https://www.costco.com/CatalogSearch?keyword=${query}`,
-    'eBay': `https://www.ebay.com/sch/i.html?_nkw=${query}`,
-    'Nordstrom': `https://www.nordstrom.com/sr?keyword=${query}`,
-  };
-  return urls[retailer] || `https://www.google.com/search?q=${query}+${retailer}`;
-}
+import { searchWithFallback } from '@/lib/searchService';
+import { getSearchUrl } from '@/lib/retailerUrls';
+import { extensionCorsHeaders } from '@/lib/cors';
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Helper function to extract meaningful search terms from natural language
 function extractSearchTerms(query: string): string[] {
@@ -50,12 +32,19 @@ const trendingProducts = [
 ];
 
 // Handle CORS preflight
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, { headers: extensionCorsHeaders(request.headers.get('origin')) });
 }
 
 export async function POST(request: NextRequest) {
+  const corsHeaders = extensionCorsHeaders(request.headers.get('origin'));
+
   try {
+    const rl = checkRateLimit(request, RATE_LIMITS.search);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSeconds, corsHeaders);
+    }
+
     const body = await request.json();
     const { query, image } = body;
 
@@ -82,8 +71,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (typeof query === 'string' && query.length > 200) {
+      return NextResponse.json(
+        { products: [], message: 'Search query is too long (max 200 characters).', count: 0 },
+        { status: 200, headers: corsHeaders }
+      );
+    }
+
     // Handle text search
-    if (query) {
+    if (typeof query === 'string') {
       const searchTerms = extractSearchTerms(query);
 
       if (searchTerms.length === 0) {
@@ -93,24 +89,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Call internal search API to get products
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000';
+      const results = await searchWithFallback(query);
 
-      const searchUrl = `${baseUrl}/api/search?q=${encodeURIComponent(query)}`;
-      const response = await fetch(searchUrl);
-
-      if (!response.ok) {
-        return NextResponse.json(
-          { products: [], message: 'Search service temporarily unavailable.', count: 0 },
-          { status: 200, headers: corsHeaders }
-        );
-      }
-
-      const data = await response.json();
-
-      if (!data.results || data.results.length === 0) {
+      if (results.length === 0) {
         return NextResponse.json(
           { products: [], searchTerms, count: 0, message: 'No products found matching your request.' },
           { status: 200, headers: corsHeaders }
@@ -118,14 +99,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Transform products into response format (3-8 results)
-      const matchedProducts = data.results.slice(0, 8).map((product: any) => {
+      const matchedProducts = results.slice(0, 8).map((product) => {
         // Calculate match confidence
         const nameLower = product.name.toLowerCase();
         const matchedTerms = searchTerms.filter(term => nameLower.includes(term));
         const confidence = Math.round((matchedTerms.length / searchTerms.length) * 100);
 
         // Get the lowest price and its corresponding retailer
-        const lowestPriceEntry = product.prices.find((p: any) => p.amount === product.lowestPrice) || product.prices[0];
+        const lowestPriceEntry = product.prices.find((p) => p.amount === product.lowestPrice) || product.prices[0];
 
         return {
           id: product.id,
@@ -141,7 +122,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Sort by confidence (highest first)
-      matchedProducts.sort((a: any, b: any) => b.confidence - a.confidence);
+      matchedProducts.sort((a, b) => b.confidence - a.confidence);
 
       return NextResponse.json(
         { products: matchedProducts, searchTerms, count: matchedProducts.length },
@@ -149,7 +130,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fallback if neither query nor image
+    // Fallback if neither a valid query nor image
     return NextResponse.json(
       { products: [], message: 'Please provide a search query or image.', count: 0 },
       { status: 200, headers: corsHeaders }
