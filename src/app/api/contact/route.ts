@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // TODO: Send email notification
     // Example with Resend:
     // await resend.emails.send({
-    //   from: 'Pick Marketplace <noreply@pickmarketplace.com>',
+    //   from: 'Pick Marketplace <noreply@pickmarketplace.app>',
     //   to: 'support@pickmarketplace.app',
     //   subject: `Contact Form: ${subject}`,
     //   html: `

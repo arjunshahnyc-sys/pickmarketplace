@@ -8,6 +8,8 @@ interface OrganizationSchemaProps {
 }
 
 export function OrganizationSchema({ name, url, logo, description }: OrganizationSchemaProps) {
+  // No sameAs links until real social profiles exist — pointing Google at
+  // unregistered handles hurts rather than helps entity recognition.
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -15,11 +17,6 @@ export function OrganizationSchema({ name, url, logo, description }: Organizatio
     url,
     logo,
     description,
-    sameAs: [
-      'https://twitter.com/pickmarketplace',
-      'https://facebook.com/pickmarketplace',
-      'https://instagram.com/pickmarketplace',
-    ],
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
@@ -116,7 +113,8 @@ export function WebsiteSchema({ name, url, description }: WebsiteSchemaProps) {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${url}/search?q={search_term_string}`,
+        // Search lives on the homepage as /?q=, not on a /search route
+        urlTemplate: `${url}/?q={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },

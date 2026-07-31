@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <a
-          href="mailto:support@pickmarketplace.com?subject=Password%20reset%20request"
+          href="mailto:support@pickmarketplace.app?subject=Password%20reset%20request"
           className="w-full flex items-start gap-3 p-4 border border-black/10 rounded-xl hover:border-[#2A9D8F] hover:bg-black/[0.02] transition text-left"
         >
           <Mail className="w-5 h-5 text-[#2A9D8F] mt-0.5 shrink-0" />
@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
               Email support
             </span>
             <span className="block text-xs text-black/60 mt-1">
-              support@pickmarketplace.com — include the email you signed up with.
+              support@pickmarketplace.app — include the email you signed up with.
             </span>
           </span>
         </a>

@@ -1,10 +1,10 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://pickmarketplace.com';
+  const baseUrl = 'https://pickmarketplace.app';
   const currentDate = new Date();
 
-  // Static pages
+  // Static pages — keep in sync with real routes in src/app/
   const staticPages = [
     '',
     '/pricing',
@@ -13,9 +13,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/contact',
     '/help',
     '/faq',
-    '/blog',
+    '/supported-retailers',
     '/privacy',
     '/terms',
+    '/cookie-policy',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: currentDate,
@@ -23,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '' ? 1.0 : 0.8,
   }));
 
-  // Popular search categories (could be dynamic from database)
+  // Popular search categories — search lives at /?q=, not /search
   const popularCategories = [
     'headphones',
     'laptops',
@@ -34,7 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'coffee-makers',
     'gaming-mice',
   ].map((category) => ({
-    url: `${baseUrl}/search?q=${category}`,
+    url: `${baseUrl}/?q=${category}`,
     lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.6,

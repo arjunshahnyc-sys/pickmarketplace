@@ -39,7 +39,7 @@ export default function FAQPage() {
     },
     {
       question: 'How do I report an incorrect price or broken link?',
-      answer: 'If you find a price that's incorrect, a link that doesn't work, or any other issue, please contact us via our contact form or email support@pickmarketplace.com. Include the product name, retailer, and a description of the problem. We review all reports and work to fix issues quickly.',
+      answer: 'If you find a price that's incorrect, a link that doesn't work, or any other issue, please contact us via our contact form or email support@pickmarketplace.app. Include the product name, retailer, and a description of the problem. We review all reports and work to fix issues quickly.',
     },
     {
       question: 'Do you guarantee I'll get the lowest price?',

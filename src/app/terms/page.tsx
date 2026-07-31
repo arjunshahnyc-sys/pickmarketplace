@@ -120,7 +120,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact Information</h2>
             <p className="text-black/80 leading-relaxed">
-              If you have questions about these Terms of Service, please contact us at support@pickmarketplace.com
+              If you have questions about these Terms of Service, please contact us at support@pickmarketplace.app
             </p>
           </section>
         </div>

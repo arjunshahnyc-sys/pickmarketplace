@@ -109,7 +109,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-black/80 leading-relaxed">
-              If you have questions about this Privacy Policy or our privacy practices, please contact us at support@pickmarketplace.com
+              If you have questions about this Privacy Policy or our privacy practices, please contact us at support@pickmarketplace.app
             </p>
           </section>
         </div>

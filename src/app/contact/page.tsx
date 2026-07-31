@@ -196,8 +196,8 @@ export default function ContactPage() {
                     <p className="text-sm text-green-800">
                       Message recorded — thanks! Our contact form is still in beta,
                       so for anything urgent please also email{' '}
-                      <a href="mailto:support@pickmarketplace.com" className="underline font-medium">
-                        support@pickmarketplace.com
+                      <a href="mailto:support@pickmarketplace.app" className="underline font-medium">
+                        support@pickmarketplace.app
                       </a>{' '}
                       directly.
                     </p>
