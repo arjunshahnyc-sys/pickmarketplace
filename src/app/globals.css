@@ -156,25 +156,29 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   transform: scale(0.98);
 }
 
-/* Primary button - Enhanced with ripple effect */
-.btn-primary, button[type="submit"] {
+/* Primary button - Enhanced with ripple effect.
+   These rules are unlayered, so they beat Tailwind's layered utilities;
+   :not(.absolute) keeps them off submit buttons positioned inside inputs
+   (e.g. the search bar's arrow button), where forcing position: relative
+   knocks the button out of its absolute placement. */
+.btn-primary, button[type="submit"]:not(.absolute) {
   position: relative;
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.btn-primary:hover:not(:disabled), button[type="submit"]:hover:not(:disabled) {
+.btn-primary:hover:not(:disabled), button[type="submit"]:hover:not(:disabled):not(.absolute) {
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
 }
 
-.btn-primary:active:not(:disabled), button[type="submit"]:active:not(:disabled) {
+.btn-primary:active:not(:disabled), button[type="submit"]:active:not(:disabled):not(.absolute) {
   transform: scale(0.98);
   box-shadow: 0 2px 6px rgba(42, 157, 143, 0.2);
 }
 
 /* Ripple effect */
-.btn-primary::before, button[type="submit"]::before {
+.btn-primary::before, button[type="submit"]:not(.absolute)::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -187,7 +191,7 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   transition: width 0.6s, height 0.6s;
 }
 
-.btn-primary:active::before, button[type="submit"]:active::before {
+.btn-primary:active::before, button[type="submit"]:not(.absolute):active::before {
   width: 300px;
   height: 300px;
 }
@@ -404,6 +408,51 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Trending Now marquee. The track holds two identical copies of the card
+   row; animating to -50% loops seamlessly. Fade edges via mask so it works
+   on any background color. */
+.trending-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent);
+}
+
+.trending-track {
+  display: flex;
+  width: max-content;
+  animation: trending-scroll 45s linear infinite;
+}
+
+/* Pause for every input mode: mouse hover, touch-hold, keyboard focus,
+   and the explicit Pause button (data-paused). */
+.trending-viewport:hover .trending-track,
+.trending-viewport:active .trending-track,
+.trending-viewport:focus-within .trending-track,
+.trending-viewport[data-paused="true"] .trending-track {
+  animation-play-state: paused;
+}
+
+@keyframes trending-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Reduced motion: no animation, and the row must stay reachable — make it
+   a normal swipe/scrollable strip and drop the loop clone. */
+@media (prefers-reduced-motion: reduce) {
+  .trending-viewport {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .trending-track {
+    animation: none !important;
+  }
+  .trending-clone {
+    display: none;
   }
 }
 

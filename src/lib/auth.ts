@@ -1,6 +1,7 @@
 // Server-side auth: session cookies (JWT via jose) + user shape shared with the client.
 // Only import from server code (route handlers / server components).
 
+import { createHash } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
@@ -40,8 +41,18 @@ export function toPublicUser(user: {
   };
 }
 
-export async function createSession(userId: string): Promise<void> {
-  const token = await new SignJWT({ sub: userId })
+/**
+ * Sessions are bound to the password hash: the token carries a short digest
+ * of it, so changing the password (including a manual reset by support)
+ * immediately invalidates every outstanding session for that account.
+ * The digest reveals nothing about the hash itself.
+ */
+function passwordVersion(passwordHash: string): string {
+  return createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
+}
+
+export async function createSession(userId: string, passwordHash: string): Promise<void> {
+  const token = await new SignJWT({ sub: userId, pv: passwordVersion(passwordHash) })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DAYS}d`)
@@ -74,7 +85,13 @@ export async function getSessionUser(): Promise<PublicUser | null> {
     if (!userId) return null;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    return user ? toPublicUser(user) : null;
+    if (!user) return null;
+
+    // Reject tokens minted before a password change (or before this check
+    // existed) — see passwordVersion above.
+    if (payload.pv !== passwordVersion(user.passwordHash)) return null;
+
+    return toPublicUser(user);
   } catch {
     // Expired or tampered token — treat as logged out.
     return null;

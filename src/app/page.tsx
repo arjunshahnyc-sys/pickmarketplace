@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ShoppingBag, ArrowRight, X, Download, Globe, TrendingUp } from 'lucide-react';
+import { TrendingUp, Pause, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 import Footer from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
@@ -55,8 +55,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Searching retailers...');
   const [hasSearched, setHasSearched] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [trendingPaused, setTrendingPaused] = useState(false);
   const [searchResponse, setSearchResponse] = useState<any>(null);
   const [searchError, setSearchError] = useState(false);
 
@@ -347,93 +347,87 @@ export default function Home() {
     (p: Product) => p.originalPrice && p.originalPrice > p.price
   ).length;
 
+  // Trending card, rendered twice (real + loop clone). Clones are untabbable;
+  // their wrapper is aria-hidden.
+  const renderTrendingCard = (product: any, idx: number, isClone: boolean) => (
+    <a
+      key={idx}
+      href={product.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      tabIndex={isClone ? -1 : undefined}
+      className="group w-56 mx-2 block bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
+    >
+      <div className="relative aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
+        <button
+          type="button"
+          tabIndex={isClone ? -1 : undefined}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleItem({
+              name: product.name,
+              price: product.price,
+              image: product.imageUrl,
+              retailer: product.retailer,
+              url: product.url,
+            });
+          }}
+          aria-label={isSaved(product.url) ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
+          title={isSaved(product.url) ? 'Remove from saved items' : 'Save to your list'}
+          className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
+            isSaved(product.url)
+              ? 'bg-[#2A9D8F] text-white'
+              : 'bg-white/90 text-black/50 hover:text-[#2A9D8F] hover:bg-white'
+          }`}
+        >
+          {isSaved(product.url) ? <Check className="w-4 h-4" /> : <ShoppingBagIcon className="w-4 h-4" />}
+        </button>
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
+          loading="lazy"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent && !parent.querySelector('.image-fallback')) {
+              const fallback = document.createElement('div');
+              fallback.className = 'image-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-4';
+              // Static markup only — the product name is attacker-influenced
+              // (Serper feed) and must go through textContent, never innerHTML.
+              fallback.innerHTML = `
+                <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
+                  <svg class="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+              `;
+              const label = document.createElement('span');
+              label.className = 'text-xs text-black/40 font-medium';
+              label.textContent =
+                product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name;
+              fallback.appendChild(label);
+              parent.appendChild(fallback);
+            }
+          }}
+        />
+      </div>
+      <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem] text-black">
+        {product.name}
+      </h3>
+      <div className="flex items-baseline gap-2">
+        <span className="text-lg font-semibold text-[#2A9D8F]">
+          ${formatPrice(product.price)}
+        </span>
+      </div>
+    </a>
+  );
+
   return (
     <div className="relative z-10 texture-bg min-h-screen">
-      {/* Install Extension Modal */}
-      {showInstallModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowInstallModal(false)}
-          />
-          <div
-            className="relative bg-white text-black w-full max-w-md p-8 shadow-xl border border-black/10"
-            style={{ borderRadius: '8px' }}
-          >
-            <button
-              onClick={() => setShowInstallModal(false)}
-              className="absolute top-4 right-4 text-black/60 hover:text-black transition-colors btn"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-full bg-[#2A9D8F]/10 flex items-center justify-center">
-                <Globe size={24} className="text-[#2A9D8F]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-black">Install Pick Extension</h3>
-                <p className="text-sm text-black/60">3 simple steps</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2A9D8F] text-white text-sm font-medium flex items-center justify-center">
-                  1
-                </span>
-                <div>
-                  <p className="font-medium mb-1 text-black">Download the extension</p>
-                  <a
-                    href="/extension.zip"
-                    download
-                    className="inline-flex items-center gap-2 text-sm text-[#2A9D8F] hover:underline"
-                  >
-                    <Download size={14} />
-                    Download pick-extension.zip
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2A9D8F] text-white text-sm font-medium flex items-center justify-center">
-                  2
-                </span>
-                <div>
-                  <p className="font-medium mb-1 text-black">Open Chrome Extensions</p>
-                  <p className="text-sm text-black/60">
-                    Go to{' '}
-                    <code className="px-1.5 py-0.5 bg-black/5 rounded text-xs">
-                      chrome://extensions
-                    </code>{' '}
-                    and enable <strong>Developer mode</strong> (top right)
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2A9D8F] text-white text-sm font-medium flex items-center justify-center">
-                  3
-                </span>
-                <div>
-                  <p className="font-medium mb-1 text-black">Load the extension</p>
-                  <p className="text-sm text-black/60">
-                    Unzip the file, click <strong>Load unpacked</strong>, and select the unzipped
-                    folder
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-black/10">
-              <p className="text-xs text-black/60 text-center">
-                Works on Chrome, Edge, Brave, and other Chromium browsers
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <Header />
 
@@ -579,76 +573,32 @@ export default function Home() {
             <div className="flex items-center gap-2 mb-6">
               <TrendingUp size={20} className="text-[#2A9D8F]" />
               <h2 className="text-xl font-semibold text-black">Trending Now</h2>
+              <button
+                type="button"
+                onClick={() => setTrendingPaused(!trendingPaused)}
+                aria-pressed={trendingPaused}
+                className="ml-auto flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-[#2A9D8F] transition-colors"
+              >
+                {trendingPaused ? <Play size={14} /> : <Pause size={14} />}
+                {trendingPaused ? 'Play' : 'Pause'}
+              </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {trendingProducts.map((product, idx) => (
-                <a
-                  key={idx}
-                  href={product.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
-                >
-                  <div className="relative aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleItem({
-                          name: product.name,
-                          price: product.price,
-                          image: product.imageUrl,
-                          retailer: product.retailer,
-                          url: product.url,
-                        });
-                      }}
-                      aria-label={isSaved(product.url) ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
-                      title={isSaved(product.url) ? 'Remove from saved items' : 'Save to your list'}
-                      className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
-                        isSaved(product.url)
-                          ? 'bg-[#2A9D8F] text-white'
-                          : 'bg-white/90 text-black/50 hover:text-[#2A9D8F] hover:bg-white'
-                      }`}
-                    >
-                      {isSaved(product.url) ? <Check className="w-4 h-4" /> : <ShoppingBagIcon className="w-4 h-4" />}
-                    </button>
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
-                      loading="lazy"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.onerror = null;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent && !parent.querySelector('.image-fallback')) {
-                          const fallback = document.createElement('div');
-                          fallback.className = 'image-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-4';
-                          fallback.innerHTML = `
-                            <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
-                              <svg class="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                              </svg>
-                            </div>
-                            <span class="text-xs text-black/40 font-medium">${product.name.substring(0, 30)}${product.name.length > 30 ? '...' : ''}</span>
-                          `;
-                          parent.appendChild(fallback);
-                        }
-                      }}
-                    />
-                  </div>
-                  <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem] text-black">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-semibold text-[#2A9D8F]">
-                      ${formatPrice(product.price)}
-                    </span>
-                  </div>
-                </a>
-              ))}
+            {/* Scrolling marquee. Pauses on hover, touch-hold, focus, or the
+                toggle above; under prefers-reduced-motion it becomes a static
+                scrollable row. The second copy of the track exists only to
+                make the loop seamless — it's aria-hidden and untabbable. */}
+            <div
+              className="trending-viewport"
+              data-paused={trendingPaused ? 'true' : undefined}
+            >
+              <div className="trending-track">
+                <div className="flex">
+                  {trendingProducts.map((product, idx) => renderTrendingCard(product, idx, false))}
+                </div>
+                <div className="flex trending-clone" aria-hidden="true">
+                  {trendingProducts.map((product, idx) => renderTrendingCard(product, idx, true))}
+                </div>
+              </div>
             </div>
           </motion.section>
         )}
@@ -1055,42 +1005,6 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Extension CTA */}
-            <motion.section
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              id="extension"
-              className="max-w-5xl mx-auto px-6 py-20 hidden md:block"
-            >
-              <div
-                className="border border-black/10 bg-white p-10 md:p-14"
-                style={{ borderRadius: '8px' }}
-              >
-                <div className="max-w-lg">
-                  <h2 className="text-2xl md:text-3xl font-semibold mb-4 tracking-tight text-black">
-                    See price comparisons while you shop
-                  </h2>
-                  <p className="text-black/60 mb-8 leading-relaxed">
-                    Install our browser extension. When you visit a product page on any supported
-                    retailer, Pick automatically shows you if it&apos;s cheaper somewhere else, or if
-                    there&apos;s a better alternative.
-                  </p>
-                  <button
-                    onClick={() => setShowInstallModal(true)}
-                    className="btn-primary inline-flex items-center gap-2 px-6 py-3 bg-[#2A9D8F] text-white font-medium hover:bg-[#238B7E] cursor-pointer"
-                    style={{ borderRadius: '6px' }}
-                  >
-                    <span>Add to Chrome</span>
-                    <ArrowRight size={16} className="arrow" />
-                  </button>
-                  <p className="text-xs text-black/60 mt-4">
-                    Free browser extension. Desktop only.
-                  </p>
-                </div>
-              </div>
-            </motion.section>
           </>
         )}
 

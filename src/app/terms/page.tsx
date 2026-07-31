@@ -22,7 +22,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Acceptance of Terms</h2>
             <p className="text-black/80 leading-relaxed">
-              By accessing or using Pick's website and browser extension (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service.
+              By accessing or using Pick's website (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service.
             </p>
           </section>
 
@@ -72,13 +72,6 @@ export default function Terms() {
             <h2 className="text-2xl font-semibold mb-4">Intellectual Property</h2>
             <p className="text-black/80 leading-relaxed">
               The Service, including its content, features, and functionality, is owned by Pick and is protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Browser Extension</h2>
-            <p className="text-black/80 leading-relaxed">
-              Our browser extension is provided "as is" and requires certain permissions to function. By installing the extension, you grant us permission to access product pages you visit on supported retailer websites to provide price comparison features.
             </p>
           </section>
 

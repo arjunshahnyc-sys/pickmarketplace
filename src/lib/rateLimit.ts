@@ -28,10 +28,8 @@ export const RATE_LIMITS = {
   signup: { name: 'signup', limit: 10, windowMs: 60 * 60 * 1000 },
   plan: { name: 'plan', limit: 30, windowMs: 60 * 60 * 1000 },
   contact: { name: 'contact', limit: 5, windowMs: 15 * 60 * 1000 },
-  // Search endpoints cost real money (Serper) on cache misses. All four
-  // (/api/search-live, /api/search, /api/ask, /api/similar) funnel into the
-  // same paid pipeline, so they deliberately SHARE this one bucket —
-  // separate budgets would stack into 100+ uncached searches a minute.
+  // Search costs real money (Serper) on cache misses — /api/search-live is
+  // the only route that hits the paid pipeline.
   search: { name: 'search', limit: 30, windowMs: 60 * 1000 },
 } satisfies Record<string, RateLimitRule>;
 

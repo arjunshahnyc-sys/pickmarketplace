@@ -27,6 +27,12 @@ export function validatePassword(password: string): ValidationResult {
     return { valid: false, error: 'Password must be at least 8 characters' };
   }
 
+  // bcrypt only uses the first 72 bytes anyway; cap well below that ceiling
+  // so oversized submissions are rejected instead of silently truncated.
+  if (password.length > 128) {
+    return { valid: false, error: 'Password must be at most 128 characters' };
+  }
+
   return { valid: true };
 }
 
@@ -37,6 +43,10 @@ export function validateName(name: string): ValidationResult {
 
   if (name.length < 2) {
     return { valid: false, error: 'Name must be at least 2 characters' };
+  }
+
+  if (name.length > 100) {
+    return { valid: false, error: 'Name must be at most 100 characters' };
   }
 
   return { valid: true };

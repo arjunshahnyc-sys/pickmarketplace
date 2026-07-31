@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       data: { name, email, passwordHash },
     });
 
-    await createSession(user.id);
+    await createSession(user.id, user.passwordHash);
     return NextResponse.json({ user: toPublicUser(user) }, { status: 201 });
   } catch (error) {
     console.error('Signup error:', error);

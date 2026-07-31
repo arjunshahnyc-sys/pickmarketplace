@@ -235,7 +235,6 @@ export async function searchGoogleShoppingAPI(query: string): Promise<Product[]>
       const img = item.imageUrl || item.thumbnail || "";
       const rating = item.rating;
       const reviewCount = item.ratingCount;
-      const delivery = item.delivery;
 
       // Relevance filtering: check if product title matches query
       if (!isRelevantResult(name, query)) {
@@ -277,9 +276,7 @@ export async function searchGoogleShoppingAPI(query: string): Promise<Product[]>
 export async function searchTarget(query: string): Promise<Product[]> {
   const products: Product[] = [];
   try {
-    // Use environment variable, fallback to hardcoded key only in development
-    const apiKey = process.env.TARGET_API_KEY ||
-      (process.env.NODE_ENV === 'development' ? '9f36aeafbe60771e321a7cc95a78140772ab3e96' : '');
+    const apiKey = process.env.TARGET_API_KEY || '';
 
     if (!apiKey) {
       console.error('[Target] API key not configured');

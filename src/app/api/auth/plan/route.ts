@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
     }
 
+    // SECURITY: any signed-in user can set their own plan. Fine while
+    // premium is a free beta — MUST be gated behind verified payment
+    // (webhook-confirmed) before premium ever costs money.
     const body = await req.json().catch(() => null);
     const plan = body?.plan;
     if (plan !== 'free' && plan !== 'premium') {

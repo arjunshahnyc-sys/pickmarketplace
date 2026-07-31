@@ -28,15 +28,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log the contact form submission
     // TODO: Connect to email service (SendGrid, Resend, AWS SES, etc.)
-    // For now, we just log it
-    console.log('📧 Contact Form Submission:', {
+    // Until then, log receipt only — no name/email/message, so PII doesn't
+    // accumulate in server logs. (When wiring the email template, HTML-escape
+    // name/subject/message: they are user input.)
+    console.log('📧 Contact form submission received:', {
       timestamp: new Date().toISOString(),
-      name,
-      email,
-      subject,
-      message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+      subjectLength: subject.length,
+      messageLength: message.length,
     });
 
     // TODO: Send email notification

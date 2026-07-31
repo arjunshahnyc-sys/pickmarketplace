@@ -1,15 +1,10 @@
-// In-process search pipeline shared by /api/search-live, /api/search,
-// /api/ask, and /api/similar.
+// In-process search pipeline for /api/search-live.
 //
-// These routes used to call each other over public HTTP (ask -> search ->
-// search-live via VERCEL_URL self-fetches). That tripled function invocations
-// and would have made per-IP rate limiting count internal hops against the
-// platform's egress IP. Everything now runs in-process.
+// The extension-era routes (/api/search, /api/ask, /api/similar) that shared
+// this module were removed along with the browser extension.
 
 import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks } from './scrapers';
-import type { Product, ProductResult, RetailerSearchLink } from './types';
-import { getSearchUrl } from './retailerUrls';
-import { populateUrls, searchMockProducts } from './mockProducts';
+import type { Product, RetailerSearchLink } from './types';
 
 export interface LiveSearchData {
   results: Product[];
@@ -102,38 +97,3 @@ export async function performLiveSearch(q: string): Promise<LiveSearchData> {
   return data;
 }
 
-/**
- * Live search transformed to the ProductResult shape, topped up with mock
- * catalog entries when live results are thin. This is what /api/search
- * returns and what /api/ask and /api/similar consume.
- */
-export async function searchWithFallback(query: string): Promise<ProductResult[]> {
-  let allResults: ProductResult[] = [];
-
-  try {
-    const liveData = await performLiveSearch(query);
-    allResults = liveData.results.map((product) => ({
-      id: product.id ?? '',
-      name: product.name,
-      imageUrl: product.image,
-      prices: [{
-        retailer: product.retailer,
-        amount: product.price,
-        // ALWAYS ensure URLs are populated, never empty
-        url: product.url || getSearchUrl(product.retailer, product.name || query),
-      }],
-      lowestPrice: product.price,
-      highestPrice: product.price,
-    }));
-  } catch (err) {
-    console.error('Live search error:', err);
-  }
-
-  // If we don't have enough results, use mock products as fallback
-  if (allResults.length < 5) {
-    allResults = [...allResults, ...searchMockProducts(query)];
-  }
-
-  // Ensure ALL results have populated URLs before returning
-  return populateUrls(allResults, query);
-}

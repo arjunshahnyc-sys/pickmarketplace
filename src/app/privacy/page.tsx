@@ -22,7 +22,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Introduction</h2>
             <p className="text-black/80 leading-relaxed">
-              Pick ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use our website and browser extension.
+              Pick ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use our website.
             </p>
           </section>
 
@@ -62,13 +62,6 @@ export default function Privacy() {
               <li><strong>Retailers:</strong> When you click on product links, retailers may receive information about your visit</li>
               <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
             </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Browser Extension</h2>
-            <p className="text-black/80 leading-relaxed">
-              Our browser extension operates locally in your browser. It only sends product information to our servers when you actively use the price comparison feature. We do not track your general browsing activity.
-            </p>
           </section>
 
           <section>

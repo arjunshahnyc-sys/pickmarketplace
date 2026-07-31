@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    await createSession(user.id);
+    await createSession(user.id, user.passwordHash);
     return NextResponse.json({ user: toPublicUser(user) });
   } catch (error) {
     console.error('Login error:', error);
