@@ -9,6 +9,9 @@ const SITE_URL = "https://pickmarketplace.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  verification: {
+    google: "0RU8rMwul--pZJv97ilC5UBOsETNmJByI5sV-pOoziA",
+  },
   title: "Pick - Don't waste your money. Buy the same product for less.",
   description: "Compare prices across major retailers including Amazon, Target, Best Buy, and Walmart, plus Google Shopping. Find deals on electronics, clothing, home goods, and more.",
   openGraph: {
