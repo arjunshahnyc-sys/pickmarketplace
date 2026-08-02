@@ -22,6 +22,11 @@ const globalStore = globalThis as unknown as {
 };
 const cache = (globalStore.__pickSearchCache ??= new Map<string, { data: LiveSearchData; ts: number }>());
 const TTL = 30 * 60 * 1000;
+// Empty result sets get a short TTL: they're usually a transient scraper
+// timeout, and caching them for the full 30 minutes blanks that query for
+// everyone. The short window still stops hopeless queries from hammering
+// the paid API on every request.
+const TTL_EMPTY = 60 * 1000;
 const MAX_CACHE_SIZE = 100;
 const CACHE_EVICTION_COUNT = 20;
 
@@ -30,7 +35,7 @@ export async function performLiveSearch(q: string): Promise<LiveSearchData> {
   const key = q.toLowerCase().trim();
 
   const cached = cache.get(key);
-  if (cached && Date.now() - cached.ts < TTL) {
+  if (cached && Date.now() - cached.ts < (cached.data.results.length > 0 ? TTL : TTL_EMPTY)) {
     return cached.data;
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TrendingUp, Pause, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 import Footer from '@/components/Footer';
@@ -25,6 +25,8 @@ import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 // Testimonials intentionally unmounted pre-launch: the quotes were invented.
 // Re-add once there are real user quotes to show.
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
+import { getRetailerTrust } from '@/lib/retailerTrust';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Animation variants for staggered product grid
 const gridVariants = {
@@ -68,6 +70,7 @@ export default function Home() {
   // Filter and sort state
   const [sortBy, setSortBy] = useState('relevance');
   const [showOnSaleOnly, setShowOnSaleOnly] = useState(false);
+  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
 
   // Cycling loading text
   useEffect(() => {
@@ -111,7 +114,9 @@ export default function Home() {
     }
   };
 
-  const handleProductSelect = (product: Product) => {
+  // Stable identity so memoized ProductCards don't re-render on every
+  // parent render just because the callback prop changed
+  const handleProductSelect = useCallback((product: Product) => {
     setSelectedProducts((prev) => {
       const isAlreadySelected = prev.some((p) => p.url === product.url);
       if (isAlreadySelected) {
@@ -122,7 +127,7 @@ export default function Home() {
       }
       return [...prev, product];
     });
-  };
+  }, []);
 
   const handleRemoveProduct = (productUrl: string) => {
     setSelectedProducts((prev) => prev.filter((p) => p.url !== productUrl));
@@ -299,14 +304,23 @@ export default function Home() {
     ? Array.from(new Set(results.map((p: any) => p.retailer)))
     : [];
 
-  // Filter and sort results
-  const getFilteredAndSortedResults = () => {
+  // Filter and sort results. Memoized so the (fairly heavy) group-enhance
+  // pass doesn't rerun — and the grid doesn't get new object identities —
+  // on unrelated re-renders like compare-mode selection.
+  const filteredResults = useMemo(() => {
     let filtered = [...results];
 
     // Apply "On Sale Only" filter
     if (showOnSaleOnly) {
       filtered = filtered.filter(
         (p: Product) => p.originalPrice && p.originalPrice > p.price
+      );
+    }
+
+    // Apply "Verified sellers only" filter
+    if (showVerifiedOnly) {
+      filtered = filtered.filter(
+        (p: Product) => getRetailerTrust(p.retailer).level === 'verified'
       );
     }
 
@@ -338,14 +352,23 @@ export default function Home() {
     }
 
     // Enhance with product grouping and savings info
-    const enhanced = enhanceProductsWithGroupInfo(filtered);
-    return enhanced;
-  };
+    return enhanceProductsWithGroupInfo(filtered);
+  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly]);
 
-  const filteredResults = getFilteredAndSortedResults();
-  const saleCount = results.filter(
-    (p: Product) => p.originalPrice && p.originalPrice > p.price
-  ).length;
+  // Each toggle's count is computed against the OTHER active filter, so the
+  // number on the button always matches what clicking it would show.
+  const saleCount = useMemo(() => {
+    const pool = showVerifiedOnly
+      ? results.filter((p: Product) => getRetailerTrust(p.retailer).level === 'verified')
+      : results;
+    return pool.filter((p: Product) => p.originalPrice && p.originalPrice > p.price).length;
+  }, [results, showVerifiedOnly]);
+  const verifiedCount = useMemo(() => {
+    const pool = showOnSaleOnly
+      ? results.filter((p: Product) => p.originalPrice && p.originalPrice > p.price)
+      : results;
+    return pool.filter((p: Product) => getRetailerTrust(p.retailer).level === 'verified').length;
+  }, [results, showOnSaleOnly]);
 
   // Trending card, rendered twice (real + loop clone). Clones are untabbable;
   // their wrapper is aria-hidden.
@@ -657,6 +680,9 @@ export default function Home() {
                   onSortChange={setSortBy}
                   showOnSaleOnly={showOnSaleOnly}
                   onOnSaleToggle={() => setShowOnSaleOnly(!showOnSaleOnly)}
+                  showVerifiedOnly={showVerifiedOnly}
+                  onVerifiedToggle={() => setShowVerifiedOnly(!showVerifiedOnly)}
+                  verifiedCount={verifiedCount}
                   onCompareClick={handleCompareClick}
                   isCompareMode={isCompareMode}
                   products={filteredResults}
@@ -665,15 +691,21 @@ export default function Home() {
                   saleCount={saleCount}
                 />
 
-                {/* Sale filter active but nothing qualifies */}
-                {showOnSaleOnly && filteredResults.length === 0 && (
+                {/* A filter is active but nothing qualifies */}
+                {(showOnSaleOnly || showVerifiedOnly) && filteredResults.length === 0 && (
                   <div className="text-center py-12 border border-dashed border-black/10 rounded-xl mb-6">
                     <p className="text-sm text-black/60 mb-4">
-                      None of these results include sale-price data, so there's
-                      nothing to show with this filter on.
+                      {showVerifiedOnly && !showOnSaleOnly
+                        ? 'None of these results come from a verified major retailer.'
+                        : showOnSaleOnly && !showVerifiedOnly
+                          ? "None of these results include sale-price data, so there's nothing to show with this filter on."
+                          : 'No results match the active filters.'}
                     </p>
                     <button
-                      onClick={() => setShowOnSaleOnly(false)}
+                      onClick={() => {
+                        setShowOnSaleOnly(false);
+                        setShowVerifiedOnly(false);
+                      }}
                       className="px-5 py-2.5 rounded-xl bg-[#2A9D8F] text-white text-sm font-medium hover:bg-[#238B7E] transition"
                     >
                       Show all {results.length} results
@@ -681,35 +713,39 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Product grid with stagger animation */}
-                <motion.div
-                  variants={gridVariants}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, amount: 0.05 }}
-                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-                >
-                  {(() => {
-                    // Show ALL results for unauthenticated users, limit for authenticated free users
-                    const visible = filteredResults.slice(
-                      0,
-                      !isAuthenticated
-                        ? filteredResults.length  // No limit for anonymous first-time visitors
-                        : Number(getFeatureLimit('resultsPerSearch'))  // Limit for logged-in free users
-                    );
+                {/* Product grid with stagger animation. A single bad result
+                    object degrades to the boundary fallback instead of
+                    blanking the whole results view. */}
+                <ErrorBoundary>
+                  <motion.div
+                    variants={gridVariants}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, amount: 0.05 }}
+                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                  >
+                    {(() => {
+                      // Show ALL results for unauthenticated users, limit for authenticated free users
+                      const visible = filteredResults.slice(
+                        0,
+                        !isAuthenticated
+                          ? filteredResults.length  // No limit for anonymous first-time visitors
+                          : Number(getFeatureLimit('resultsPerSearch'))  // Limit for logged-in free users
+                      );
 
-                    return visible.map((product, i) => (
-                      <motion.div key={product.id || i} variants={cardVariants}>
-                        <ProductCard
-                          product={product}
-                          isCompareMode={isCompareMode}
-                          isSelected={selectedProducts.some((p) => p.url === product.url)}
-                          onSelect={handleProductSelect}
-                        />
-                      </motion.div>
-                    ));
-                  })()}
-                </motion.div>
+                      return visible.map((product, i) => (
+                        <motion.div key={product.id || i} variants={cardVariants}>
+                          <ProductCard
+                            product={product}
+                            isCompareMode={isCompareMode}
+                            isSelected={selectedProducts.some((p) => p.url === product.url)}
+                            onSelect={handleProductSelect}
+                          />
+                        </motion.div>
+                      ));
+                    })()}
+                  </motion.div>
+                </ErrorBoundary>
 
                 {/* Show upgrade prompt only for authenticated free users */}
                 {isAuthenticated && user?.plan === 'free' &&

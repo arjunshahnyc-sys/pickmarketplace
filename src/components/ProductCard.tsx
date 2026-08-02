@@ -1,29 +1,25 @@
 "use client";
 
+import { memo } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
 import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
+import { formatPrice, formatRating } from "@/lib/formatters";
+import type { Product } from "@/lib/types";
+import type { EnhancedProduct } from "@/lib/productGrouping";
 
-interface Product {
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  retailer: string;
-  url: string;
-  rating?: number;
-  reviewCount?: number;
-  brand?: string;
-  isFallback?: boolean;
-  lastVerified?: string;
-  isLowestInGroup?: boolean;
-  groupSavingsAmount?: number;
-  groupSavingsPercent?: number;
-  groupSize?: number;
-}
+// Deterministic across server and client (explicit locale + UTC) — cards are
+// prerendered on /search/[slug] pages, and locale/timezone-dependent output
+// like bare toLocaleDateString() causes React hydration mismatches there.
+const verifiedDateFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 interface ProductCardProps {
-  product: Product;
+  product: EnhancedProduct;
   isCompareMode?: boolean;
   isSelected?: boolean;
   onSelect?: (product: Product) => void;
@@ -34,7 +30,7 @@ interface ProductCardProps {
   groupSize?: number;
 }
 
-export default function ProductCard({
+function ProductCard({
   product,
   isCompareMode = false,
   isSelected = false,
@@ -92,7 +88,7 @@ export default function ProductCard({
       aria-label={`${
         product.isFallback
           ? `Search for ${product.name} on ${product.retailer}`
-          : `View ${product.name} on ${product.retailer}`
+          : `View ${product.name} on ${product.retailer}, $${formatPrice(product.price)}`
       }${
         trust.level === 'flagged'
           ? ' — warning: possible scam, not from a verified reseller'
@@ -240,17 +236,21 @@ export default function ProductCard({
         {productGroupSize && productGroupSize > 1 && (
           <span className="text-xs text-neutral-500">from</span>
         )}
-        <span className="text-xl font-bold tabular-nums text-neutral-900">${product.price.toFixed(2)}</span>
+        <span className="text-xl font-bold tabular-nums text-neutral-900">${formatPrice(product.price)}</span>
         {product.originalPrice && product.originalPrice > product.price && (
-          <span className="text-sm line-through text-neutral-400 font-normal">${product.originalPrice.toFixed(2)}</span>
+          <span className="text-sm line-through text-neutral-400 font-normal">${formatPrice(product.originalPrice)}</span>
         )}
       </div>
 
-      {product.rating && !product.isFallback && (
+      {typeof product.rating === "number" && product.rating > 0 && !product.isFallback && (
         <div className="flex items-center gap-1 mt-1 text-xs text-pick-muted">
-          <span className="text-yellow-500">{"★".repeat(Math.round(product.rating))}</span>
-          <span>{product.rating.toFixed(1)}</span>
-          {product.reviewCount && <span>({product.reviewCount.toLocaleString()})</span>}
+          <span className="text-yellow-500">
+            {"★".repeat(Math.min(5, Math.max(0, Math.round(product.rating))))}
+          </span>
+          <span>{formatRating(product.rating)}</span>
+          {product.reviewCount ? (
+            <span>({product.reviewCount.toLocaleString("en-US")})</span>
+          ) : null}
         </div>
       )}
 
@@ -264,9 +264,13 @@ export default function ProductCard({
 
       {!product.isFallback && product.lastVerified && (
         <div className="mt-1 text-[10px] text-pick-muted">
-          Price verified {new Date(product.lastVerified).toLocaleDateString()}
+          Price verified {verifiedDateFormat.format(new Date(product.lastVerified))}
         </div>
       )}
     </a>
   );
 }
+
+// Memoized: the results grid re-renders on every compare-mode selection and
+// filter change; cards only need to re-render when their own props change.
+export default memo(ProductCard);

@@ -40,8 +40,24 @@ export default function Header() {
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-[72px]">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          {/* Logo. When already on the homepage a client-side Link to "/"
+              is a no-op that leaves search results on screen — force a full
+              navigation so the logo always returns to the clean home view. */}
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+            aria-label="Pick home"
+            onClick={(e) => {
+              // Only intercept plain left-clicks — modified clicks (new
+              // tab/window) keep native link behavior.
+              const plainClick =
+                e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+              if (plainClick && window.location.pathname === '/') {
+                e.preventDefault();
+                window.location.assign('/');
+              }
+            }}
+          >
             <PickLogo size={28} />
             <span className="text-xl font-medium text-black">pick</span>
           </Link>

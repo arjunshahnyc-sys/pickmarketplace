@@ -1,6 +1,7 @@
 'use client';
 
-import { Tag, ArrowUpDown, BadgeCheck, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Tag, ArrowUpDown, BadgeCheck } from 'lucide-react';
+import SellerTrustKey from './SellerTrustKey';
 import { useAuth } from '@/contexts/AuthContext';
 import BlurOverlay from './gating/BlurOverlay';
 import { useState } from 'react';
@@ -12,6 +13,9 @@ interface SearchSectionProps {
   onSortChange: (sort: string) => void;
   showOnSaleOnly: boolean;
   onOnSaleToggle: () => void;
+  showVerifiedOnly?: boolean;
+  onVerifiedToggle?: () => void;
+  verifiedCount?: number;
   onCompareClick: () => void;
   isCompareMode: boolean;
   products?: Product[];
@@ -26,6 +30,9 @@ export default function SearchSection({
   onSortChange,
   showOnSaleOnly,
   onOnSaleToggle,
+  showVerifiedOnly = false,
+  onVerifiedToggle,
+  verifiedCount = 0,
   onCompareClick,
   isCompareMode,
   products = [],
@@ -89,13 +96,19 @@ export default function SearchSection({
   const refinements = getSearchRefinements(query);
 
   return (
-    <div className="mb-6">
-      {/* PINCHPOINT 2 FIX - Sticky Filter Bar */}
-      <div className="sticky top-0 z-20 bg-white py-3 border-b border-pick-border mb-4">
+    // Fragment, not a wrapper div: position:sticky only sticks within its
+    // parent's box, so wrapping the bar in a short div (as before) meant it
+    // never actually stuck. As a direct child of the results <section> it
+    // pins below the site header for the whole grid scroll.
+    <>
+      {/* PINCHPOINT 2 FIX - Sticky Filter Bar. top matches the sticky site
+          header's h-[72px] so the bar lands below it instead of under it. */}
+      <div className="sticky top-[72px] z-20 bg-white py-3 border-b border-pick-border mb-4">
         <div className="flex flex-wrap items-center gap-3">
           {/* On Sale Only Toggle — disabled when no result carries sale-price data */}
           <button
             onClick={onOnSaleToggle}
+            aria-pressed={showOnSaleOnly}
             disabled={saleCount === 0 && !showOnSaleOnly}
             title={
               saleCount === 0 && !showOnSaleOnly
@@ -115,6 +128,32 @@ export default function SearchSection({
               On Sale Only{saleCount > 0 && !showOnSaleOnly ? ` (${saleCount})` : ''}
             </span>
           </button>
+
+          {/* Verified Sellers Only Toggle */}
+          {onVerifiedToggle && (
+            <button
+              onClick={onVerifiedToggle}
+              aria-pressed={showVerifiedOnly}
+              disabled={verifiedCount === 0 && !showVerifiedOnly}
+              title={
+                verifiedCount === 0 && !showVerifiedOnly
+                  ? 'No results from verified major retailers'
+                  : 'Only show results sold by major retailers Pick recognizes'
+              }
+              className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
+                showVerifiedOnly
+                  ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
+                  : verifiedCount === 0
+                    ? 'bg-gray-100 text-neutral-400 cursor-not-allowed'
+                    : 'bg-gray-100 text-neutral-700 hover:bg-gray-200'
+              }`}
+            >
+              <BadgeCheck size={16} />
+              <span className="text-sm font-medium">
+                Verified Only{verifiedCount > 0 && !showVerifiedOnly ? ` (${verifiedCount})` : ''}
+              </span>
+            </button>
+          )}
 
           {/* Sort Dropdown with Label */}
           <div className="flex items-center gap-2">
@@ -140,6 +179,7 @@ export default function SearchSection({
           {/* Compare Button */}
           <button
             onClick={handleCompareClick}
+            aria-pressed={isCompareMode}
             className={`ml-auto flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
               isCompareMode
                 ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
@@ -177,30 +217,7 @@ export default function SearchSection({
       </div>
 
       {/* Seller-trust key — explains the badges on result cards */}
-      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap mb-4 text-[11px] text-neutral-500">
-        <span className="font-medium text-neutral-600">Seller key:</span>
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-teal-50 text-[#1F7A6F] font-medium">
-            <BadgeCheck className="w-3 h-3" aria-hidden="true" />
-            Verified
-          </span>
-          major retailer
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">
-            <HelpCircle className="w-3 h-3" aria-hidden="true" />
-            Unverified seller
-          </span>
-          check reviews first
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-semibold">
-            <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-            Possible scam
-          </span>
-          known scam reports
-        </span>
-      </div>
+      <SellerTrustKey />
 
       {/* PINCHPOINT 8 - Search Refinement Suggestions */}
       {refinements.length > 0 && onSearch && (
@@ -237,6 +254,6 @@ export default function SearchSection({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

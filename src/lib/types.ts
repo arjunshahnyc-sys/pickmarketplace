@@ -33,6 +33,8 @@ export interface Product {
   category?: string;
   brand?: string;
   lastVerified?: string;
+  /** True for example/deep-link cards shown when live results are thin */
+  isFallback?: boolean;
 }
 
 export interface RetailerSearchLink {

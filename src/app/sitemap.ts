@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SEARCH_CATEGORIES } from '@/lib/searchCategories';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://pickmarketplace.app';
@@ -24,18 +25,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '' ? 1.0 : 0.8,
   }));
 
-  // Popular search categories — search lives at /?q=, not /search
-  const popularCategories = [
-    'headphones',
-    'laptops',
-    'shoes',
-    'skincare',
-    'watches',
-    'backpacks',
-    'coffee-makers',
-    'gaming-mice',
-  ].map((category) => ({
-    url: `${baseUrl}/?q=${category}`,
+  // Popular categories — server-rendered landing pages at /search/[slug]
+  const popularCategories = SEARCH_CATEGORIES.map((category) => ({
+    url: `${baseUrl}/search/${category.slug}`,
     lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.6,
