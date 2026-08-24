@@ -73,7 +73,7 @@ export default function ContactPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
@@ -194,12 +194,12 @@ export default function ContactPage() {
                 {status === 'success' && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
-                      Message recorded — thanks! Our contact form is still in beta,
-                      so for anything urgent please also email{' '}
+                      Thanks! Our contact form is still in beta and may not reach
+                      us reliably yet, so please also email{' '}
                       <a href="mailto:support@pickmarketplace.app" className="underline font-medium">
                         support@pickmarketplace.app
                       </a>{' '}
-                      directly.
+                      to make sure we see it.
                     </p>
                   </div>
                 )}

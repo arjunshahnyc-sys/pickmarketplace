@@ -19,7 +19,7 @@ export default function HelpPage() {
     {
       icon: TrendingDown,
       title: 'How Price Comparison Works',
-      content: 'When you search, we check current prices from 12 major retailers including Amazon, Target, Best Buy, and Walmart, plus aggregated results through Google Shopping. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices are checked throughout the day. Always verify the final price on the retailer\'s site before purchasing.',
+      content: 'When you search, we check Target\'s catalog directly and aggregate current Google Shopping results, which cover major retailers like Amazon, Best Buy, and Walmart. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices are checked throughout the day. Always verify the final price on the retailer\'s site before purchasing.',
     },
     {
       icon: AlertCircle,
@@ -36,7 +36,7 @@ export default function HelpPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-5xl mx-auto px-4 py-16">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">

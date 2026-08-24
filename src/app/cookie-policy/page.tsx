@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Cookie Policy - Pick Marketplace',
-  description: 'Learn how Pick Marketplace uses cookies to improve your experience and support our affiliate partnerships.',
+  description: 'Learn how Pick Marketplace uses cookies to improve your experience.',
 };
 
 export default function CookiePolicyPage() {
@@ -13,7 +13,7 @@ export default function CookiePolicyPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-16">
           <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
             Cookie Policy
@@ -65,7 +65,7 @@ export default function CookiePolicyPage() {
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <h3 className="font-semibold text-black mb-2">Affiliate Cookies</h3>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    When you click through to a retailer from Pick Marketplace, affiliate cookies may be set to track your purchase. These cookies allow us to earn a commission if you complete a purchase within a certain timeframe (typically 24-90 days, depending on the retailer). This doesn't affect the price you pay.
+                    Pick does not currently set any affiliate tracking cookies, because we don't participate in retailer affiliate programs. If we join affiliate programs in the future, clicking through to a retailer may set affiliate cookies, and we will update this policy before that happens.
                   </p>
                 </div>
               </div>
@@ -113,7 +113,7 @@ export default function CookiePolicyPage() {
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mt-4">
                 <li><strong>Session cookies:</strong> Deleted when you close your browser</li>
                 <li><strong>Preference cookies:</strong> Typically stored for 1 year</li>
-                <li><strong>Affiliate cookies:</strong> Stored for 24-90 days depending on the retailer's affiliate program</li>
+                <li><strong>Affiliate cookies:</strong> None set today; this will be updated if we join retailer affiliate programs</li>
               </ul>
             </section>
 

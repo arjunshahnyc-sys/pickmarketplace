@@ -4,6 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { createSession, normalizeEmail, toPublicUser } from '@/lib/auth';
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
+// Valid hash of a throwaway string. The unknown-email path compares against
+// this so it does the same bcrypt work as the wrong-password path; skipping
+// the compare made the 401 measurably faster and leaked account existence.
+const TIMING_EQUALIZER_HASH = '$2b$10$jjiYBKIXC3eD5EgE7/af2eIvXl/oMl4rTCkuRwEwpedt0OgGezGCW';
+
 export async function POST(req: NextRequest) {
   try {
     const rl = checkRateLimit(req, RATE_LIMITS.login);
@@ -24,7 +29,8 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({ where: { email } });
     // Same error for unknown email and wrong password — don't leak which one it was.
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? TIMING_EQUALIZER_HASH);
+    if (!user || !passwordMatches) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 

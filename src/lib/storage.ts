@@ -1,124 +1,58 @@
-// Storage utilities for user authentication and session management
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  passwordHash: string;
-  plan: 'free' | 'premium';
-  createdAt: string;
-}
-
-export interface Session {
-  userId: string;
-  email: string;
-  expiresAt: string;
-}
+// Per-device search-count tracking for the free plan's daily limit.
+//
+// The localStorage user/session/password helpers that used to live here were
+// dead code from before auth moved server-side (see src/lib/auth.ts) and
+// have been removed.
 
 export interface SearchCount {
   date: string;
   count: number;
 }
 
-const USERS_KEY = 'pick_users';
-const SESSION_KEY = 'pick_session';
 const SEARCH_COUNT_KEY = 'pick_search_count';
 
-// User management
-export function getAllUsers(): Record<string, User> {
-  if (typeof window === 'undefined') return {};
-  const data = localStorage.getItem(USERS_KEY);
-  return data ? JSON.parse(data) : {};
-}
-
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
-export function getUser(email: string): User | null {
-  const users = getAllUsers();
-  // Fall back to the raw key for accounts created before emails were normalized
-  return users[normalizeEmail(email)] || users[email] || null;
-}
-
-export function saveUser(user: User): void {
-  const users = getAllUsers();
-  users[normalizeEmail(user.email)] = user;
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-export function updateUserPlan(email: string, plan: 'free' | 'premium'): void {
-  const user = getUser(email);
-  if (user) {
-    user.plan = plan;
-    saveUser(user);
-  }
-}
-
-// Session management
-export function getSession(): Session | null {
-  if (typeof window === 'undefined') return null;
-  const data = localStorage.getItem(SESSION_KEY);
-  if (!data) return null;
-
-  const session: Session = JSON.parse(data);
-  // Check if session is expired
-  if (new Date(session.expiresAt) < new Date()) {
-    clearSession();
-    return null;
-  }
-
-  return session;
-}
-
-export function saveSession(session: Session): void {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-}
-
-export function clearSession(): void {
-  localStorage.removeItem(SESSION_KEY);
-}
-
-// Search count management
 export function getSearchCount(): SearchCount {
   if (typeof window === 'undefined') return { date: '', count: 0 };
-  const data = localStorage.getItem(SEARCH_COUNT_KEY);
-  if (!data) return { date: getTodayDate(), count: 0 };
 
-  const searchCount: SearchCount = JSON.parse(data);
-  // Reset count if it's a new day
-  if (searchCount.date !== getTodayDate()) {
-    return { date: getTodayDate(), count: 0 };
+  // Never trust stored JSON: a corrupt or hand-edited value would otherwise
+  // throw here and take down every caller (search gating, /account).
+  let stored: SearchCount | null = null;
+  try {
+    const data = localStorage.getItem(SEARCH_COUNT_KEY);
+    const parsed = data ? JSON.parse(data) : null;
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof parsed.date === 'string' &&
+      typeof parsed.count === 'number' &&
+      Number.isFinite(parsed.count)
+    ) {
+      stored = { date: parsed.date, count: Math.max(0, Math.floor(parsed.count)) };
+    }
+  } catch {
+    // Fall through to a fresh count
   }
 
-  return searchCount;
+  if (!stored || stored.date !== getTodayDate()) {
+    return { date: getTodayDate(), count: 0 };
+  }
+  return stored;
 }
 
 export function incrementSearchCount(): number {
   const searchCount = getSearchCount();
   const newCount = searchCount.count + 1;
-  const updated = { date: getTodayDate(), count: newCount };
-  localStorage.setItem(SEARCH_COUNT_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(
+      SEARCH_COUNT_KEY,
+      JSON.stringify({ date: getTodayDate(), count: newCount })
+    );
+  } catch {
+    // Private mode / quota exceeded: counting fails open rather than crashing
+  }
   return newCount;
-}
-
-export function resetDailySearchCount(): void {
-  const reset = { date: getTodayDate(), count: 0 };
-  localStorage.setItem(SEARCH_COUNT_KEY, JSON.stringify(reset));
 }
 
 function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
-}
-
-// Simple hash function for passwords (in production, use bcrypt on backend)
-export function hashPassword(password: string): string {
-  // This is a simple hash - in production, use proper backend hashing
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
 }

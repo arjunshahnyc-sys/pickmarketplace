@@ -9,13 +9,13 @@ export function HowItWorks() {
       icon: Search,
       number: '1',
       title: 'Search Any Product',
-      description: 'Type in what you\'re looking for, from headphones to laptops, and we\'ll find it across 12 major retailers.',
+      description: 'Type in what you\'re looking for, from headphones to laptops, and we\'ll search Target\'s catalog plus Google Shopping listings from major retailers.',
     },
     {
       icon: Zap,
       number: '2',
       title: 'We Check Current Prices',
-      description: 'We compare prices, ratings, and availability from Amazon, Target, Best Buy, and more.',
+      description: 'We compare prices, ratings, and availability from Target and from Google Shopping merchants like Amazon, Walmart, and Best Buy.',
     },
     {
       icon: TrendingDown,

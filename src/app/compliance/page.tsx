@@ -8,12 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default function CompliancePage() {
-  const lastUpdated = 'July 14, 2026';
+  const lastUpdated = 'August 24, 2026';
 
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-16">
           <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
             Compliance
@@ -29,19 +29,30 @@ export default function CompliancePage() {
               </h2>
               <div className="p-5 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
                 <p className="text-gray-800 leading-relaxed">
-                  <strong className="text-black">Disclosure:</strong> Pick Marketplace participates in affiliate marketing programs. When you click on links to retailers and make a purchase, we may earn a commission at no additional cost to you. This helps us keep the service free and support ongoing development.
+                  <strong className="text-black">Disclosure:</strong> Pick Marketplace does not currently participate in any affiliate marketing program. We earn nothing when you click through to a retailer or make a purchase. If we join affiliate programs in the future, we will update this disclosure before any commission-earning links go live.
                 </p>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                In compliance with the Federal Trade Commission's (FTC) guidelines on endorsements and testimonials, we disclose that:
+                In line with the Federal Trade Commission's (FTC) guidelines on endorsements and material connections, we disclose that:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mt-4">
-                <li>We have affiliate relationships with Amazon, Target, Best Buy, Walmart, and other retailers featured on our platform.</li>
-                <li>We may receive compensation when you click through our links and make a purchase.</li>
-                <li>Commission rates vary by retailer and product category, but they do not affect the prices you pay.</li>
-                <li>Our price comparisons reflect actual retail prices and are not inflated to increase our commission.</li>
+                <li>We have no affiliate, sponsorship, or paid-placement relationship with any retailer shown on our platform, including Amazon, Target, Best Buy, and Walmart.</li>
+                <li>No retailer pays us for inclusion, ranking, or clicks.</li>
+                <li>Our price comparisons reflect the prices our data sources report and are never adjusted for commercial reasons.</li>
                 <li>We clearly label example or demo products that may not reflect current real-time availability.</li>
               </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-black mb-4">
+                Where Our Price Data Comes From
+              </h2>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Pick uses two data sources: we query Target's public catalog API directly, and we aggregate product listings from Google Shopping, which cover retailers such as Amazon, Walmart, Best Buy, Nordstrom, and Macy's. We do not scrape retailer websites, and prices for retailers other than Target come from their Google Shopping listings rather than from the retailer directly.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                If we join a retailer's affiliate or API program in the future, we will source that retailer's data as its program terms require. For Amazon specifically, that means price and availability data would come from Amazon's Product Advertising API, refreshed and timestamped per the Amazon Associates program policies.
+              </p>
             </section>
 
             <section>
@@ -78,15 +89,15 @@ export default function CompliancePage() {
 
             <section>
               <h2 className="text-2xl font-semibold text-black mb-4">
-                Affiliate Relationship Transparency
+                Ranking and Link Transparency
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                We maintain transparency about our affiliate relationships:
+                We maintain transparency about how results are ranked and where links go:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li><strong>No preferential ranking:</strong> We do not rank search results based on commission rates. Products are sorted by price, relevance, or user-selected criteria.</li>
-                <li><strong>Clear labeling:</strong> External links to retailers include appropriate rel="sponsored" attributes for search engine transparency.</li>
-                <li><strong>Honest recommendations:</strong> We do not promote products solely based on commission potential. Our goal is to help you find the best price, not maximize our earnings.</li>
+                <li><strong>No preferential ranking:</strong> Products are sorted by price, relevance, or user-selected criteria. No retailer can pay for placement.</li>
+                <li><strong>Direct links:</strong> Result links go straight to the retailer's site, with no tracking parameters added by us.</li>
+                <li><strong>Honest recommendations:</strong> We do not promote products based on commercial incentives. Our goal is to help you find the best price.</li>
               </ul>
             </section>
 
@@ -150,7 +161,7 @@ export default function CompliancePage() {
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mt-4">
                 <li>Prices and availability are subject to change without notice</li>
-                <li>Retailers may update prices more frequently than we can scrape them</li>
+                <li>Retailers may update prices more frequently than our sources refresh them</li>
                 <li>Shipping costs may vary and are not always included in displayed prices</li>
                 <li>We clearly label example products and estimated prices when real-time data is unavailable</li>
                 <li>Always verify the final price on the retailer's website before purchasing</li>

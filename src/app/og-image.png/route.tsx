@@ -57,17 +57,20 @@ export async function GET() {
               fontWeight: 600,
             }}
           >
+            {/* Claims here must match what the site actually does: it checks
+                12 named stores (plus marketplace sellers), verifies sellers,
+                and costs nothing. "50+ / Real-Time / AI Powered" did not. */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: 64, fontWeight: 700 }}>50+</div>
-              <div style={{ fontSize: 24, color: '#737373', marginTop: '8px' }}>Retailers</div>
+              <div style={{ fontSize: 64, fontWeight: 700 }}>12+</div>
+              <div style={{ fontSize: 24, color: '#737373', marginTop: '8px' }}>Major Stores</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: 64, fontWeight: 700 }}>Real-Time</div>
-              <div style={{ fontSize: 24, color: '#737373', marginTop: '8px' }}>Prices</div>
+              <div style={{ fontSize: 64, fontWeight: 700 }}>Verified</div>
+              <div style={{ fontSize: 24, color: '#737373', marginTop: '8px' }}>Sellers</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: 64, fontWeight: 700 }}>AI</div>
-              <div style={{ fontSize: 24, color: '#737373', marginTop: '8px' }}>Powered</div>
+              <div style={{ fontSize: 64, fontWeight: 700 }}>Free</div>
+              <div style={{ fontSize: 24, color: '#737373', marginTop: '8px' }}>To Use</div>
             </div>
           </div>
         </div>

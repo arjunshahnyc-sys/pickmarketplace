@@ -4,7 +4,7 @@
 // search results and see a running total, then buy on the retailer's site.
 // Persisted per-device in localStorage.
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export interface SavedItem {
   name: string;
@@ -29,6 +29,28 @@ interface SavedListContextType {
 
 const STORAGE_KEY = 'pick_saved_items';
 
+// A try/catch around JSON.parse is not enough: `{}` is valid JSON, and
+// setting it as state crashed every .some()/.reduce() over the list. Keep
+// only entries that actually look like SavedItems.
+function sanitizeStoredItems(raw: string | null): SavedItem[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (i): i is SavedItem =>
+        !!i &&
+        typeof i === 'object' &&
+        typeof (i as SavedItem).name === 'string' &&
+        typeof (i as SavedItem).price === 'number' &&
+        typeof (i as SavedItem).retailer === 'string' &&
+        typeof (i as SavedItem).url === 'string'
+    );
+  } catch {
+    return [];
+  }
+}
+
 const SavedListContext = createContext<SavedListContextType | undefined>(undefined);
 
 export function SavedListProvider({ children }: { children: React.ReactNode }) {
@@ -38,19 +60,34 @@ export function SavedListProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setItems(JSON.parse(stored));
+      setItems(sanitizeStoredItems(localStorage.getItem(STORAGE_KEY)));
     } catch {
-      // Corrupt data — start fresh
+      // localStorage unavailable (private mode) — start fresh
     }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (hydrated) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      } catch {
+        // Quota exceeded / private mode: the in-memory list still works
+      }
     }
   }, [items, hydrated]);
+
+  // Keep tabs in sync: without this, the last tab to write clobbered saves
+  // made in any other tab.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        setItems(sanitizeStoredItems(e.newValue));
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const isSaved = (url: string) => items.some((i) => i.url === url);
 
@@ -70,6 +107,10 @@ export function SavedListProvider({ children }: { children: React.ReactNode }) {
 
   const total = items.reduce((sum, i) => sum + (i.price || 0), 0);
 
+  // Stable identities: the drawer keys effects off these
+  const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
+
   return (
     <SavedListContext.Provider
       value={{
@@ -80,8 +121,8 @@ export function SavedListProvider({ children }: { children: React.ReactNode }) {
         clearAll,
         total,
         isDrawerOpen,
-        openDrawer: () => setIsDrawerOpen(true),
-        closeDrawer: () => setIsDrawerOpen(false),
+        openDrawer,
+        closeDrawer,
       }}
     >
       {children}

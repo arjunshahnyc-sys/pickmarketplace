@@ -20,15 +20,15 @@ const faqData: FAQItem[] = [
   },
   {
     question: 'How does Pick make money?',
-    answer: 'We earn a small affiliate commission when you purchase through some of our retailer links. This doesn\'t affect your price — you always get the best deal we find. Premium subscriptions help us keep the service fast and ad-free.',
+    answer: 'Right now, mostly through goodwill: Pick doesn\'t yet earn affiliate commissions from retailer links, and Premium is free during beta. The planned model is affiliate commissions plus Premium subscriptions, and we\'ll disclose it when commission-earning links go live. Your price is never affected either way.',
   },
   {
     question: 'Is Pick like Honey?',
-    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick compares prices across major retailers via Google Shopping and helps you find similar products at better prices. We also prioritize privacy — we don\'t track your browsing or sell your data.',
+    answer: 'Similar goal (save you money), different approach. Honey focuses on coupon codes at checkout. Pick compares prices across major retailers via Google Shopping and helps you find similar products at better prices. We also prioritize privacy: we don\'t track your browsing or sell your data.',
   },
   {
     question: 'What payment methods do you accept?',
-    answer: 'None needed right now — Premium is free to activate while we\'re in beta, no card required. When billing launches, we\'ll accept all major credit cards through a secure payment processor.',
+    answer: 'None needed right now: Premium is free to activate while we\'re in beta, no card required. When billing launches, we\'ll accept all major credit cards through a secure payment processor.',
   },
 ];
 

@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { ShoppingBag } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service - Pick Marketplace',
+  description: 'The terms that govern your use of Pick Marketplace, the price-comparison service for major retailers.',
+};
 
 export default function Terms() {
   return (
@@ -14,7 +20,7 @@ export default function Terms() {
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-16">
+      <main id="main-content" className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-5xl font-bold mb-8">Terms of Service</h1>
         <p className="text-sm text-black/60 mb-12">Last updated: July 14, 2026</p>
 
@@ -64,7 +70,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Affiliate Relationships</h2>
             <p className="text-black/80 leading-relaxed">
-              We may earn commissions from retailers when you click on links and make purchases. These affiliate relationships do not affect the prices you pay or our commitment to providing unbiased price comparisons.
+              Pick does not currently participate in retailer affiliate programs and earns no commissions from outbound links. If we join affiliate programs in the future, we may earn commissions when you make purchases through our links; any such relationships will not affect the prices you pay or our commitment to unbiased price comparisons, and we will update these Terms and our disclosures before commission-earning links go live.
             </p>
           </section>
 

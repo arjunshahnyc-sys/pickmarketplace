@@ -120,7 +120,7 @@ export default function PricingPage() {
                 </span>
               </div>
               <p className="text-white/70 text-sm mb-2">
-                Free while we're in beta — no card required.
+                Free while we're in beta, no card required.
                 {billingPeriod === 'annual' ? ' Later: $39.99/yr.' : ' Later: $4.99/mo.'}
               </p>
               <p className="text-white/80">For when you're done overpaying.</p>

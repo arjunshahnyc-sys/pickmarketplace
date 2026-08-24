@@ -11,11 +11,11 @@ export default function FAQPage() {
   const faqs = [
     {
       question: "Is Pick Marketplace free to use?",
-      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. There's also a Premium plan with unlimited searches, more results per search, and advanced features — free to activate while we're in beta (planned pricing: $4.99/month, or $3.33/month billed annually). We earn affiliate commissions when you purchase through our links.",
+      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. There's also a Premium plan with unlimited searches, more results per search, and advanced features, free to activate while we're in beta (planned pricing: $4.99/month, or $3.33/month billed annually).",
     },
     {
       question: "How does Pick Marketplace make money?",
-      answer: "We participate in affiliate marketing programs with retailers like Amazon, Target, Best Buy, and Walmart. When you click through from Pick Marketplace and make a purchase, we may earn a small commission (typically 1-10% depending on the product category). This doesn't affect the price you pay-the retailer pays us, not you.",
+      answer: "Right now, we don't. Pick doesn't currently participate in any retailer affiliate program, so clicking through to a store earns us nothing. The planned model is affiliate commissions plus optional Premium subscriptions; if we join affiliate programs, we'll disclose it here and on our compliance page before any commission-earning links go live.",
     },
     {
       question: "How often are prices updated?",
@@ -54,7 +54,7 @@ export default function FAQPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-16">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">

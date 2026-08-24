@@ -157,11 +157,12 @@ export default function SearchSection({
 
           {/* Sort Dropdown with Label */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-black">Sort:</span>
+            <span id="sort-label" className="text-sm font-medium text-black">Sort:</span>
             <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value)}
+                aria-labelledby="sort-label"
                 className="appearance-none h-10 bg-gray-100 rounded-full px-4 pr-10 text-sm font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
               >
                 <option value="relevance">Relevance</option>
@@ -244,6 +245,7 @@ export default function SearchSection({
           <div className="relative z-10">
             <button
               onClick={() => setShowUpgradePrompt(false)}
+              aria-label="Close upgrade prompt"
               className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-black/5 transition-colors z-20"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

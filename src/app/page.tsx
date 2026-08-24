@@ -61,6 +61,7 @@ export default function Home() {
   const [trendingPaused, setTrendingPaused] = useState(false);
   const [searchResponse, setSearchResponse] = useState<any>(null);
   const [searchError, setSearchError] = useState(false);
+  const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(null);
 
   // Compare mode state
   const [isCompareMode, setIsCompareMode] = useState(false);
@@ -93,10 +94,17 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // ESC key handler to exit compare mode
+  // ESC closes the compare modal first, then exits compare mode. Clearing
+  // only the selection used to leave showCompareModal stuck true, so the
+  // modal auto-reopened as soon as two products were selected again.
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isCompareMode) {
+      if (e.key !== 'Escape') return;
+      if (showCompareModal) {
+        setShowCompareModal(false);
+        return;
+      }
+      if (isCompareMode) {
         setIsCompareMode(false);
         setSelectedProducts([]);
       }
@@ -104,7 +112,7 @@ export default function Home() {
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isCompareMode]);
+  }, [isCompareMode, showCompareModal]);
 
   // Compare mode handlers
   const handleCompareClick = () => {
@@ -142,6 +150,7 @@ export default function Home() {
   const handleCloseCompareMode = () => {
     setIsCompareMode(false);
     setSelectedProducts([]);
+    setShowCompareModal(false);
   };
 
   const handleSearch = async (searchQuery: string) => {
@@ -156,6 +165,7 @@ export default function Home() {
     setHasSearched(true);
     setResults([]);
     setSearchError(false);
+    setSearchErrorMessage(null);
 
     try {
       const response = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
@@ -165,10 +175,14 @@ export default function Home() {
       setSearchResponse(data);
       if (!response.ok || data.error) {
         setSearchError(true);
-      }
-
-      // Increment search count for authenticated free users
-      if (isAuthenticated && user?.plan === 'free') {
+        // Prefer the server's message (rate limit, source outage) over the
+        // generic one, so a 429 doesn't read as "something broke".
+        if (typeof data.error === 'string' && data.error) {
+          setSearchErrorMessage(data.error);
+        }
+      } else if (isAuthenticated && user?.plan === 'free') {
+        // Count only successful searches against the daily quota; a failed
+        // request the user has to retry shouldn't burn it.
         incrementSearchCount();
       }
     } catch (error) {
@@ -429,7 +443,7 @@ export default function Home() {
                 </div>
               `;
               const label = document.createElement('span');
-              label.className = 'text-xs text-black/40 font-medium';
+              label.className = 'text-xs text-black/60 font-medium';
               label.textContent =
                 product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name;
               fallback.appendChild(label);
@@ -454,7 +468,7 @@ export default function Home() {
       {/* Header */}
       <Header />
 
-      <main>
+      <main id="main-content">
         {/* Usage Meter for Free Users */}
         {isAuthenticated && user?.plan === 'free' && (
           <div className="max-w-5xl mx-auto px-6 pt-6">
@@ -512,7 +526,7 @@ export default function Home() {
             </h1>
             <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6">
               Buy the same product for less. One search compares prices across
-              major retailers — same item, or a near-identical one that costs less.
+              major retailers: same item, or a near-identical one that costs less.
             </p>
 
             {/* Search Bar */}
@@ -593,7 +607,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="max-w-5xl mx-auto px-6 pb-16 pt-8"
           >
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-1">
               <TrendingUp size={20} className="text-[#2A9D8F]" />
               <h2 className="text-xl font-semibold text-black">Trending Now</h2>
               <button
@@ -606,6 +620,10 @@ export default function Home() {
                 {trendingPaused ? 'Play' : 'Pause'}
               </button>
             </div>
+            <p className="text-xs text-neutral-500 mb-6">
+              Products people compare a lot. Prices are approximate; each card links to the
+              retailer&apos;s site for current prices.
+            </p>
             {/* Scrolling marquee. Pauses on hover, touch-hold, focus, or the
                 toggle above; under prefers-reduced-motion it becomes a static
                 scrollable row. The second copy of the track exists only to
@@ -790,16 +808,17 @@ export default function Home() {
                 {/* Affiliate Disclosure */}
                 {!isLoading && results.length > 0 && (
                   <>
-                    <p className="mt-6 text-xs text-black/40 text-center">
-                      Pick may earn affiliate commissions from purchases. Rankings based on price, not commission amount.
+                    <p className="mt-6 text-xs text-black/60 text-center">
+                      Pick doesn&apos;t currently earn commissions from these links. Results are ranked by price and relevance, never by pay.
                     </p>
                     <details className="mt-4 border border-black/10 rounded-lg bg-white/50 text-xs text-black/50">
                       <summary className="px-4 py-3 cursor-pointer hover:bg-black/5">
                         Full Disclosure & Legal
                       </summary>
                       <div className="px-4 pb-4 space-y-2">
-                        <p>Pick may earn a commission from purchases made through our links.
-                           This doesn&apos;t affect prices you pay or how we rank results.</p>
+                        <p>Pick doesn&apos;t currently participate in retailer affiliate programs, so clicking
+                           through earns us nothing. If we join affiliate programs in the future, we&apos;ll
+                           disclose it here before any commission-earning links go live.</p>
                         <p>Prices shown are current as of the last check from Target API and Google Shopping.
                            Always verify final pricing on retailer sites before purchasing.</p>
                       </div>
@@ -824,9 +843,10 @@ export default function Home() {
                     ? 'Something went wrong on our end'
                     : <>No results found for &quot;{query}&quot;</>}
                 </h3>
-                <p className="text-black/50 mb-6">
+                <p className="text-black/60 mb-6">
                   {searchError
-                    ? 'Our price check failed — it’s not you. Try again, or search the stores directly below.'
+                    ? (searchErrorMessage ??
+                        'Our price check failed, and it’s not you. Try again, or search the stores directly below.')
                     : 'Try a different search term, browse popular categories, or search the stores directly below.'}
                 </p>
                 {searchError && (
@@ -839,7 +859,7 @@ export default function Home() {
                 )}
                 {searchResponse?.retailerSearchLinks?.length > 0 && (
                   <div className="mb-8">
-                    <p className="text-xs uppercase tracking-wide text-black/40 mb-3">
+                    <p className="text-xs uppercase tracking-wide text-black/60 mb-3">
                       Search &quot;{query}&quot; on
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
@@ -913,7 +933,9 @@ export default function Home() {
 
             {/* Retailers - Compact badges */}
             <section className="max-w-5xl mx-auto px-6 py-12">
-              <h3 className="text-sm font-medium text-black mb-4 text-center">We check these stores</h3>
+              <h3 className="text-sm font-medium text-black mb-4 text-center">
+                Prices sourced from Target and Google Shopping, across stores including
+              </h3>
               <div className="flex flex-wrap justify-center gap-2">
                 {retailers.map((retailer) => (
                   <span
@@ -1002,6 +1024,9 @@ export default function Home() {
                         <p className="font-medium text-sm text-black">Sony WH-1000XM5</p>
                         <p className="text-xs text-black/60">Same product, different prices</p>
                       </div>
+                      <span className="ml-auto self-start text-[10px] font-semibold uppercase tracking-wide text-black/40 border border-black/10 rounded-full px-2 py-0.5">
+                        Example
+                      </span>
                     </div>
                     <div className="space-y-2">
                       <div
@@ -1036,6 +1061,9 @@ export default function Home() {
                     <p className="text-xs text-[#2A9D8F] mt-4 font-medium">
                       Save $21.99 buying from Amazon
                     </p>
+                    <p className="text-[11px] text-black/40 mt-2">
+                      Illustrative prices, not live data. Search any product for current prices.
+                    </p>
                   </div>
                 </motion.div>
               </div>
@@ -1067,7 +1095,7 @@ export default function Home() {
                 Save money without settling.
               </p>
             </div>
-            <p className="mt-8 text-sm text-black/40">Arjun Shah, Founder</p>
+            <p className="mt-8 text-sm text-black/60">Arjun Shah, Founder</p>
           </div>
         </section>
       </main>

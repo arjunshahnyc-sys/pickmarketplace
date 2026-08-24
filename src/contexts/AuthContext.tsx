@@ -21,9 +21,9 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  upgradeToPremium: () => void;
-  downgradToFree: () => void;
+  logout: () => Promise<void>;
+  upgradeToPremium: () => Promise<{ success: boolean; error?: string }>;
+  downgradToFree: () => Promise<{ success: boolean; error?: string }>;
   canUseFeature: (feature: string) => boolean;
   searchesRemaining: number;
   incrementSearchCount: () => void;
@@ -77,6 +77,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [searchesRemaining, setSearchesRemaining] = useState(0);
 
+  // Update searches remaining (search counting stays per-device for now).
+  // Declared before the mount effect that calls it.
+  const updateSearchesRemaining = (plan: 'free' | 'premium') => {
+    if (plan === 'premium') {
+      setSearchesRemaining(Infinity);
+    } else {
+      const { count } = getSearchCount();
+      const limit = FEATURE_LIMITS.free.searchesPerDay;
+      setSearchesRemaining(Math.max(0, limit - count));
+    }
+  };
+
   // Restore session from the server on mount (httpOnly cookie carries it)
   useEffect(() => {
     let cancelled = false;
@@ -98,18 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Update searches remaining (search counting stays per-device for now)
-  const updateSearchesRemaining = (plan: 'free' | 'premium') => {
-    if (plan === 'premium') {
-      setSearchesRemaining(Infinity);
-    } else {
-      const { count } = getSearchCount();
-      const limit = FEATURE_LIMITS.free.searchesPerDay;
-      setSearchesRemaining(Math.max(0, limit - count));
-    }
-  };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const result = await authRequest('/api/auth/login', { email, password });
@@ -131,31 +133,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   };
 
-  const logout = () => {
-    authRequest('/api/auth/logout');
+  // Awaited so the httpOnly cookie is actually cleared before navigation can
+  // cancel the request; local state clears either way, matching user intent.
+  const logout = async () => {
+    await authRequest('/api/auth/logout');
     setUser(null);
     setSearchesRemaining(0);
   };
 
-  const setPlan = async (plan: 'free' | 'premium') => {
-    if (!user) return;
-    // Optimistic update; server is the source of truth on next load
-    setUser({ ...user, plan });
-    updateSearchesRemaining(plan);
+  // Server-first, not optimistic: a rejected plan change (expired session,
+  // rate limit) must not leave the UI celebrating a premium upgrade that
+  // /api/auth/me will silently revert on the next load.
+  const setPlan = async (plan: 'free' | 'premium'): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'You need to be logged in.' };
     const result = await authRequest('/api/auth/plan', { plan });
     if (result.ok && result.user) {
       setUser(result.user);
       updateSearchesRemaining(result.user.plan);
+      return { success: true };
     }
+    return { success: false, error: result.error };
   };
 
-  const upgradeToPremium = () => {
-    setPlan('premium');
-  };
+  const upgradeToPremium = () => setPlan('premium');
 
-  const downgradToFree = () => {
-    setPlan('free');
-  };
+  const downgradToFree = () => setPlan('free');
 
   const canUseFeature = (feature: string): boolean => {
     if (!user) return false;

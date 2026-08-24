@@ -20,15 +20,17 @@ export default function CompareDrawer({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-black/10 shadow-2xl">
-      <div className="max-w-5xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+        {/* Stacks on phones: the old single no-wrap row with fixed-width
+            slots pushed Compare Now and the close button off a 375px screen. */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {/* Selected Products */}
-          <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
             <span className="text-sm font-medium text-black">
               Compare Products ({selectedProducts.length}/2)
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {selectedProducts.map((product) => (
                 <div
                   key={product.url}
@@ -45,9 +47,12 @@ export default function CompareDrawer({
                     </p>
                     <p className="text-xs text-black/60">${product.price.toFixed(2)}</p>
                   </div>
+                  {/* Always visible on touch (no hover to reveal it); on
+                      pointer devices it fades in on hover or keyboard focus */}
                   <button
                     onClick={() => onRemove(product.url)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    aria-label={`Remove ${product.name} from comparison`}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 transition-opacity hover:bg-red-600"
                   >
                     <X size={12} />
                   </button>
@@ -58,16 +63,16 @@ export default function CompareDrawer({
               {[...Array(2 - selectedProducts.length)].map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className="w-[180px] h-[68px] border-2 border-dashed border-black/10 rounded-lg flex items-center justify-center"
+                  className="w-[140px] sm:w-[180px] h-[68px] border-2 border-dashed border-black/10 rounded-lg flex items-center justify-center"
                 >
-                  <span className="text-xs text-black/40">Select a product</span>
+                  <span className="text-xs text-black/60">Select a product</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-end">
             <button
               onClick={onCompare}
               disabled={!canCompare}
@@ -81,6 +86,7 @@ export default function CompareDrawer({
             </button>
             <button
               onClick={onClose}
+              aria-label="Exit compare mode"
               className="p-2 text-black/60 hover:text-black transition-colors"
             >
               <X size={20} />

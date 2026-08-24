@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { ShoppingBag } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy - Pick Marketplace',
+  description: 'How Pick Marketplace collects, uses, and protects your data when you compare prices across retailers.',
+};
 
 export default function Privacy() {
   return (
@@ -14,7 +20,7 @@ export default function Privacy() {
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-16">
+      <main id="main-content" className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-5xl font-bold mb-8">Privacy Policy</h1>
         <p className="text-sm text-black/60 mb-12">Last updated: July 14, 2026</p>
 

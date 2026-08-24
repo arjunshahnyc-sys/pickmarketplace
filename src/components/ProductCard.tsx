@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
 import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
@@ -52,6 +52,12 @@ function ProductCard({
   const saved = isSaved(product.url);
   const trust = getRetailerTrust(product.retailer);
 
+  // Track the failed URL, not a boolean: memoized cards get recycled under
+  // index keys, and a bare flag would keep showing the fallback after the
+  // card is reused for a product whose image loads fine.
+  const [failedImage, setFailedImage] = useState<string | null>(null);
+  const imageFailed = !product.image || failedImage === product.image;
+
   const handleClick = (e: React.MouseEvent) => {
     if (isCompareMode && onSelect) {
       e.preventDefault();
@@ -72,11 +78,16 @@ function ProductCard({
   };
 
   return (
+    // Wrapper div exists so the save button is a sibling of the link, not a
+    // descendant: interactive-inside-interactive is invalid HTML and trips
+    // screen readers. The hover lift lives here so link and button move
+    // together.
+    <div className="relative group transition hover:-translate-y-0.5">
     <a
       href={product.url}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      className={`bg-white rounded-xl border p-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition group slide-in block relative ${
+      className={`bg-white rounded-xl border p-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition slide-in block relative ${
         trust.level === 'flagged' ? 'border-red-300' : 'border-gray-200/70'
       } ${isCompareMode ? 'cursor-pointer' : ''} ${
         isSelected
@@ -91,9 +102,9 @@ function ProductCard({
           : `View ${product.name} on ${product.retailer}, $${formatPrice(product.price)}`
       }${
         trust.level === 'flagged'
-          ? ' — warning: possible scam, not from a verified reseller'
+          ? '. Warning: possible scam, not from a verified reseller'
           : trust.level === 'unknown'
-            ? ' — unverified seller'
+            ? '. Unverified seller'
             : ''
       }`}
       onClick={handleClick}
@@ -127,50 +138,24 @@ function ProductCard({
         </div>
       )}
       <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-gray-100 p-4">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.onerror = null;
-            target.style.display = 'none';
-            const parent = target.parentElement;
-            if (parent && !parent.querySelector('.image-fallback')) {
-              const fallback = document.createElement('div');
-              fallback.className = 'image-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-4';
-              // Static markup only — the product name is attacker-influenced
-              // (Serper feed) and must go through textContent, never innerHTML.
-              fallback.innerHTML = `
-                <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
-                  <svg class="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                </div>
-              `;
-              const label = document.createElement('span');
-              label.className = 'text-xs text-black/40 font-medium';
-              label.textContent =
-                product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name;
-              fallback.appendChild(label);
-              parent.appendChild(fallback);
-            }
-          }}
-        />
-        {!isCompareMode && (
-          <button
-            type="button"
-            onClick={handleSave}
-            aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
-            title={saved ? 'Remove from saved items' : 'Save to your list'}
-            className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
-              saved
-                ? 'bg-pick-teal text-white'
-                : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
-            }`}
-          >
-            {saved ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-          </button>
+        {imageFailed ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+            <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
+              <svg className="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="text-xs text-black/60 font-medium">
+              {product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name}
+            </span>
+          </div>
+        ) : (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+            onError={() => setFailedImage(product.image)}
+          />
         )}
         {savings > 0 && !product.isFallback && (
           <span className="absolute top-2 left-2 bg-neutral-900/80 text-white text-xs font-medium px-2 py-0.5 rounded-full">
@@ -224,7 +209,7 @@ function ProductCard({
       </div>
       {trust.level === 'flagged' && (
         <p className="mt-1 text-[11px] leading-tight text-red-600">
-          Not from a verified reseller — buy with caution.
+          Not from a verified reseller. Buy with caution.
         </p>
       )}
 
@@ -233,7 +218,9 @@ function ProductCard({
       </h3>
 
       <div className="mt-2 flex items-baseline gap-2 flex-wrap">
-        {productGroupSize && productGroupSize > 1 && (
+        {/* "from" only on the card that actually carries the group's lowest
+            price; on the others it would advertise a floor the price isn't. */}
+        {productGroupSize && productGroupSize > 1 && showLowestPrice && (
           <span className="text-xs text-neutral-500">from</span>
         )}
         <span className="text-xl font-bold tabular-nums text-neutral-900">${formatPrice(product.price)}</span>
@@ -268,6 +255,24 @@ function ProductCard({
         </div>
       )}
     </a>
+      {/* Sibling of the link (see wrapper comment). top/right = card padding
+          (12px) + the old inset (8px). */}
+      {!isCompareMode && (
+        <button
+          type="button"
+          onClick={handleSave}
+          aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
+          title={saved ? 'Remove from saved items' : 'Save to your list'}
+          className={`absolute top-5 right-5 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
+            saved
+              ? 'bg-pick-teal text-white'
+              : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
+          }`}
+        >
+          {saved ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+        </button>
+      )}
+    </div>
   );
 }
 

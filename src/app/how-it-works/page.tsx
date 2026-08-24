@@ -5,7 +5,7 @@ import { Search, Zap, ShoppingCart, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: "How It Works - Pick Marketplace",
-  description: "Learn how Pick Marketplace compares prices across 12 major retailers plus Google Shopping. Free to search with optional Premium upgrade.",
+  description: "Learn how Pick Marketplace compares prices using Target's catalog and Google Shopping results from major retailers. Free to search with optional Premium upgrade.",
 };
 
 export default function HowItWorksPage() {
@@ -18,7 +18,7 @@ export default function HowItWorksPage() {
     {
       icon: Zap,
       title: "We Check Prices Across Retailers",
-      description: "Pick checks current prices from 12 major retailers including Amazon, Target, Best Buy, Walmart, and more, plus aggregated results through Google Shopping. This happens in seconds.",
+      description: "Pick checks Target's catalog directly and aggregates live Google Shopping results, which cover major retailers like Amazon, Walmart, and Best Buy plus many smaller merchants. This happens in seconds.",
     },
     {
       icon: ShoppingCart,
@@ -35,7 +35,7 @@ export default function HowItWorksPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-5xl mx-auto px-4 py-16">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
@@ -101,7 +101,7 @@ export default function HowItWorksPage() {
                 Free to Search
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Start with 5 free searches per day. Optional Premium upgrade available for unlimited searches and more features. We earn affiliate commissions when you purchase through our links.
+                Start with 5 free searches per day. Optional Premium upgrade available for unlimited searches and more features. Pick doesn't currently earn commissions from retailer links; if we join affiliate programs in the future, we'll disclose it.
               </p>
             </div>
           </div>

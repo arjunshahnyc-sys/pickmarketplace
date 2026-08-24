@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,9 +18,12 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Already signed in? Go to the account page instead of showing the form
+  // Already signed in? Go to the account page instead of showing the form.
+  // The ref keeps this from also firing right after a successful form login,
+  // where it raced handleSubmit's own navigation and won inconsistently.
+  const justLoggedInRef = useRef(false);
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (!authLoading && isAuthenticated && !justLoggedInRef.current) {
       router.push('/account');
     }
   }, [authLoading, isAuthenticated, router]);
@@ -46,7 +49,8 @@ export default function LoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      router.push('/');
+      justLoggedInRef.current = true;
+      router.replace('/');
     } else {
       setErrors({ general: result.error });
       setIsLoading(false);

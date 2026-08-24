@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
               Email support
             </span>
             <span className="block text-xs text-black/60 mt-1">
-              support@pickmarketplace.app — include the email you signed up with.
+              support@pickmarketplace.app and include the email you signed up with.
             </span>
           </span>
         </a>

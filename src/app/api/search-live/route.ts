@@ -41,6 +41,19 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await performLiveSearch(q);
+
+    // Every price source failed: report an outage instead of a 200 that
+    // renders as "no results found" for a query that may match plenty.
+    if (data.allSourcesFailed && data.results.length === 0) {
+      return NextResponse.json(
+        {
+          ...data,
+          error: "Our price sources are unavailable right now. Please try again shortly.",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     // Log error for debugging

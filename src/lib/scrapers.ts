@@ -96,9 +96,24 @@ function guessCategory(name: string): string {
 }
 
 // ─── Relevance Filtering Helper ────────────────────────────────────────
+// Price/quality modifiers ("under $50", "best rated", "on sale") never appear
+// in product titles, so they must not count against the title-match ratio —
+// with them included, the app's own refinement chips produced queries that
+// rejected nearly every result.
+function coreProductQuery(query: string): string {
+  const stripped = query
+    .toLowerCase()
+    .replace(/\b(?:under|over|below|above|around)\s*\$?\d+(?:\.\d+)?\b/g, ' ')
+    .replace(/\$\d+(?:\.\d+)?/g, ' ')
+    .replace(/\b(?:cheap|cheapest|best rated|top rated|on sale|deals?|discount(?:ed)?|for students?)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped || query;
+}
+
 function isRelevantResult(title: string, query: string): boolean {
   const titleLower = title.toLowerCase();
-  const queryWords = query.toLowerCase().split(/\s+/).filter(word => word.length > 2); // Ignore words <= 2 chars
+  const queryWords = coreProductQuery(query).split(/\s+/).filter(word => word.length > 2); // Ignore words <= 2 chars
 
   if (queryWords.length === 0) return true; // If no meaningful query words, accept all
 
@@ -118,92 +133,57 @@ function isRelevantResult(title: string, query: string): boolean {
  * Maps a retailer source name to a direct search URL for a product.
  * This avoids Google intermediary pages and sends users directly to the retailer.
  */
+// Word-boundary patterns, not substring includes: with loose matching,
+// unrelated merchants were rewritten to the wrong store ('CVS Pharmacy'
+// contains 'macy' → macys.com, '1-800-Flowers.com' contains 'lowe' →
+// lowes.com, 'Kohler' contains 'kohl' → kohls.com).
+const RETAILER_SEARCH_URLS: Array<{
+  pattern: RegExp;
+  build: (encodedTitle: string) => string;
+}> = [
+  { pattern: /\bamazon\b/, build: (t) => `https://www.amazon.com/s?k=${t}` },
+  { pattern: /\bwalmart\b/, build: (t) => `https://www.walmart.com/search?q=${t}` },
+  { pattern: /\bbest ?buy\b/, build: (t) => `https://www.bestbuy.com/site/searchpage.jsp?st=${t}` },
+  { pattern: /\btarget\b/, build: (t) => `https://www.target.com/s?searchTerm=${t}` },
+  { pattern: /\bmacy'?s\b/, build: (t) => `https://www.macys.com/shop/search?keyword=${t}` },
+  { pattern: /\bebay\b/, build: (t) => `https://www.ebay.com/sch/i.html?_nkw=${t}` },
+  { pattern: /\bnordstrom\b/, build: (t) => `https://www.nordstrom.com/sr?origin=keywordsearch&keyword=${t}` },
+  { pattern: /\bhome ?depot\b/, build: (t) => `https://www.homedepot.com/s/${t}` },
+  { pattern: /\blowe'?s\b/, build: (t) => `https://www.lowes.com/search?searchTerm=${t}` },
+  { pattern: /\bcostco\b/, build: (t) => `https://www.costco.com/CatalogSearch?keyword=${t}` },
+  { pattern: /\bwayfair\b/, build: (t) => `https://www.wayfair.com/keyword.php?keyword=${t}` },
+  { pattern: /\betsy\b/, build: (t) => `https://www.etsy.com/search?q=${t}` },
+  { pattern: /\bnike\b/, build: (t) => `https://www.nike.com/w?q=${t}` },
+  { pattern: /\bkohl'?s\b/, build: (t) => `https://www.kohls.com/search.jsp?submit-search=web-regular&search=${t}` },
+];
+
 function buildDirectRetailerUrl(retailerSource: string, productTitle: string): string | null {
-  const encodedTitle = encodeURIComponent(productTitle);
   const retailerLower = retailerSource.toLowerCase();
+  const match = RETAILER_SEARCH_URLS.find(({ pattern }) => pattern.test(retailerLower));
+  return match ? match.build(encodeURIComponent(productTitle)) : null;
+}
 
-  // Amazon
-  if (retailerLower.includes('amazon')) {
-    return `https://www.amazon.com/s?k=${encodedTitle}`;
-  }
+// "$15.99 - $29.99" must parse as 15.99, not parseFloat('15.9929.99');
+// returns the first (lowest) number in the string.
+function parseFirstPrice(priceStr: string | undefined | null): number {
+  const match = priceStr?.match(/\d+(?:,\d{3})*(?:\.\d+)?/);
+  return match ? parseFloat(match[0].replace(/,/g, '')) : 0;
+}
 
-  // Walmart
-  if (retailerLower.includes('walmart')) {
-    return `https://www.walmart.com/search?q=${encodedTitle}`;
-  }
-
-  // Best Buy
-  if (retailerLower.includes('best buy') || retailerLower.includes('bestbuy')) {
-    return `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedTitle}`;
-  }
-
-  // Target
-  if (retailerLower.includes('target')) {
-    return `https://www.target.com/s?searchTerm=${encodedTitle}`;
-  }
-
-  // Macy's
-  if (retailerLower.includes('macy') || retailerLower.includes("macy's")) {
-    return `https://www.macys.com/shop/search?keyword=${encodedTitle}`;
-  }
-
-  // eBay
-  if (retailerLower.includes('ebay')) {
-    return `https://www.ebay.com/sch/i.html?_nkw=${encodedTitle}`;
-  }
-
-  // Nordstrom
-  if (retailerLower.includes('nordstrom')) {
-    return `https://www.nordstrom.com/sr?origin=keywordsearch&keyword=${encodedTitle}`;
-  }
-
-  // Home Depot
-  if (retailerLower.includes('home depot') || retailerLower.includes('homedepot')) {
-    return `https://www.homedepot.com/s/${encodedTitle}`;
-  }
-
-  // Lowe's
-  if (retailerLower.includes('lowe') || retailerLower.includes("lowe's")) {
-    return `https://www.lowes.com/search?searchTerm=${encodedTitle}`;
-  }
-
-  // Costco
-  if (retailerLower.includes('costco')) {
-    return `https://www.costco.com/CatalogSearch?keyword=${encodedTitle}`;
-  }
-
-  // Wayfair
-  if (retailerLower.includes('wayfair')) {
-    return `https://www.wayfair.com/keyword.php?keyword=${encodedTitle}`;
-  }
-
-  // Etsy
-  if (retailerLower.includes('etsy')) {
-    return `https://www.etsy.com/search?q=${encodedTitle}`;
-  }
-
-  // Nike
-  if (retailerLower.includes('nike')) {
-    return `https://www.nike.com/w?q=${encodedTitle}`;
-  }
-
-  // Kohl's
-  if (retailerLower.includes('kohl') || retailerLower.includes("kohl's")) {
-    return `https://www.kohls.com/search.jsp?submit-search=web-regular&search=${encodedTitle}`;
-  }
-
-  // No direct mapping found
-  return null;
+/** Distinguishes "the source failed" from "the source found nothing". */
+export interface ScraperResult {
+  products: Product[];
+  sourceError?: string;
 }
 
 // ─── Google Shopping via Serper.dev API ────────────────────────────────────
-export async function searchGoogleShoppingAPI(query: string): Promise<Product[]> {
+export async function searchGoogleShoppingAPI(query: string): Promise<ScraperResult> {
   const products: Product[] = [];
   const apiKey = process.env.SERPER_API_KEY;
 
   if (!apiKey) {
     console.log('[Serper] API key not configured, skipping Google Shopping results');
-    return products;
+    return { products, sourceError: 'Serper API key not configured' };
   }
 
   try {
@@ -224,13 +204,20 @@ export async function searchGoogleShoppingAPI(query: string): Promise<Product[]>
       8000
     );
 
+    // Serper returns auth/quota failures (401/403/429) as JSON bodies that
+    // would otherwise parse cleanly into zero results and look like a
+    // genuine no-match.
+    if (!response.ok) {
+      console.error(`[Serper] API returned ${response.status}`);
+      return { products, sourceError: `Serper API returned ${response.status}` };
+    }
+
     const data = await response.json();
     const items = data?.shopping || [];
 
     for (const item of items) {
       const name = item.title || "";
-      const priceStr = item.price?.replace(/[^0-9.]/g, "") || "0";
-      const price = parseFloat(priceStr);
+      const price = parseFirstPrice(item.price);
       const retailer = item.source || "Google Shopping";
       const img = item.imageUrl || item.thumbnail || "";
       const rating = item.rating;
@@ -252,6 +239,8 @@ export async function searchGoogleShoppingAPI(query: string): Promise<Product[]>
         const productUrl = directUrl || item.link || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`;
 
         products.push({
+          // Stable identity so React keys don't fall back to array index
+          id: `serper:${retailer}:${name}`.toLowerCase(),
           name,
           price,
           image: img,
@@ -266,32 +255,38 @@ export async function searchGoogleShoppingAPI(query: string): Promise<Product[]>
       }
     }
   } catch (error) {
-    console.error('[Serper] API request failed:', error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Serper] API request failed:', message);
+    return { products, sourceError: `Serper request failed: ${message}` };
   }
 
-  return products;
+  return { products };
 }
 
 // ─── Target (ONLY WORKING SCRAPER) ────────────────────────────────────────
-export async function searchTarget(query: string): Promise<Product[]> {
+export async function searchTarget(query: string): Promise<ScraperResult> {
   const products: Product[] = [];
   try {
     const apiKey = process.env.TARGET_API_KEY || '';
 
     if (!apiKey) {
       console.error('[Target] API key not configured');
-      return products;
+      return { products, sourceError: 'Target API key not configured' };
     }
 
     const apiUrl = `https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=${apiKey}&channel=WEB&count=20&keyword=${encodeURIComponent(query)}&offset=0&page=%2Fs%2F${encodeURIComponent(query)}&pricing_store_id=3991&scheduled_delivery_store_id=3991&store_ids=3991&visitor_id=web`;
     const res = await withTimeout(fetch(apiUrl, { headers: HEADERS }), 8000);
+    if (!res.ok) {
+      console.error(`[Target] API returned ${res.status}`);
+      return { products, sourceError: `Target API returned ${res.status}` };
+    }
     const data = await res.json();
 
     const items = data?.data?.search?.products || [];
     for (const item of items) {
       const name = item.item?.product_description?.title || "";
       const price = item.price?.formatted_current_price
-        ? parseFloat(item.price.formatted_current_price.replace(/[^0-9.]/g, ""))
+        ? parseFirstPrice(item.price.formatted_current_price)
         : item.price?.current_retail || 0;
       const origPrice = item.price?.reg_retail || undefined;
       const img = item.item?.enrichment?.images?.primary_image_url || "";
@@ -302,6 +297,7 @@ export async function searchTarget(query: string): Promise<Product[]> {
 
       if (name && price) {
         products.push({
+          id: tcin ? `target:${tcin}` : `target:${name.toLowerCase()}`,
           name,
           price,
           originalPrice: origPrice && origPrice > price ? origPrice : undefined,
@@ -317,9 +313,11 @@ export async function searchTarget(query: string): Promise<Product[]> {
       }
     }
   } catch (error) {
-    console.error('[Target] API request failed:', error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Target] API request failed:', message);
+    return { products, sourceError: `Target request failed: ${message}` };
   }
-  return products;
+  return { products };
 }
 
 // ─── Retailer Deep Links ────────────────────────────────────────────────

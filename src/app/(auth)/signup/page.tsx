@@ -97,7 +97,7 @@ export default function SignupPage() {
             Start saving.
           </h1>
           <p className="text-lg text-white/80 mb-10">
-            One search compares prices across major retailers — free, no card required.
+            One search compares prices across major retailers. Free, no card required.
           </p>
 
           {/* Feature highlights */}

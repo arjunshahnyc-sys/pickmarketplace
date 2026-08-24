@@ -7,7 +7,7 @@ export function TrustedBy() {
   return (
     <section className="py-8 border-y border-black/10 bg-white/50">
       <p className="text-center text-xs text-black/40 uppercase tracking-[0.2em] mb-6 font-medium">
-        Prices from Target, Google Shopping & more
+        Prices from Target and Google Shopping, across retailers including
       </p>
       <Marquee
         speed={35}

@@ -12,7 +12,7 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white">
+      <main id="main-content" className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-16">
           <h1 className="text-4xl md:text-5xl font-bold text-black mb-6">
             About Pick Marketplace
@@ -44,7 +44,7 @@ export default function AboutPage() {
                 <strong>Direct product links:</strong> When available, we link directly to product pages so you can buy immediately. When we show example products, we clearly label them.
               </li>
               <li>
-                <strong>Honest pricing:</strong> Pick offers a free tier (5 searches/day) and a Premium tier that's free to activate during our beta (planned pricing: $4.99/month, or $3.33/month billed annually). We earn affiliate commissions when you purchase through our links, but this doesn't affect the prices you see.
+                <strong>Honest pricing:</strong> Pick offers a free tier (5 searches/day) and a Premium tier that's free to activate during our beta (planned pricing: $4.99/month, or $3.33/month billed annually). We don't currently earn commissions from retailer links, and no retailer pays for placement.
               </li>
               <li>
                 <strong>Honest about limitations:</strong> We display price verification timestamps and clearly indicate when prices may not be current. We believe in transparency over fake urgency.
@@ -68,7 +68,7 @@ export default function AboutPage() {
               Pick was founded by <strong>Arjun Shah</strong>, who got tired of overpaying for products and manually checking multiple retailers. Every time he found something he wanted, the price felt too high, and he knew there had to be a better deal somewhere but didn't have time to check every single store.
             </p>
             <p className="text-gray-700 mb-8 leading-relaxed">
-              What started as a personal tool to save money became Pick Marketplace. We make money through affiliate commissions (when you buy through our links, retailers pay us a small percentage) and optional Premium subscriptions for unlimited searches. This lets us keep the core service accessible while building better features.
+              What started as a personal tool to save money became Pick Marketplace. The planned business model is affiliate commissions plus optional Premium subscriptions for unlimited searches. Today, Pick doesn't yet earn commissions from retailer links; if we join affiliate programs, we'll disclose it before any commission-earning links go live.
             </p>
 
             <div className="mt-12 p-6 bg-gray-50 border border-gray-200 rounded-lg">

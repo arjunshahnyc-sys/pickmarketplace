@@ -7,6 +7,12 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "contradiction-engine",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/arjunshah/dev/contradiction-engine", "run", "dev", "--", "-p", "3005"],
+      "port": 3005
     }
   ]
 }

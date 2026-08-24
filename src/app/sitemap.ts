@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/privacy',
     '/terms',
     '/cookie-policy',
+    '/compliance',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: currentDate,

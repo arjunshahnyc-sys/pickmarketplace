@@ -12,6 +12,8 @@ export interface LiveSearchData {
   message: string;
   retailersFound: string[];
   checkedAt: string;
+  /** Set when every price source failed — an outage, not a genuine zero-match. */
+  allSourcesFailed?: boolean;
 }
 
 // Anchored on globalThis because Next bundles each route with its own copy
@@ -40,13 +42,19 @@ export async function performLiveSearch(q: string): Promise<LiveSearchData> {
   }
 
   // Search both APIs in parallel
-  const [googleResults, targetResults] = await Promise.all([
+  const [googleSearch, targetSearch] = await Promise.all([
     searchGoogleShoppingAPI(q),
     searchTarget(q),
   ]);
+  const googleResults = googleSearch.products;
+  const targetResults = targetSearch.products;
+  const allSourcesFailed = Boolean(googleSearch.sourceError && targetSearch.sourceError);
 
-  // Combine and deduplicate results (prefer Target results for same products)
-  const allResults = [...googleResults, ...targetResults];
+  // Combine and deduplicate results. Target goes first because dedup keeps
+  // the first occurrence, and Target copies carry a direct product URL and
+  // originalPrice (sale data) that Google Shopping mirrors of the same
+  // listing lack.
+  const allResults = [...targetResults, ...googleResults];
 
   // Deduplicate by product name (case-insensitive)
   const seen = new Set<string>();
@@ -83,7 +91,14 @@ export async function performLiveSearch(q: string): Promise<LiveSearchData> {
     message,
     retailersFound, // For frontend to display dynamic header
     checkedAt: new Date().toISOString(), // preserved in cache so the UI can show real freshness
+    allSourcesFailed,
   };
+
+  // A total outage is not a result — caching it would serve the failure to
+  // everyone for the TTL window.
+  if (allSourcesFailed) {
+    return data;
+  }
 
   // Cache eviction: if cache is too large, delete oldest entries
   if (cache.size > MAX_CACHE_SIZE) {

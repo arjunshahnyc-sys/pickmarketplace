@@ -1,10 +1,32 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useSavedList } from '@/contexts/SavedListContext';
 import { X, Trash2, ExternalLink, ShoppingBag } from 'lucide-react';
 
 export default function SavedListDrawer() {
   const { items, removeItem, clearAll, total, isDrawerOpen, closeDrawer } = useSavedList();
+  const panelRef = useRef<HTMLElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+
+  // Dialog behavior: Escape closes, focus moves into the panel on open and
+  // back to the opener on close, and the page behind stops scrolling.
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeDrawer();
+    };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      restoreFocusRef.current?.focus?.();
+    };
+  }, [isDrawerOpen, closeDrawer]);
 
   if (!isDrawerOpen) return null;
 
@@ -19,8 +41,11 @@ export default function SavedListDrawer() {
 
       {/* Panel */}
       <aside
+        ref={panelRef}
+        tabIndex={-1}
         className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col"
         role="dialog"
+        aria-modal="true"
         aria-label="Saved items"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-black/10">
@@ -106,9 +131,9 @@ export default function SavedListDrawer() {
                 </span>
                 <span className="text-2xl font-bold text-black">${total.toFixed(2)}</span>
               </div>
-              <p className="text-xs text-black/40 leading-relaxed">
-                Prices from the last check — confirm at checkout. You buy directly
-                on each retailer's site; this list just keeps your running total.
+              <p className="text-xs text-black/60 leading-relaxed">
+                Prices from the last check, so confirm at checkout. You buy directly
+                on each retailer&apos;s site; this list just keeps your running total.
               </p>
               <button
                 onClick={clearAll}

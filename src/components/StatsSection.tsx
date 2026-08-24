@@ -16,8 +16,8 @@ export function StatsSection() {
           Compare Prices Across Top Retailers
         </h3>
         <p className="text-black/60 text-lg mb-8">
-          We search Amazon, Target, Best Buy, Walmart, Macy's, Nordstrom, and more
-          to find you the best price on every product.
+          Prices come from Target's catalog and from Google Shopping listings
+          across retailers including Amazon, Walmart, Best Buy, Nordstrom, and more.
         </p>
         <div className="flex flex-wrap justify-center gap-4 text-sm text-black/60">
           {['Amazon', 'Target', 'Best Buy', 'Walmart', "Macy's", 'Nordstrom', 'Nike', 'eBay', 'Etsy', 'Costco'].map((retailer) => (

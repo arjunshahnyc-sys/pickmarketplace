@@ -14,7 +14,7 @@ export function WhyPick() {
     {
       icon: Zap,
       title: 'Current Price Checks',
-      description: 'Prices checked from 12 major retailers throughout the day.',
+      description: 'Prices checked from Target and Google Shopping retailers throughout the day.',
       highlight: 'vs Honey: Regular updates',
     },
     {
@@ -166,7 +166,7 @@ export function WhyPick() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-sm text-black">12 major retailers</td>
+                  <td className="py-4 px-6 text-sm text-black">Target + Google Shopping retailers</td>
                   <td className="py-4 px-6 text-center">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-[#10B981]/10 rounded-full">
                       <span className="text-[#10B981] font-bold">✓</span>

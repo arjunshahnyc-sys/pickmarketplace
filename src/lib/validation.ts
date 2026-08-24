@@ -27,10 +27,11 @@ export function validatePassword(password: string): ValidationResult {
     return { valid: false, error: 'Password must be at least 8 characters' };
   }
 
-  // bcrypt only uses the first 72 bytes anyway; cap well below that ceiling
-  // so oversized submissions are rejected instead of silently truncated.
-  if (password.length > 128) {
-    return { valid: false, error: 'Password must be at most 128 characters' };
+  // bcrypt only hashes the first 72 BYTES; anything longer is silently
+  // truncated at hash time, so reject it here. Measured in bytes, not
+  // characters, because multibyte characters hit the ceiling sooner.
+  if (new TextEncoder().encode(password).length > 72) {
+    return { valid: false, error: 'Password is too long (max 72 characters)' };
   }
 
   return { valid: true };

@@ -12,7 +12,7 @@ export default function LockedFeature({ featureName, compact = false }: LockedFe
     return (
       <Link
         href="/pricing"
-        className="inline-flex items-center gap-1 text-xs text-black/60 hover:text-[#2A9D8F][#2A9D8F]"
+        className="inline-flex items-center gap-1 text-xs text-black/60 hover:text-[#2A9D8F]"
       >
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
           <path

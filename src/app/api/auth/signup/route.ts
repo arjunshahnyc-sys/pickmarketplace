@@ -43,6 +43,15 @@ export async function POST(req: NextRequest) {
     await createSession(user.id, user.passwordHash);
     return NextResponse.json({ user: toPublicUser(user) }, { status: 201 });
   } catch (error) {
+    // Two concurrent signups for the same email can both pass the existence
+    // check; the loser hits the unique constraint (P2002) and should get the
+    // same 409 as the sequential case, not a 500.
+    if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') {
+      return NextResponse.json(
+        { error: 'An account with this email already exists' },
+        { status: 409 }
+      );
+    }
     console.error('Signup error:', error);
     return NextResponse.json(
       { error: 'Something went wrong creating your account. Please try again.' },

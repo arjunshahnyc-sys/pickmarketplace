@@ -31,7 +31,7 @@ export async function generateMetadata({
   const label = category?.label ?? query;
   return {
     title: `${label} Price Comparison Across Major Retailers | Pick`,
-    description: `Compare ${label.toLowerCase()} prices from Amazon, Walmart, Target, Best Buy, and more in one search. Live prices, verified sellers, and deals — never overpay for ${label.toLowerCase()}.`,
+    description: `Compare ${label.toLowerCase()} prices from Amazon, Walmart, Target, Best Buy, and more in one search. Live prices, verified sellers, and deals, so you never overpay for ${label.toLowerCase()}.`,
     alternates: { canonical: `/search/${query}` },
   };
 }
@@ -68,14 +68,14 @@ export default async function CategorySearchPage({
   return (
     <div className="relative z-10 texture-bg min-h-screen">
       <Header />
-      <main className="max-w-5xl mx-auto px-6 pt-12 pb-24">
+      <main id="main-content" className="max-w-5xl mx-auto px-6 pt-12 pb-24">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 mb-2">
           {category.label} Price Comparison
         </h1>
         <p className="text-neutral-600 mb-6 max-w-2xl">
           Live prices for {category.label.toLowerCase()} across major
           retailers{data.retailersFound.length > 1 &&
-            ` — currently comparing ${data.retailersFound.slice(0, 4).join(', ')}${
+            `, currently comparing ${data.retailersFound.slice(0, 4).join(', ')}${
               data.retailersFound.length > 4
                 ? ` and ${data.retailersFound.length - 4} more stores`
                 : ''

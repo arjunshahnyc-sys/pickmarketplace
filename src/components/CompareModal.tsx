@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { X, ExternalLink, Trophy } from 'lucide-react';
 import { Product } from '@/lib/types';
 
@@ -10,6 +11,22 @@ interface CompareModalProps {
 
 export default function CompareModal({ products, onClose }: CompareModalProps) {
   const [product1, product2] = products;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+
+  // Dialog behavior: focus moves in on mount and back on unmount, and the
+  // page behind stops scrolling. (Escape is handled by the parent, which
+  // owns the open state.)
+  useEffect(() => {
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      restoreFocusRef.current?.focus?.();
+    };
+  }, []);
 
   // Calculate savings
   const getSavings = (product: Product) => {
@@ -78,12 +95,20 @@ export default function CompareModal({ products, onClose }: CompareModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="compare-modal-title"
+        tabIndex={-1}
+        className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+      >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-black/10 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-semibold text-black">Compare Products</h2>
+          <h2 id="compare-modal-title" className="text-xl font-semibold text-black">Compare Products</h2>
           <button
             onClick={onClose}
+            aria-label="Close comparison"
             className="p-2 text-black/60 hover:text-black hover:bg-black/5 rounded-lg transition-colors"
           >
             <X size={20} />
