@@ -30,7 +30,9 @@ export interface RetailerTrust {
 // "the" and a trailing domain suffix, strip everything that isn't a letter
 // or digit. "Best Buy" -> "bestbuy", "Macy's" -> "macys", "Temu.com" ->
 // "temu", "The Home Depot" -> "homedepot"
-function collapse(name: string): string {
+// Exported: landedCost/merchants.ts keys its config on the same collapse so
+// trust badges and merchant config can never disagree about identity.
+export function collapse(name: string): string {
   return name
     .toLowerCase()
     .replace(/^\s*the\s+/, '')
