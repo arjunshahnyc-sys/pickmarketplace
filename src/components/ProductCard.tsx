@@ -6,6 +6,7 @@ import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle } from "lucid
 import { getRetailerTrust } from "@/lib/retailerTrust";
 import { affiliateLinksEnabled } from "@/lib/affiliate";
 import { formatPrice, formatRating } from "@/lib/formatters";
+import LandedCostPanel from "./LandedCostPanel";
 import type { Product } from "@/lib/types";
 import type { EnhancedProduct } from "@/lib/productGrouping";
 
@@ -291,6 +292,13 @@ function ProductCard({
         </div>
       )}
     </a>
+      {/* Landed-cost breakdown, only present when the flag-on enrichment
+          attached one. A sibling of the link, not a child: <details> is
+          interactive and interactive-inside-interactive is invalid HTML
+          (same reason the save button lives out here). */}
+      {product.landedCost && !product.isFallback && (
+        <LandedCostPanel breakdown={product.landedCost} />
+      )}
       {/* Sibling of the link (see wrapper comment). top/right = card padding
           (12px) + the old inset (8px). */}
       {!isCompareMode && (

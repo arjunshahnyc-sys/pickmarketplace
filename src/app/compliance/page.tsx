@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
+import { landedCostEnabled } from '@/lib/flags';
 
 export const metadata: Metadata = {
   title: 'Compliance - Pick Marketplace',
@@ -108,6 +109,26 @@ export default function CompliancePage() {
                 <li><strong>Honest recommendations:</strong> We do not promote products based on commercial incentives. Our goal is to help you find the best price.</li>
               </ul>
             </section>
+
+            {landedCostEnabled() && (
+              <section>
+                <h2 className="text-2xl font-semibold text-black mb-4">
+                  Landed Cost Estimates
+                </h2>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  Where shown, total cost figures (item, shipping, import duty, import tax, and
+                  carrier fees) are estimates for comparison only. They are not quotes, invoices,
+                  or customs advice. Actual charges are determined by customs authorities,
+                  carriers, and the merchant at the time of import, and can differ from our
+                  estimates.
+                </p>
+                <ul className="list-disc pl-6 text-gray-700 space-y-2">
+                  <li><strong>Labeled uncertainty:</strong> every estimated figure is marked as an estimate, and components we cannot compute are shown as unknown rather than assumed to be zero.</li>
+                  <li><strong>Ranges, not false precision:</strong> when we cannot tell whether a merchant collects duties at checkout, we show a range instead of a single number.</li>
+                  <li><strong>Verify before you buy:</strong> always confirm final pricing, shipping, and any import charges with the retailer and carrier before purchasing.</li>
+                </ul>
+              </section>
+            )}
 
             <section>
               <h2 className="text-2xl font-semibold text-black mb-4">

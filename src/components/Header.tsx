@@ -3,9 +3,57 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSavedList } from '@/contexts/SavedListContext';
+import { useDestination } from '@/contexts/DestinationContext';
+import { landedCostEnabled } from '@/lib/flags';
 import Link from 'next/link';
-import { ShoppingBag } from 'lucide-react';
+import { Globe, ShoppingBag } from 'lucide-react';
 import { PickLogo } from './PickLogo';
+
+// Destination + display currency for landed-cost estimates. Rendered only
+// behind LANDED_COST_ENABLED; changing the country snaps the currency to
+// that destination's own (the shopper can still override it, and totals for
+// pairs with no FX data honestly show as unavailable rather than converted
+// at a made-up rate).
+const CURRENCY_OPTIONS = ['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY'];
+
+function DestinationPicker({ compact = false }: { compact?: boolean }) {
+  const { destination, setCountry, setCurrency, countries } = useDestination();
+  return (
+    <div className={`flex items-center gap-1.5 ${compact ? 'py-2' : ''}`}>
+      <Globe className="w-4 h-4 text-pick-muted" aria-hidden="true" />
+      <label className="sr-only" htmlFor={compact ? 'dest-country-m' : 'dest-country'}>
+        Delivery country
+      </label>
+      <select
+        id={compact ? 'dest-country-m' : 'dest-country'}
+        value={destination.country}
+        onChange={(e) => setCountry(e.target.value)}
+        className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+      >
+        {countries.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+      <label className="sr-only" htmlFor={compact ? 'dest-currency-m' : 'dest-currency'}>
+        Display currency
+      </label>
+      <select
+        id={compact ? 'dest-currency-m' : 'dest-currency'}
+        value={destination.currency}
+        onChange={(e) => setCurrency(e.target.value)}
+        className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+      >
+        {CURRENCY_OPTIONS.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function SavedListButton() {
   const { items, total, openDrawer } = useSavedList();
@@ -64,6 +112,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
+            {landedCostEnabled() && <DestinationPicker />}
             <SavedListButton />
 
             {isAuthenticated ? (
@@ -126,6 +175,7 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-pick-border">
             <nav aria-label="Mobile navigation" className="flex flex-col space-y-3">
+              {landedCostEnabled() && <DestinationPicker compact />}
               {isAuthenticated ? (
                 <>
                   <div className="py-2">

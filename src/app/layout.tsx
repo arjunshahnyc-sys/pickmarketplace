@@ -3,6 +3,7 @@ import { DM_Sans, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SavedListProvider } from "@/contexts/SavedListContext";
+import { DestinationProvider } from "@/contexts/DestinationContext";
 import SavedListDrawer from "@/components/SavedListDrawer";
 import { SkipToContent } from "@/components/SkipToContent";
 import { OrganizationSchema, WebsiteSchema } from "@/components/StructuredData";
@@ -62,7 +63,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <AuthProvider>
           <SavedListProvider>
-            {children}
+            <DestinationProvider>
+              {children}
+            </DestinationProvider>
             <SavedListDrawer />
           </SavedListProvider>
         </AuthProvider>

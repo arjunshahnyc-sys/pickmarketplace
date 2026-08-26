@@ -19,6 +19,8 @@ export interface SearchResponse {
   totalResults: number;
 }
 
+import type { LandedCostBreakdown } from './landedCost/types';
+
 // Types for scraper functions
 export interface Product {
   id?: string;
@@ -35,6 +37,12 @@ export interface Product {
   lastVerified?: string;
   /** True for example/deep-link cards shown when live results are thin */
   isFallback?: boolean;
+  /**
+   * Landed-cost breakdown for the shopper's destination. Attached only when
+   * LANDED_COST_ENABLED is on (see lib/landedCost/enrich.ts); absent
+   * otherwise and on server-rendered category pages.
+   */
+  landedCost?: LandedCostBreakdown;
 }
 
 export interface RetailerSearchLink {

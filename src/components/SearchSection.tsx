@@ -3,6 +3,7 @@
 import { Tag, ArrowUpDown, BadgeCheck } from 'lucide-react';
 import SellerTrustKey from './SellerTrustKey';
 import { Product } from '@/lib/types';
+import { landedCostEnabled } from '@/lib/flags';
 
 interface SearchSectionProps {
   resultsCount: number;
@@ -151,9 +152,14 @@ export default function SearchSection({
                 aria-labelledby="sort-label"
                 className="appearance-none h-10 bg-gray-100 rounded-full px-4 pr-10 text-sm font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
               >
+                {/* Landed cost is the default sort when the flag is on;
+                    item-price sorts stay available as the toggle. */}
+                {landedCostEnabled() && (
+                  <option value="total-cost">Total cost: Low to High (est.)</option>
+                )}
                 <option value="relevance">Relevance</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
+                <option value="price-low">{landedCostEnabled() ? 'Item price: Low to High' : 'Price: Low to High'}</option>
+                <option value="price-high">{landedCostEnabled() ? 'Item price: High to Low' : 'Price: High to Low'}</option>
                 <option value="biggest-sale">Biggest Sale</option>
               </select>
               <ArrowUpDown

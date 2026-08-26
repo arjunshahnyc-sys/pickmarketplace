@@ -19,6 +19,9 @@ import { useSavedList } from '@/contexts/SavedListContext';
 import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { sortProducts } from '@/lib/sortResults';
+import { landedCostEnabled } from '@/lib/flags';
+import { orderByLandedCost, withLandedCosts } from '@/lib/landedCost/enrich';
+import { useDestination } from '@/contexts/DestinationContext';
 import { getRetailerTrust } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -45,6 +48,7 @@ function formatCheckedAt(checkedAt?: string): string {
 
 export default function Home() {
   const { isSaved, toggleItem } = useSavedList();
+  const { destination } = useDestination();
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -61,8 +65,9 @@ export default function Home() {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
 
-  // Filter and sort state
-  const [sortBy, setSortBy] = useState('relevance');
+  // Filter and sort state. Landed cost is the default sort when the flag is
+  // on; 'relevance' stays the flag-off default (characterized behavior).
+  const [sortBy, setSortBy] = useState(landedCostEnabled() ? 'total-cost' : 'relevance');
   const [showOnSaleOnly, setShowOnSaleOnly] = useState(false);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
 
@@ -321,16 +326,29 @@ export default function Home() {
       );
     }
 
-    // Apply sorting (extracted verbatim to sortResults.ts and pinned by
-    // characterization tests; behavior must not drift while the landed-cost
-    // flag is off)
-    filtered = sortProducts(filtered, sortBy);
+    if (landedCostEnabled()) {
+      // Attach a landed-cost breakdown for the shopper's destination to
+      // every offer (per-line provenance and confidence; unknowns stay
+      // unknown). The date only feeds rules-staleness warnings.
+      filtered = withLandedCosts(filtered, destination, new Date());
+    }
+
+    if (landedCostEnabled() && sortBy === 'total-cost') {
+      // Landed-cost ranking: ascending on the honest low estimate, with the
+      // top-slot rule (an offer never wins on missing required data).
+      filtered = orderByLandedCost(filtered).products;
+    } else {
+      // Apply sorting (extracted verbatim to sortResults.ts and pinned by
+      // characterization tests; behavior must not drift while the
+      // landed-cost flag is off)
+      filtered = sortProducts(filtered, sortBy);
+    }
 
     // Enhance with product grouping and savings info. The similar-pick
     // reference is the top relevance-ordered result, so re-sorting by price
     // doesn't change which product the alternatives are compared against.
     return enhanceProductsWithGroupInfo(filtered, results[0]);
-  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly]);
+  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, destination]);
 
   // Each toggle's count is computed against the OTHER active filter, so the
   // number on the button always matches what clicking it would show.
@@ -676,6 +694,12 @@ export default function Home() {
                       </>
                     )}
                     Prices checked {formatCheckedAt(searchResponse?.checkedAt)}
+                    {landedCostEnabled() && (
+                      <>
+                        {' '}• Totals estimated for delivery to {destination.country} in{' '}
+                        {destination.currency}, duties not prepaid unless shown
+                      </>
+                    )}
                   </p>
                 </div>
 
