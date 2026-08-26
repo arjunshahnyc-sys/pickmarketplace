@@ -1,10 +1,9 @@
 // France destination rules.
 // Structural rows verified 2026-08-26 (live fetches, adversarially
 // re-checked, owner-approved). Intra-EU purchases never reach these rules.
-// Same EU flat-fee SCHEMA GAP as DE.ts: the abolished EUR 150 exemption is
-// replaced by a temporary flat EUR 3 per-item duty (until 2028-07-01) that
-// this schema cannot express yet — do not fill ad valorem rates before the
-// engine gains a flat-per-item duty policy.
+// The EU transitional regime is encoded as flat-below-threshold, same as
+// DE.ts: EUR 3 per item at or under EUR 150 (until 2028-07-01), ad valorem
+// TARIC rates above.
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
 import { todo, verified } from '../seed';
@@ -23,16 +22,21 @@ export const FR: DestinationRules = {
     'French customs computes duty on the valeur CAF (cost + insurance + freight); corroborated by La Poste.'
   ),
   dutyRelief: verified<ReliefPolicy>(
-    { kind: 'none' },
+    {
+      kind: 'flat-below-threshold',
+      amountMinor: 15_000,
+      basis: 'intrinsic-goods-value',
+      flatDutyMinorPerItem: 300,
+    },
     'https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en',
     V,
-    'The EUR 150 franchise was abolished 2026-07-01, replaced by a temporary flat EUR 3 per-item duty on consignments up to EUR 150 until 2028-07-01 (EU Commission; corroborated by La Poste). Flat fee not yet expressible; see header comment.'
+    'The EUR 150 franchise was abolished 2026-07-01, replaced by a temporary flat EUR 3 per-item duty on consignments up to EUR 150 until 2028-07-01 (EU Commission; corroborated verbatim by La Poste). Threshold basis follows the intrinsic-value test the EU uses for low-value consignments.'
   ),
   dutyRates: [
     {
       hsPrefix: 'default',
       label: 'Import duty',
-      rateBps: todo(TARIC, 'Per-heading rates from TARIC. BLOCKED on the flat-fee schema gap described in the header comment.'),
+      rateBps: todo(TARIC, 'Ad valorem TARIC rates apply only ABOVE the EUR 150 flat-fee band; add per-heading rows for curated categories.'),
     },
   ],
   importTax: {

@@ -379,6 +379,41 @@ function crossBorderCharges(
         // 'excluded': the category is carved out of relief; fall through to
         // the rate path and compute duty normally.
       }
+    } else if (policy.kind === 'flat-below-threshold') {
+      const base = thresholdBase(policy.basis);
+      if (!base) {
+        warnings.push(
+          `The flat-duty threshold for ${rules.country} compares against ${policy.basis}, which is unknown.`
+        );
+        reliefConfidence = 'unknown';
+      } else if (base.amountMinor <= policy.amountMinor) {
+        const exclusion = exclusionStatus(policy.excludedHsPrefixes, input.item.hs?.code);
+        if (exclusion === 'undecidable') {
+          warnings.push(
+            `${rules.country} excludes some product categories from its flat low-value duty and this product has no HS classification; duty is unknown.`
+          );
+          reliefConfidence = 'unknown';
+        } else if (exclusion === 'not-excluded') {
+          relieved = true; // duty resolved by policy: skip the rate path
+          duty = {
+            amountMinor: policy.flatDutyMinorPerItem,
+            confidence: combineConfidence(
+              reliefRule.confidence,
+              base.confidence,
+              policy.excludedHsPrefixes?.length
+                ? input.item.hs?.confidence ?? 'estimated'
+                : 'exact'
+            ),
+            sourceId: R('dutyRelief'),
+          };
+          dutyBasis = `Flat ${fmt(policy.flatDutyMinorPerItem)} per item: ${policy.basis} ${fmt(base.amountMinor)} is at or under ${fmt(policy.amountMinor)}`;
+          assumptions.push(
+            'Assumes a single-item consignment; the flat low-value duty applies per item.'
+          );
+        }
+        // 'excluded': falls through to the ad valorem rate path.
+      }
+      // Above the threshold: fall through to the ad valorem rate path.
     }
     if (!relieved && reliefConfidence !== 'unknown' && customsValue) {
       // Step 2 continued: rate by longest HS-prefix match. Origin-specific

@@ -159,14 +159,29 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(summarizeTotal(out).kind).toBe('unavailable');
   });
 
-  it('DE under EUR 150: IOSS zeroes VAT but the flat-duty gap keeps duty unknown', () => {
-    // Deliberate: dutyRelief is 'none' (exemption abolished) and ad valorem
-    // rates are unfilled pending flat-fee support, so duty stays unknown.
+  it('DE under EUR 150: flat EUR 3 duty, IOSS-collected VAT, handling fee — a full estimate', () => {
+    // $100 -> EUR 90.00 intrinsic: flat-fee band. Duty EUR 3.00, VAT
+    // merchant-collected (assumed), Deutsche Post fee applies since duty is
+    // due at the border.
     const out = calculateLandedCost(
       input({ priceMinor: 10_000, destCountry: 'DE', destCurrency: 'EUR' }),
-      { ...ctx('DE'), fx: new FixtureFxProvider({ 'USD:EUR': { midMicros: 900_000, asOf: '2026-08-26T00:00:00Z' } }) }
+      ctx('DE')
     );
+    expect(line(out.lines, 'duty').amountMinor).toBe(300);
+    expect(line(out.lines, 'duty').basis).toContain('Flat');
     expect(line(out.lines, 'tax').amountMinor).toBe(0);
+    expect(line(out.lines, 'fee').amountMinor).toBe(750);
+    expect(out.totalMinor).toBe(9_000 + 300 + 750);
+    expect(out.assumptions.join(' ')).toContain('single-item consignment');
+    expect(isTopSlotEligible(out)).toBe(true);
+    expect(summarizeTotal(out)).toMatchObject({ kind: 'subtotal', missing: ['shipping'] });
+  });
+
+  it('DE over EUR 150: ad valorem band, honestly unavailable until TARIC rates land', () => {
+    const out = calculateLandedCost(
+      input({ priceMinor: 30_000, destCountry: 'DE', destCurrency: 'EUR' }),
+      ctx('DE')
+    );
     expect(line(out.lines, 'duty').amountMinor).toBeNull();
     expect(summarizeTotal(out).kind).toBe('unavailable');
   });

@@ -3,14 +3,10 @@
 // re-checked, owner-approved). Intra-EU purchases never reach these rules;
 // they apply to goods entering the EU via Germany.
 //
-// SCHEMA GAP (deliberate): since 2026-07-01 the abolished EUR 150 duty
-// exemption is replaced by a temporary flat EUR 3 PER-ITEM duty on
-// consignments up to EUR 150, until 2028-07-01. dutyRelief 'none' is correct
-// (no relief threshold exists) and safe today because the ad valorem duty
-// rates below are still unfilled, so duty stays honestly unknown. Do NOT
-// fill EU ad valorem rates until the engine gains a flat-per-item duty
-// policy for the sub-150 band; otherwise it would compute rate x value where
-// the true duty is flat EUR 3.
+// The EU transitional regime (2026-07-01 to 2028-07-01) is encoded as a
+// flat-below-threshold policy: EUR 3 per item at or under EUR 150, ad
+// valorem TARIC rates above. The sunset date is inside the 90-day staleness
+// window many times over, so re-verification will catch the 2028 switch.
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
 import { todo, verified } from '../seed';
@@ -29,16 +25,21 @@ export const DE: DestinationRules = {
     'EU customs value includes transport/postage (and insurance); zoll.de states full postage up to the domestic destination is counted for commercial postal imports (broader than border-CIF under UCC Art. 71).'
   ),
   dutyRelief: verified<ReliefPolicy>(
-    { kind: 'none' },
-    'https://www.zoll.de/EN/Private-individuals/Postal_consignments_internet_order/Shipments-from-a-non-EU-country/Duties-and-taxes/duties-and-taxes_node.html',
+    {
+      kind: 'flat-below-threshold',
+      amountMinor: 15_000,
+      basis: 'intrinsic-goods-value',
+      flatDutyMinorPerItem: 300,
+    },
+    'https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en',
     V,
-    'The EUR 150 duty exemption ended 2026-07-01 (zoll.de and the European Commission both confirm). Replaced by a temporary flat EUR 3 per-item duty on consignments up to EUR 150 until 2028-07-01 — NOT yet expressible in this schema; see the header comment before filling any ad valorem rates.'
+    'The EUR 150 duty exemption ended 2026-07-01 (zoll.de and the European Commission both confirm); replaced by a temporary flat EUR 3 per-item duty on consignments up to EUR 150, in force until 2028-07-01, after which normal ad valorem rates resume. Threshold basis follows the intrinsic-value test the EU uses for low-value consignments.'
   ),
   dutyRates: [
     {
       hsPrefix: 'default',
       label: 'Import duty',
-      rateBps: todo(TARIC, 'Per-heading rates from TARIC. BLOCKED on the flat-fee schema gap described in the header comment.'),
+      rateBps: todo(TARIC, 'Ad valorem TARIC rates apply only ABOVE the EUR 150 flat-fee band; add per-heading rows for curated categories.'),
     },
   ],
   importTax: {

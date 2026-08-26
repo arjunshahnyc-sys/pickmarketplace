@@ -148,6 +148,21 @@ export type ReliefPolicy =
        */
       excludedHsPrefixes?: string[];
     }
+  /**
+   * A flat per-item duty replaces ad valorem duty at or under a value
+   * threshold (the EU's transitional regime: EUR 3 per item on consignments
+   * up to EUR 150, in force 2026-07-01 to 2028-07-01). Above the threshold,
+   * normal ad valorem rates apply. Offers are modeled as single-item
+   * consignments; the calculator states that as an assumption.
+   */
+  | {
+      kind: 'flat-below-threshold';
+      amountMinor: number;
+      basis: ThresholdBasis;
+      flatDutyMinorPerItem: number;
+      /** Same semantics as the 'threshold' variant's exclusions. */
+      excludedHsPrefixes?: string[];
+    }
   /** Verified fact that NO relief exists (e.g. US de minimis suspended). */
   | { kind: 'none' };
 

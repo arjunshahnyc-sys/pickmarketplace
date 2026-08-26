@@ -241,6 +241,53 @@ describe('relief exclusions (excludedHsPrefixes)', () => {
   });
 });
 
+describe('flat-below-threshold duty (EU transitional regime shape)', () => {
+  const FLATLAND: DestinationRules = {
+    ...FOBLAND,
+    country: 'FL',
+    dutyRelief: sourced({
+      kind: 'flat-below-threshold' as const,
+      amountMinor: 15_000,
+      basis: 'intrinsic-goods-value' as const,
+      flatDutyMinorPerItem: 300,
+    }),
+  };
+
+  it('at or under the threshold: flat per-item duty, stated as single-item', () => {
+    const out = calculateLandedCost(baseInput({ priceMinor: 10_000 }), ctxFor(FLATLAND));
+    expect(line(out.lines, 'duty').amountMinor).toBe(300);
+    expect(line(out.lines, 'duty').basis).toContain('Flat');
+    expect(out.assumptions.join(' ')).toContain('single-item consignment');
+    // duty feeds the tax base: (100 + 3 + 20 shipping) x 20% = 24.60
+    expect(line(out.lines, 'tax').amountMinor).toBe(2_460);
+  });
+
+  it('above the threshold: normal ad valorem rates resume', () => {
+    const out = calculateLandedCost(baseInput({ priceMinor: 20_000 }), ctxFor(FLATLAND));
+    expect(line(out.lines, 'duty').amountMinor).toBe(1_000); // default 5%
+  });
+
+  it('respects exclusions: carved-out categories pay ad valorem, unclassified is undecidable', () => {
+    const withExclusions: DestinationRules = {
+      ...FLATLAND,
+      dutyRelief: sourced({
+        kind: 'flat-below-threshold' as const,
+        amountMinor: 15_000,
+        basis: 'intrinsic-goods-value' as const,
+        flatDutyMinorPerItem: 300,
+        excludedHsPrefixes: ['6404'],
+      }),
+    };
+    const excluded = calculateLandedCost(
+      baseInput({ priceMinor: 10_000, hs: { code: '640411', confidence: 'estimated', sourceId: 't' } }),
+      ctxFor(withExclusions)
+    );
+    expect(line(excluded.lines, 'duty').amountMinor).toBe(1_000); // footwear 10%
+    const unclassified = calculateLandedCost(baseInput({ priceMinor: 10_000 }), ctxFor(withExclusions));
+    expect(line(unclassified.lines, 'duty').amountMinor).toBeNull();
+  });
+});
+
 describe('verified zero tax rate', () => {
   it('a 0% rate makes tax exactly zero even when duty is unknown', () => {
     const NOVATLAND: DestinationRules = {
