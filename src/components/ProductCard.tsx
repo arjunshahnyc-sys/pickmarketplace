@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
 import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
+import { affiliateLinksEnabled } from "@/lib/affiliate";
 import { formatPrice, formatRating } from "@/lib/formatters";
 import type { Product } from "@/lib/types";
 import type { EnhancedProduct } from "@/lib/productGrouping";
@@ -86,7 +87,9 @@ function ProductCard({
     <a
       href={product.url}
       target="_blank"
-      rel="noopener noreferrer sponsored"
+      // rel=sponsored is a machine-readable paid-link claim; only make it
+      // when the links actually carry commission tracking
+      rel={affiliateLinksEnabled() ? "noopener noreferrer sponsored" : "noopener noreferrer"}
       className={`bg-white rounded-xl border p-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition slide-in block relative ${
         trust.level === 'flagged' ? 'border-red-300' : 'border-gray-200/70'
       } ${isCompareMode ? 'cursor-pointer' : ''} ${
@@ -167,10 +170,17 @@ function ProductCard({
             EXAMPLE
           </span>
         )}
-        {/* Lowest-of-group chip — quiet, factual */}
+        {/* Same-item chip: this exact product, cheapest of its listings */}
         {showLowestPrice && !product.isFallback && savingsAmount && savingsAmount > 0 && (
           <span className="absolute bottom-2 left-2 bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-            Lowest price · Save ${savingsAmount.toFixed(2)}
+            Same item · Save ${savingsAmount.toFixed(2)}
+          </span>
+        )}
+        {/* Similar-alternative chip: a different product, much cheaper.
+            Solid dark fill so the two decisions never look alike. */}
+        {product.matchType === 'similar' && product.similarTo && !product.isFallback && (
+          <span className="absolute bottom-2 left-2 bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+            Similar pick · {product.similarTo.savingsPercent}% less
           </span>
         )}
       </div>
@@ -238,6 +248,32 @@ function ProductCard({
           {product.reviewCount ? (
             <span>({product.reviewCount.toLocaleString("en-US")})</span>
           ) : null}
+        </div>
+      )}
+
+      {/* Why this alternative is comparable: reviews above, shared specs here */}
+      {product.matchType === 'similar' && product.similarTo && !product.isFallback && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <p className="text-[11px] leading-snug text-[#14524B]">
+            Alternative to{' '}
+            <span className="font-medium">
+              {product.similarTo.name.length > 34
+                ? `${product.similarTo.name.substring(0, 34)}…`
+                : product.similarTo.name}
+            </span>
+          </p>
+          {product.similarTo.sharedSpecs.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {product.similarTo.sharedSpecs.map((spec) => (
+                <span
+                  key={spec}
+                  className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#14524B]/5 text-[#14524B]"
+                >
+                  {spec}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

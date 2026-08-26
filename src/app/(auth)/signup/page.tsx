@@ -107,7 +107,7 @@ export default function SignupPage() {
                 🔍
               </div>
               <div>
-                <p className="font-semibold">One Search, Every Major Store</p>
+                <p className="font-semibold">One Search, Dozens of Stores</p>
                 <p className="text-sm text-white/60">Amazon, Target, Best Buy, Walmart & more</p>
               </div>
             </div>
@@ -122,11 +122,11 @@ export default function SignupPage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
-                🤖
+                🧩
               </div>
               <div>
-                <p className="font-semibold">AI Shopping Assistant</p>
-                <p className="text-sm text-white/60">Find deals, discover dupes, compare prices</p>
+                <p className="font-semibold">Similar-Product Finder</p>
+                <p className="text-sm text-white/60">Well-reviewed alternatives that cost less</p>
               </div>
             </div>
           </div>

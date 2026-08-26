@@ -26,11 +26,11 @@ export const RATE_LIMITS = {
   // bucket would let an attacker lock a victim out of their own login.
   login: { name: 'login', limit: 10, windowMs: 5 * 60 * 1000 },
   signup: { name: 'signup', limit: 10, windowMs: 60 * 60 * 1000 },
-  plan: { name: 'plan', limit: 30, windowMs: 60 * 60 * 1000 },
   contact: { name: 'contact', limit: 5, windowMs: 15 * 60 * 1000 },
-  // Search costs real money (Serper) on cache misses — /api/search-live is
-  // the only route that hits the paid pipeline.
-  search: { name: 'search', limit: 30, windowMs: 60 * 1000 },
+  // Anti-scraper guard, not a product limit: generous enough that no human
+  // hits it, tight enough to stop bots hammering the paid Serper pipeline.
+  // /api/search-live is the only route that hits that pipeline.
+  search: { name: 'search', limit: 60, windowMs: 60 * 1000 },
 } satisfies Record<string, RateLimitRule>;
 
 interface Bucket {

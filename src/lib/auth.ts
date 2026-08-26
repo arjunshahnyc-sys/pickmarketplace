@@ -13,7 +13,6 @@ export interface PublicUser {
   id: string;
   name: string;
   email: string;
-  plan: 'free' | 'premium';
   createdAt: string;
 }
 
@@ -29,14 +28,12 @@ export function toPublicUser(user: {
   id: string;
   name: string;
   email: string;
-  plan: string;
   createdAt: Date;
 }): PublicUser {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
-    plan: user.plan === 'premium' ? 'premium' : 'free',
     createdAt: user.createdAt.toISOString(),
   };
 }

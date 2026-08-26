@@ -1,3 +1,5 @@
+import { affiliateLinksEnabled } from '@/lib/affiliate';
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -7,12 +9,16 @@ export default function Footer() {
         {/* FTC Disclosure - Shortened */}
         <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-lg">
           <p className="text-xs text-white/60 leading-relaxed">
-            <strong className="font-semibold text-white/80">Disclosure:</strong> Pick may earn a commission when you buy through our links. Prices shift, so always double-check at checkout.
+            <strong className="font-semibold text-white/80">Disclosure:</strong>{' '}
+            {affiliateLinksEnabled()
+              ? 'Pick earns a commission from the retailer when you buy through our links, never by ranking results.'
+              : "Pick doesn't currently earn commissions from retailer links; we'll disclose it here before any commission-earning links go live."}{' '}
+            Prices shift, so always double-check at checkout.
           </p>
         </div>
 
-        {/* Navigation - Simplified to 4 columns max */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+        {/* Navigation - Simplified to 3 columns max */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">Company</h3>
             <ul className="space-y-2 text-sm">
@@ -76,17 +82,6 @@ export default function Footer() {
               <li>
                 <a href="/compliance" className="text-white/70 hover:text-white transition-colors">
                   Compliance
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">Plans</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="/pricing" className="text-white/70 hover:text-white transition-colors">
-                  Pricing
                 </a>
               </li>
             </ul>

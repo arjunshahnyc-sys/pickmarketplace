@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { affiliateLinksEnabled } from '@/lib/affiliate';
 
 export const metadata: Metadata = {
   title: "FAQ - Pick Marketplace",
@@ -11,11 +12,13 @@ export default function FAQPage() {
   const faqs = [
     {
       question: "Is Pick Marketplace free to use?",
-      answer: "Pick offers a free tier with 5 searches per day and basic product comparisons. No account required to start searching. There's also a Premium plan with unlimited searches, more results per search, and advanced features, free to activate while we're in beta (planned pricing: $4.99/month, or $3.33/month billed annually).",
+      answer: "Yes. Pick is completely free to use. There are no paid plans and no account required to search.",
     },
     {
       question: "How does Pick Marketplace make money?",
-      answer: "Right now, we don't. Pick doesn't currently participate in any retailer affiliate program, so clicking through to a store earns us nothing. The planned model is affiliate commissions plus optional Premium subscriptions; if we join affiliate programs, we'll disclose it here and on our compliance page before any commission-earning links go live.",
+      answer: affiliateLinksEnabled()
+        ? "Affiliate commissions. When you buy through a link on Pick, the retailer pays us a commission at no extra cost to you. That's the whole business model: there's no paid tier, and commissions never affect which results we show or how they're ranked."
+        : "Right now, we don't. Pick doesn't currently participate in any retailer affiliate program, so clicking through to a store earns us nothing. The planned model is affiliate commissions; if we join affiliate programs, we'll disclose it here and on our compliance page before any commission-earning links go live.",
     },
     {
       question: "How often are prices updated?",

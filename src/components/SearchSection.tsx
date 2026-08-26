@@ -2,9 +2,6 @@
 
 import { Tag, ArrowUpDown, BadgeCheck } from 'lucide-react';
 import SellerTrustKey from './SellerTrustKey';
-import { useAuth } from '@/contexts/AuthContext';
-import BlurOverlay from './gating/BlurOverlay';
-import { useState } from 'react';
 import { Product } from '@/lib/types';
 
 interface SearchSectionProps {
@@ -40,17 +37,6 @@ export default function SearchSection({
   onSearch,
   saleCount = 0,
 }: SearchSectionProps) {
-  const { canUseFeature } = useAuth();
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-
-  const handleCompareClick = () => {
-    if (!canUseFeature('priceComparison')) {
-      setShowUpgradePrompt(true);
-    } else {
-      onCompareClick();
-    }
-  };
-
   // PINCHPOINT 3 FIX - Calculate price range
   const minPrice = products.length > 0 ? Math.min(...products.map(p => p.price)) : 0;
   const maxPrice = products.length > 0 ? Math.max(...products.map(p => p.price)) : 0;
@@ -179,7 +165,7 @@ export default function SearchSection({
 
           {/* Compare Button */}
           <button
-            onClick={handleCompareClick}
+            onClick={onCompareClick}
             aria-pressed={isCompareMode}
             className={`ml-auto flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
               isCompareMode
@@ -232,28 +218,6 @@ export default function SearchSection({
               {term}
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Upgrade Prompt for Compare Feature */}
-      {showUpgradePrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowUpgradePrompt(false)}
-          />
-          <div className="relative z-10">
-            <button
-              onClick={() => setShowUpgradePrompt(false)}
-              aria-label="Close upgrade prompt"
-              className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-black/5 transition-colors z-20"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <BlurOverlay message="Upgrade to Premium to compare products side by side" />
-          </div>
         </div>
       )}
     </>

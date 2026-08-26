@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { ArrowRight, Search } from 'lucide-react';
 
 interface SearchBarProps {
@@ -8,8 +8,31 @@ interface SearchBarProps {
   isLoading?: boolean;
 }
 
+// Realistic example queries, rotated through the placeholder while the
+// input is empty so the box demonstrates what to type.
+const PLACEHOLDER_QUERIES = [
+  'wireless earbuds',
+  'laptop stand',
+  'hoodie',
+  'air fryer',
+  'running shoes',
+  'water bottle',
+  'desk lamp',
+];
+
 export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
   const [query, setQuery] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  // Only rotate while the field is empty — once the user types, the
+  // placeholder is invisible and the interval is just wasted renders.
+  useEffect(() => {
+    if (query) return;
+    const interval = setInterval(() => {
+      setPlaceholderIndex((i) => (i + 1) % PLACEHOLDER_QUERIES.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [query]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -26,7 +49,7 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder='Try "airpods pro" or "mini dress"'
+          placeholder={`Try "${PLACEHOLDER_QUERIES[placeholderIndex]}"`}
           className="h-14 md:h-16 w-full rounded-full bg-white pl-12 pr-16 text-base text-neutral-900 placeholder:text-neutral-400 border border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-2 focus:ring-[#2A9D8F] transition-shadow"
           disabled={isLoading}
         />

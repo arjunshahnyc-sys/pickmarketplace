@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   description: "Compare prices from Target and Google Shopping listings across major retailers like Amazon, Walmart, and Best Buy. Find deals on electronics, clothing, home goods, and more.",
   openGraph: {
     title: "Pick - Don't waste your money. Buy the same product for less.",
-    description: "One search compares prices across every major store, so you never overpay.",
+    description: "One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less.",
     type: "website",
     siteName: "Pick",
     images: ["/og-image.png"],
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Pick - Don't waste your money. Buy the same product for less.",
-    description: "One search compares prices across every major store, so you never overpay.",
+    description: "One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less.",
     images: ["/og-image.png"],
   },
 };
@@ -53,12 +53,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           name="Pick"
           url={SITE_URL}
           logo={`${SITE_URL}/logo.svg`}
-          description="One search compares prices across every major store, so you never overpay."
+          description="One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less."
         />
         <WebsiteSchema
           name="Pick"
           url={SITE_URL}
-          description="One search compares prices across every major store, so you never overpay."
+          description="One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less."
         />
         <AuthProvider>
           <SavedListProvider>

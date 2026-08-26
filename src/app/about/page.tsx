@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { affiliateLinksEnabled } from '@/lib/affiliate';
 
 export const metadata: Metadata = {
   title: 'About Us - Pick Marketplace',
@@ -27,7 +28,7 @@ export default function AboutPage() {
               What We Do
             </h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              When you search for a product on Pick Marketplace, we check Target and Google Shopping results. Our system aggregates results, compares total costs (including shipping when available), and shows you the best options ranked by price.
+              When you search for a product on Pick Marketplace, we check Target and Google Shopping results. Our system aggregates the results and shows you every option, with one-tap sorting by price.
             </p>
             <p className="text-gray-700 mb-6 leading-relaxed">
               Whether you're shopping for electronics, clothing, home goods, kitchen appliances, or beauty products, Pick Marketplace makes it easy to find the lowest price without manually checking multiple retailer websites.
@@ -38,13 +39,16 @@ export default function AboutPage() {
             </h2>
             <ul className="list-disc pl-6 text-gray-700 space-y-3 mb-6">
               <li>
-                <strong>Multi-retailer coverage:</strong> We check Target API directly, plus aggregated results from Google Shopping, not just one or two sources.
+                <strong>Multi-retailer coverage:</strong> We check Target's API directly, plus aggregated results from Google Shopping listings that span dozens of retailers.
               </li>
               <li>
                 <strong>Direct product links:</strong> When available, we link directly to product pages so you can buy immediately. When we show example products, we clearly label them.
               </li>
               <li>
-                <strong>Honest pricing:</strong> Pick offers a free tier (5 searches/day) and a Premium tier that's free to activate during our beta (planned pricing: $4.99/month, or $3.33/month billed annually). We don't currently earn commissions from retailer links, and no retailer pays for placement.
+                <strong>Free for everyone:</strong> Pick is free to use, with no paid plans.{' '}
+                {affiliateLinksEnabled()
+                  ? 'Retailers pay us a commission when you buy through our links; no retailer pays for placement or ranking.'
+                  : "We don't currently earn commissions from retailer links, and no retailer pays for placement."}
               </li>
               <li>
                 <strong>Honest about limitations:</strong> We display price verification timestamps and clearly indicate when prices may not be current. We believe in transparency over fake urgency.
@@ -68,7 +72,10 @@ export default function AboutPage() {
               Pick was founded by <strong>Arjun Shah</strong>, who got tired of overpaying for products and manually checking multiple retailers. Every time he found something he wanted, the price felt too high, and he knew there had to be a better deal somewhere but didn't have time to check every single store.
             </p>
             <p className="text-gray-700 mb-8 leading-relaxed">
-              What started as a personal tool to save money became Pick Marketplace. The planned business model is affiliate commissions plus optional Premium subscriptions for unlimited searches. Today, Pick doesn't yet earn commissions from retailer links; if we join affiliate programs, we'll disclose it before any commission-earning links go live.
+              What started as a personal tool to save money became Pick Marketplace.{' '}
+              {affiliateLinksEnabled()
+                ? 'The business model is affiliate commissions: retailers pay us when you buy through our links, so Pick stays free and commissions never influence rankings.'
+                : "The planned business model is affiliate commissions. Today, Pick doesn't yet earn commissions from retailer links; if we join affiliate programs, we'll disclose it before any commission-earning links go live."}
             </p>
 
             <div className="mt-12 p-6 bg-gray-50 border border-gray-200 rounded-lg">

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { affiliateLinksEnabled } from '@/lib/affiliate';
 
 export const metadata: Metadata = {
   title: 'Compliance - Pick Marketplace',
@@ -29,15 +30,22 @@ export default function CompliancePage() {
               </h2>
               <div className="p-5 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
                 <p className="text-gray-800 leading-relaxed">
-                  <strong className="text-black">Disclosure:</strong> Pick Marketplace does not currently participate in any affiliate marketing program. We earn nothing when you click through to a retailer or make a purchase. If we join affiliate programs in the future, we will update this disclosure before any commission-earning links go live.
+                  <strong className="text-black">Disclosure:</strong>{' '}
+                  {affiliateLinksEnabled()
+                    ? 'Pick Marketplace participates in retailer affiliate programs. When you buy through a link on this site, the retailer pays us a commission at no additional cost to you. Commissions never determine which products appear or how results are ranked.'
+                    : 'Pick Marketplace does not currently participate in any affiliate marketing program. We earn nothing when you click through to a retailer or make a purchase. If we join affiliate programs in the future, we will update this disclosure before any commission-earning links go live.'}
                 </p>
               </div>
               <p className="text-gray-700 leading-relaxed">
                 In line with the Federal Trade Commission's (FTC) guidelines on endorsements and material connections, we disclose that:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mt-4">
-                <li>We have no affiliate, sponsorship, or paid-placement relationship with any retailer shown on our platform, including Amazon, Target, Best Buy, and Walmart.</li>
-                <li>No retailer pays us for inclusion, ranking, or clicks.</li>
+                {affiliateLinksEnabled() ? (
+                  <li>Outbound links on this site are affiliate links: retailers pay us a commission on purchases made through them.</li>
+                ) : (
+                  <li>We have no affiliate, sponsorship, or paid-placement relationship with any retailer shown on our platform, including Amazon, Target, Best Buy, and Walmart.</li>
+                )}
+                <li>No retailer pays us for inclusion, ranking, or placement.</li>
                 <li>Our price comparisons reflect the prices our data sources report and are never adjusted for commercial reasons.</li>
                 <li>We clearly label example or demo products that may not reflect current real-time availability.</li>
               </ul>

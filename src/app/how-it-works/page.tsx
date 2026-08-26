@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { Search, Zap, ShoppingCart, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: "How It Works - Pick Marketplace",
-  description: "Learn how Pick Marketplace compares prices using Target's catalog and Google Shopping results from major retailers. Free to search with optional Premium upgrade.",
+  description: "Learn how Pick Marketplace compares prices using Target's catalog and Google Shopping results from major retailers. Free to use, no account required.",
 };
 
 export default function HowItWorksPage() {
@@ -22,8 +23,8 @@ export default function HowItWorksPage() {
     },
     {
       icon: ShoppingCart,
-      title: "See Results Ranked by Price",
-      description: "We show you all available options sorted by total price (including shipping when available). Each result links directly to the retailer so you can buy immediately.",
+      title: "Compare Prices Side by Side",
+      description: "We show every option our sources return, with one-tap sorting by price. Each result links directly to the retailer so you can buy immediately.",
     },
     {
       icon: CheckCircle,
@@ -101,7 +102,10 @@ export default function HowItWorksPage() {
                 Free to Search
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Start with 5 free searches per day. Optional Premium upgrade available for unlimited searches and more features. Pick doesn't currently earn commissions from retailer links; if we join affiliate programs in the future, we'll disclose it.
+                Pick is free to use, with no paid plan.{' '}
+                {affiliateLinksEnabled()
+                  ? 'Retailer commissions keep it free: when you buy through our links, the retailer pays us. You never pay more, and commissions never affect rankings.'
+                  : "Pick doesn't currently earn commissions from retailer links; if we join affiliate programs in the future, we'll disclose it."}
               </p>
             </div>
           </div>

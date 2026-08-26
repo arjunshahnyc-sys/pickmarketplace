@@ -4,6 +4,7 @@
 // this module were removed along with the browser extension.
 
 import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks } from './scrapers';
+import { toAffiliateUrl } from './affiliate';
 import type { Product, RetailerSearchLink } from './types';
 
 export interface LiveSearchData {
@@ -58,14 +59,18 @@ export async function performLiveSearch(q: string): Promise<LiveSearchData> {
 
   // Deduplicate by product name (case-insensitive)
   const seen = new Set<string>();
-  const uniqueResults = allResults.filter((product) => {
-    const normalizedName = product.name.toLowerCase().trim();
-    if (seen.has(normalizedName)) {
-      return false;
-    }
-    seen.add(normalizedName);
-    return true;
-  });
+  const uniqueResults = allResults
+    .filter((product) => {
+      const normalizedName = product.name.toLowerCase().trim();
+      if (seen.has(normalizedName)) {
+        return false;
+      }
+      seen.add(normalizedName);
+      return true;
+    })
+    // Commission tracking is applied last, to the link only, never to
+    // ordering. Results stay ranked by the sources' relevance order.
+    .map((product) => ({ ...product, url: toAffiliateUrl(product.url) }));
 
   // Always generate retailer search links
   const retailerLinks = buildRetailerDeepLinks(q);

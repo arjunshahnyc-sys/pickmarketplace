@@ -65,18 +65,10 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
             <SavedListButton />
-            <Link href="/pricing" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
-              Pricing
-            </Link>
 
             {isAuthenticated ? (
               <>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-neutral-600">{user?.name}</span>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-neutral-500">
-                    {user?.plan === 'premium' ? 'Premium' : 'Basic'}
-                  </span>
-                </div>
+                <span className="text-sm text-neutral-600">{user?.name}</span>
                 <Link
                   href="/account"
                   className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
@@ -134,27 +126,10 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-pick-border">
             <nav aria-label="Mobile navigation" className="flex flex-col space-y-3">
-              <Link
-                href="/pricing"
-                className="text-pick-muted hover:text-pick-teal transition-colors py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Pricing
-              </Link>
-
               {isAuthenticated ? (
                 <>
-                  <div className="py-2 flex items-center gap-2">
+                  <div className="py-2">
                     <span className="text-sm text-pick-muted">{user?.name}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        user?.plan === 'premium'
-                          ? 'bg-pick-teal text-white'
-                          : 'bg-pick-border text-pick-muted'
-                      }`}
-                    >
-                      {user?.plan === 'premium' ? 'PREMIUM' : 'BASIC'}
-                    </span>
                   </div>
                   <Link
                     href="/account"

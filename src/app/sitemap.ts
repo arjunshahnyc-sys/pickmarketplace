@@ -8,7 +8,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Static pages — keep in sync with real routes in src/app/
   const staticPages = [
     '',
-    '/pricing',
     '/how-it-works',
     '/about',
     '/contact',
