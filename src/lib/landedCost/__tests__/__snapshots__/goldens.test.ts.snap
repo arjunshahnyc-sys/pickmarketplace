@@ -1,0 +1,471 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden breakdowns > DDP merchant: import charges prepaid, decidable without rules data 1`] = `
+{
+  "assumptions": [],
+  "confidence": "exact",
+  "currency": "USD",
+  "lane": "cross-border",
+  "lines": [
+    {
+      "amountMinor": 20000,
+      "basis": "Listed price 200.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Merchant sells DDP: import charges are included in the listed price",
+      "confidence": "exact",
+      "kind": "duty",
+      "label": "Import duty (prepaid by merchant)",
+      "sourceId": "derived",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Merchant sells DDP: import charges are included in the listed price",
+      "confidence": "exact",
+      "kind": "tax",
+      "label": "Import tax (prepaid by merchant)",
+      "sourceId": "derived",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Merchant sells DDP: import charges are included in the listed price",
+      "confidence": "exact",
+      "kind": "fee",
+      "label": "Customs fees (prepaid by merchant)",
+      "sourceId": "derived",
+    },
+  ],
+  "totalMinor": 22000,
+  "totalRange": undefined,
+  "unknownComponents": [],
+  "warnings": [],
+}
+`;
+
+exports[`golden breakdowns > domestic: no import cost path 1`] = `
+{
+  "assumptions": [
+    "Domestic sales tax charged at checkout, if any, is not included.",
+  ],
+  "confidence": "unknown",
+  "currency": "USD",
+  "lane": "domestic",
+  "lines": [
+    {
+      "amountMinor": 20000,
+      "basis": "Listed price 200.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": null,
+      "basis": "Not provided by the offer source",
+      "confidence": "unknown",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Domestic purchase: no import charges",
+      "confidence": "exact",
+      "kind": "duty",
+      "label": "Import duty",
+      "sourceId": "derived",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Domestic purchase: no import charges",
+      "confidence": "exact",
+      "kind": "tax",
+      "label": "Import tax",
+      "sourceId": "derived",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Domestic purchase: no import charges",
+      "confidence": "exact",
+      "kind": "fee",
+      "label": "Customs fees",
+      "sourceId": "derived",
+    },
+  ],
+  "totalMinor": 20000,
+  "totalRange": undefined,
+  "unknownComponents": [
+    "shipping",
+  ],
+  "warnings": [
+    "Shipping cost is not available from the offer source.",
+  ],
+}
+`;
+
+exports[`golden breakdowns > high-value cross-border: duty, tax on duty-inclusive base, fees 1`] = `
+{
+  "assumptions": [
+    "Assumes non-preferential origin: no trade-agreement duty discounts are applied.",
+    "Assumes import charges are not prepaid by the merchant (DAP).",
+  ],
+  "confidence": "estimated",
+  "currency": "USD",
+  "lane": "cross-border",
+  "lines": [
+    {
+      "amountMinor": 20000,
+      "basis": "Listed price 200.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Customs value 200.00 USD x 10.00% (HS 640411, estimated)",
+      "confidence": "estimated",
+      "kind": "duty",
+      "label": "Import duty (footwear)",
+      "sourceId": "FB.dutyRates.6404",
+    },
+    {
+      "amountMinor": 4800,
+      "basis": "customs value + duty + shipping 240.00 USD x 20.00%",
+      "confidence": "estimated",
+      "kind": "tax",
+      "label": "Test VAT",
+      "sourceId": "FB.importTax.rate",
+    },
+    {
+      "amountMinor": 1340,
+      "basis": "10.00 USD flat + 5.00% of advanced charges",
+      "confidence": "estimated",
+      "kind": "fee",
+      "label": "Brokerage fee",
+      "sourceId": "FB.carrierFees.default",
+    },
+  ],
+  "totalMinor": 30140,
+  "totalRange": undefined,
+  "unknownComponents": [],
+  "warnings": [],
+}
+`;
+
+exports[`golden breakdowns > intra-EU: no duty or import VAT 1`] = `
+{
+  "assumptions": [
+    "Assumes the listed price already includes VAT, as EU consumer prices must.",
+  ],
+  "confidence": "exact",
+  "currency": "USD",
+  "lane": "intra-eu",
+  "lines": [
+    {
+      "amountMinor": 20000,
+      "basis": "Listed price 200.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Intra-EU delivery: free movement of goods",
+      "confidence": "exact",
+      "kind": "duty",
+      "label": "Import duty",
+      "sourceId": "derived",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Intra-EU delivery: VAT is included in the listed price",
+      "confidence": "exact",
+      "kind": "tax",
+      "label": "VAT",
+      "sourceId": "derived",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "Intra-EU delivery: no customs processing",
+      "confidence": "exact",
+      "kind": "fee",
+      "label": "Customs fees",
+      "sourceId": "derived",
+    },
+  ],
+  "totalMinor": 22000,
+  "totalRange": undefined,
+  "unknownComponents": [],
+  "warnings": [],
+}
+`;
+
+exports[`golden breakdowns > low-value cross-border: under both thresholds 1`] = `
+{
+  "assumptions": [
+    "Assumes non-preferential origin: no trade-agreement duty discounts are applied.",
+    "Assumes import charges are not prepaid by the merchant (DAP).",
+  ],
+  "confidence": "estimated",
+  "currency": "USD",
+  "lane": "cross-border",
+  "lines": [
+    {
+      "amountMinor": 4000,
+      "basis": "Listed price 40.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "intrinsic-goods-value 40.00 USD is at or under the 100.00 USD duty relief threshold",
+      "confidence": "exact",
+      "kind": "duty",
+      "label": "Import duty",
+      "sourceId": "FB.dutyRelief",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "intrinsic-goods-value 40.00 USD is at or under the 50.00 USD Test VAT threshold",
+      "confidence": "exact",
+      "kind": "tax",
+      "label": "Test VAT",
+      "sourceId": "FB.importTax.threshold",
+    },
+    {
+      "amountMinor": 1000,
+      "basis": "10.00 USD flat + 5.00% of advanced charges",
+      "confidence": "estimated",
+      "kind": "fee",
+      "label": "Brokerage fee",
+      "sourceId": "FB.carrierFees.default",
+    },
+  ],
+  "totalMinor": 7000,
+  "totalRange": undefined,
+  "unknownComponents": [],
+  "warnings": [],
+}
+`;
+
+exports[`golden breakdowns > tax threshold differs from duty threshold: relieved duty, charged tax 1`] = `
+{
+  "assumptions": [
+    "Assumes non-preferential origin: no trade-agreement duty discounts are applied.",
+    "Assumes import charges are not prepaid by the merchant (DAP).",
+  ],
+  "confidence": "estimated",
+  "currency": "USD",
+  "lane": "cross-border",
+  "lines": [
+    {
+      "amountMinor": 8000,
+      "basis": "Listed price 80.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 0,
+      "basis": "intrinsic-goods-value 80.00 USD is at or under the 100.00 USD duty relief threshold",
+      "confidence": "exact",
+      "kind": "duty",
+      "label": "Import duty",
+      "sourceId": "FB.dutyRelief",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "customs value + duty + shipping 100.00 USD x 20.00%",
+      "confidence": "exact",
+      "kind": "tax",
+      "label": "Test VAT",
+      "sourceId": "FB.importTax.rate",
+    },
+    {
+      "amountMinor": 1100,
+      "basis": "10.00 USD flat + 5.00% of advanced charges",
+      "confidence": "estimated",
+      "kind": "fee",
+      "label": "Brokerage fee",
+      "sourceId": "FB.carrierFees.default",
+    },
+  ],
+  "totalMinor": 13100,
+  "totalRange": undefined,
+  "unknownComponents": [],
+  "warnings": [],
+}
+`;
+
+exports[`golden breakdowns > unknown incoterm: DAP lines with a DDP-to-DAP total range 1`] = `
+{
+  "assumptions": [
+    "Assumes non-preferential origin: no trade-agreement duty discounts are applied.",
+    "This merchant may or may not collect import charges at checkout; the range spans charges-prepaid (low) to charges-added-on-delivery (high).",
+  ],
+  "confidence": "estimated",
+  "currency": "USD",
+  "lane": "cross-border",
+  "lines": [
+    {
+      "amountMinor": 20000,
+      "basis": "Listed price 200.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 1000,
+      "basis": "Customs value 200.00 USD x 5.00% (default rate, no HS code)",
+      "confidence": "estimated",
+      "kind": "duty",
+      "label": "Import duty",
+      "sourceId": "FB.dutyRates.default",
+    },
+    {
+      "amountMinor": 4600,
+      "basis": "customs value + duty + shipping 230.00 USD x 20.00%",
+      "confidence": "estimated",
+      "kind": "tax",
+      "label": "Test VAT",
+      "sourceId": "FB.importTax.rate",
+    },
+    {
+      "amountMinor": 1280,
+      "basis": "10.00 USD flat + 5.00% of advanced charges",
+      "confidence": "estimated",
+      "kind": "fee",
+      "label": "Brokerage fee",
+      "sourceId": "FB.carrierFees.default",
+    },
+  ],
+  "totalMinor": 28880,
+  "totalRange": {
+    "highMinor": 28880,
+    "lowMinor": 22000,
+  },
+  "unknownComponents": [],
+  "warnings": [
+    "No HS classification for this product; using the default duty rate if one exists.",
+  ],
+}
+`;
+
+exports[`golden breakdowns > unknown-HS fallback: default duty rate with warning 1`] = `
+{
+  "assumptions": [
+    "Assumes non-preferential origin: no trade-agreement duty discounts are applied.",
+    "Assumes import charges are not prepaid by the merchant (DAP).",
+  ],
+  "confidence": "estimated",
+  "currency": "USD",
+  "lane": "cross-border",
+  "lines": [
+    {
+      "amountMinor": 20000,
+      "basis": "Listed price 200.00 USD",
+      "confidence": "exact",
+      "kind": "item",
+      "label": "Item price",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 2000,
+      "basis": "Quoted by merchant via TestPost",
+      "confidence": "exact",
+      "kind": "shipping",
+      "label": "Shipping",
+      "sourceId": "input",
+    },
+    {
+      "amountMinor": 1000,
+      "basis": "Customs value 200.00 USD x 5.00% (default rate, no HS code)",
+      "confidence": "estimated",
+      "kind": "duty",
+      "label": "Import duty",
+      "sourceId": "FB.dutyRates.default",
+    },
+    {
+      "amountMinor": 4600,
+      "basis": "customs value + duty + shipping 230.00 USD x 20.00%",
+      "confidence": "estimated",
+      "kind": "tax",
+      "label": "Test VAT",
+      "sourceId": "FB.importTax.rate",
+    },
+    {
+      "amountMinor": 1280,
+      "basis": "10.00 USD flat + 5.00% of advanced charges",
+      "confidence": "estimated",
+      "kind": "fee",
+      "label": "Brokerage fee",
+      "sourceId": "FB.carrierFees.default",
+    },
+  ],
+  "totalMinor": 28880,
+  "totalRange": undefined,
+  "unknownComponents": [],
+  "warnings": [
+    "No HS classification for this product; using the default duty rate if one exists.",
+  ],
+}
+`;

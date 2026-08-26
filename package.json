@@ -7,6 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -35,6 +37,7 @@
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vercel": "^58.4.4"
+    "vercel": "^58.4.4",
+    "vitest": "^4.1.11"
   }
 }
