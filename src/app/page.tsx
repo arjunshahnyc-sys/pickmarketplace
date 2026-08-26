@@ -18,6 +18,7 @@ import { StatsSection } from '@/components/StatsSection';
 import { useSavedList } from '@/contexts/SavedListContext';
 import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
+import { sortProducts } from '@/lib/sortResults';
 import { getRetailerTrust } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -320,32 +321,10 @@ export default function Home() {
       );
     }
 
-    // Apply sorting
-    switch (sortBy) {
-      case 'price-low':
-        filtered.sort((a: Product, b: Product) => a.price - b.price);
-        break;
-      case 'price-high':
-        filtered.sort((a: Product, b: Product) => b.price - a.price);
-        break;
-      case 'biggest-sale':
-        filtered.sort((a: Product, b: Product) => {
-          const discountA =
-            a.originalPrice && a.originalPrice > a.price
-              ? ((a.originalPrice - a.price) / a.originalPrice) * 100
-              : 0;
-          const discountB =
-            b.originalPrice && b.originalPrice > b.price
-              ? ((b.originalPrice - b.price) / b.originalPrice) * 100
-              : 0;
-          return discountB - discountA;
-        });
-        break;
-      case 'relevance':
-      default:
-        // Keep original order
-        break;
-    }
+    // Apply sorting (extracted verbatim to sortResults.ts and pinned by
+    // characterization tests; behavior must not drift while the landed-cost
+    // flag is off)
+    filtered = sortProducts(filtered, sortBy);
 
     // Enhance with product grouping and savings info. The similar-pick
     // reference is the top relevance-ordered result, so re-sorting by price
