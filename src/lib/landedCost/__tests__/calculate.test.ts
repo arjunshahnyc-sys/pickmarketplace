@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { calculateLandedCost } from '../calculate';
-import type { BreakdownLine, LineKind } from '../types';
-import { baseInput, CIFLAND, ctxFor, FOBLAND, UNVERIFIED_RATE_LAND } from './fixtures';
+import type { BreakdownLine, DestinationRules, LineKind } from '../types';
+import { baseInput, CIFLAND, ctxFor, FOBLAND, sourced, UNVERIFIED_RATE_LAND } from './fixtures';
 
 function line(lines: BreakdownLine[], kind: LineKind): BreakdownLine {
   const found = lines.find((l) => l.kind === kind);
@@ -129,6 +129,47 @@ describe('HS classification flows into duty', () => {
     const out = calculateLandedCost(baseInput(), ctxFor(FOBLAND));
     expect(line(out.lines, 'duty').amountMinor).toBe(1_000);
     expect(out.warnings.join(' ')).toContain('No HS classification');
+  });
+});
+
+describe('origin-specific duty rows', () => {
+  const ORIGINLAND: DestinationRules = {
+    ...FOBLAND,
+    country: 'OG',
+    dutyRates: [
+      { hsPrefix: 'default', label: 'Import duty', rateBps: sourced(500) },
+      {
+        hsPrefix: 'default',
+        originCountry: 'CN',
+        label: 'Import duty (CN origin, combined rate)',
+        rateBps: sourced(3_000),
+      },
+    ],
+  };
+
+  function inputWithOrigin(origin?: string) {
+    const input = baseInput({ destCountry: 'OG' });
+    return { ...input, item: { ...input.item, originCountry: origin } };
+  }
+
+  it('matching origin beats the generic row at equal prefix length', () => {
+    const out = calculateLandedCost(inputWithOrigin('CN'), ctxFor(ORIGINLAND));
+    // 30% of 200.00 instead of the generic 5%
+    expect(line(out.lines, 'duty').amountMinor).toBe(6_000);
+    expect(line(out.lines, 'duty').sourceId).toBe('OG.dutyRates.default:CN');
+  });
+
+  it('non-matching origin uses the generic row', () => {
+    const out = calculateLandedCost(inputWithOrigin('VN'), ctxFor(ORIGINLAND));
+    expect(line(out.lines, 'duty').amountMinor).toBe(1_000);
+    expect(line(out.lines, 'duty').sourceId).toBe('OG.dutyRates.default');
+  });
+
+  it('with no explicit origin, the merchant country stands in', () => {
+    // merchant is US in baseInput, so the CN row must not fire
+    const out = calculateLandedCost(inputWithOrigin(undefined), ctxFor(ORIGINLAND));
+    expect(line(out.lines, 'duty').amountMinor).toBe(1_000);
+    expect(out.assumptions.join(' ')).toContain('non-preferential origin');
   });
 });
 

@@ -359,9 +359,19 @@ function crossBorderCharges(
       }
     }
     if (!relieved && reliefConfidence !== 'unknown') {
-      // Step 2 continued: rate by longest HS-prefix match.
+      // Step 2 continued: rate by longest HS-prefix match. Origin-specific
+      // rows apply only when the goods' origin matches, and beat the generic
+      // row at equal prefix length. Origin falls back to merchant country
+      // (the non-preferential-origin assumption is recorded above).
       const hs = input.item.hs;
-      const rows = [...rules.dutyRates].sort((a, b) => b.hsPrefix.length - a.hsPrefix.length);
+      const origin = input.item.originCountry ?? input.merchant.country;
+      const rows = rules.dutyRates
+        .filter((r) => !r.originCountry || r.originCountry === origin)
+        .sort(
+          (a, b) =>
+            b.hsPrefix.length - a.hsPrefix.length ||
+            Number(Boolean(b.originCountry)) - Number(Boolean(a.originCountry))
+        );
       const match = hs
         ? rows.find((r) => r.hsPrefix !== 'default' && hs.code.startsWith(r.hsPrefix)) ??
           rows.find((r) => r.hsPrefix === 'default')
@@ -369,7 +379,10 @@ function crossBorderCharges(
       if (!hs) {
         warnings.push('No HS classification for this product; using the default duty rate if one exists.');
       }
-      const rate = match ? resolve(match.rateBps, R(`dutyRates.${match.hsPrefix}`)) : null;
+      const rateRowId = match
+        ? `dutyRates.${match.hsPrefix}${match.originCountry ? `:${match.originCountry}` : ''}`
+        : '';
+      const rate = match ? resolve(match.rateBps, R(rateRowId)) : null;
       if (match && rate) {
         const amount = applyRateBps(customsValue.amountMinor, rate.value);
         duty = {
@@ -379,7 +392,7 @@ function crossBorderCharges(
             customsValue.confidence,
             hs?.confidence ?? 'estimated'
           ),
-          sourceId: R(`dutyRates.${match.hsPrefix}`),
+          sourceId: R(rateRowId),
         };
         dutyLabel = match.label;
         dutyBasis = `Customs value ${fmt(customsValue.amountMinor)} x ${(rate.value / 100).toFixed(2)}%${hs ? ` (HS ${hs.code}, ${hs.confidence})` : ' (default rate, no HS code)'}`;

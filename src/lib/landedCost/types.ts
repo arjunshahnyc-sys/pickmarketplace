@@ -153,6 +153,13 @@ export type TaxThresholdPolicy =
 export interface DutyRateRule {
   /** HS code prefix this rate covers ('6404'), or 'default' as a last resort. */
   hsPrefix: string;
+  /**
+   * When set, the row applies only to goods of this origin (ISO alpha-2) and
+   * beats the generic row for the same prefix. Origin surcharges that STACK
+   * on a base rate must be encoded as a combined rate in one row; the
+   * calculator applies exactly one duty row per offer.
+   */
+  originCountry?: string;
   label: string;
   rateBps: SourcedValue<number>;
 }
