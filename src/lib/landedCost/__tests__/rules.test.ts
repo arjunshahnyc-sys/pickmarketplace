@@ -78,8 +78,9 @@ describe('staleness', () => {
   it('stays quiet for fresh rows and for unverified rows', () => {
     const fresh = withVerifiedRow('2026-08-01');
     expect(collectRulesWarnings(fresh, now)).toHaveLength(0);
-    // Seed files are all unverified: no staleness noise, they warn through
-    // the calculator's unverified path instead.
+    // The real US rows were verified 2026-08-26 (fresh at `now`), and the
+    // still-unfilled duty rates warn through the calculator's unverified
+    // path, not through staleness.
     expect(collectRulesWarnings(getDestinationRules('US')!, now)).toHaveLength(0);
   });
 

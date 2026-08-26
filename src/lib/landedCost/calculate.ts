@@ -336,8 +336,12 @@ function crossBorderCharges(
   let duty: Known | null = null;
   let dutyLabel = 'Import duty';
   let dutyBasis = '';
+  // Not gated on customsValue: an intrinsic-goods-value relief threshold
+  // (e.g. the UK's) is decidable from the item price alone, even when a CIF
+  // customs value is unknown because shipping is. Only the rate path below
+  // needs the customs value.
   const reliefRule = resolve(rules.dutyRelief, R('dutyRelief'));
-  if (customsValue && reliefRule) {
+  if (reliefRule) {
     const policy = reliefRule.value;
     let relieved = false;
     let reliefConfidence: Confidence = reliefRule.confidence;
@@ -349,16 +353,34 @@ function crossBorderCharges(
         );
         reliefConfidence = 'unknown';
       } else if (base.amountMinor <= policy.amountMinor) {
-        relieved = true;
-        duty = {
-          amountMinor: 0,
-          confidence: combineConfidence(reliefRule.confidence, base.confidence),
-          sourceId: R('dutyRelief'),
-        };
-        dutyBasis = `${policy.basis} ${fmt(base.amountMinor)} is at or under the ${fmt(policy.amountMinor)} duty relief threshold`;
+        const exclusion = exclusionStatus(policy.excludedHsPrefixes, input.item.hs?.code);
+        if (exclusion === 'undecidable') {
+          warnings.push(
+            `${rules.country} excludes some product categories from duty relief and this product has no HS classification; duty is unknown.`
+          );
+          reliefConfidence = 'unknown';
+        } else if (exclusion === 'not-excluded') {
+          relieved = true;
+          duty = {
+            amountMinor: 0,
+            confidence: combineConfidence(
+              reliefRule.confidence,
+              base.confidence,
+              // With category carve-outs, relief is only as sure as the
+              // classification that says we are not in one.
+              policy.excludedHsPrefixes?.length
+                ? input.item.hs?.confidence ?? 'estimated'
+                : 'exact'
+            ),
+            sourceId: R('dutyRelief'),
+          };
+          dutyBasis = `${policy.basis} ${fmt(base.amountMinor)} is at or under the ${fmt(policy.amountMinor)} duty relief threshold`;
+        }
+        // 'excluded': the category is carved out of relief; fall through to
+        // the rate path and compute duty normally.
       }
     }
-    if (!relieved && reliefConfidence !== 'unknown') {
+    if (!relieved && reliefConfidence !== 'unknown' && customsValue) {
       // Step 2 continued: rate by longest HS-prefix match. Origin-specific
       // rows apply only when the goods' origin matches, and beat the generic
       // row at equal prefix length. Origin falls back to merchant country
@@ -420,11 +442,22 @@ function crossBorderCharges(
   // duty relief BY DESIGN; do not "simplify" them into one check.
   let tax: Known | null = null;
   let taxBasis = '';
+  let taxUndecidable = false;
   const taxRules = rules.importTax;
   const thresholdRule = resolve(taxRules.threshold, R('importTax.threshold'));
   const rateRule = resolve(taxRules.rateBps, R('importTax.rate'));
   const shipInBase = resolve(taxRules.baseIncludesShipping, R('importTax.baseIncludesShipping'));
-  if (thresholdRule) {
+  if (rateRule && rateRule.value === 0) {
+    // A verified 0% rate means the destination levies no import tax at all
+    // (e.g. the US has no federal VAT). Exactly zero regardless of base or
+    // thresholds, even when other components are unknown.
+    tax = {
+      amountMinor: 0,
+      confidence: rateRule.confidence,
+      sourceId: R('importTax.rate'),
+    };
+    taxBasis = `No ${taxRules.label} at this destination (0% rate)`;
+  } else if (thresholdRule) {
     const policy = thresholdRule.value;
     if (policy.kind === 'threshold') {
       const base = thresholdBase(policy.basis);
@@ -433,28 +466,45 @@ function crossBorderCharges(
           `${taxRules.label} threshold for ${rules.country} compares against ${policy.basis}, which is unknown.`
         );
       } else if (base.amountMinor <= policy.amountMinor) {
-        if (policy.belowThreshold === 'no-import-tax') {
-          tax = {
-            amountMinor: 0,
-            confidence: combineConfidence(thresholdRule.confidence, base.confidence),
-            sourceId: R('importTax.threshold'),
-          };
-          taxBasis = `${policy.basis} ${fmt(base.amountMinor)} is at or under the ${fmt(policy.amountMinor)} ${taxRules.label} threshold`;
-        } else {
-          tax = {
-            amountMinor: 0,
-            confidence: 'estimated',
-            sourceId: R('importTax.threshold'),
-          };
-          taxBasis = `Under ${fmt(policy.amountMinor)}, ${rules.country} requires the merchant to collect ${taxRules.label} at checkout`;
-          assumptions.push(
-            `Assumes the merchant collected ${taxRules.label} at checkout, as ${rules.country} requires for low-value imports.`
+        const exclusion = exclusionStatus(policy.excludedHsPrefixes, input.item.hs?.code);
+        if (exclusion === 'undecidable') {
+          warnings.push(
+            `${rules.country} excludes some product categories from its ${taxRules.label} relief and this product has no HS classification; ${taxRules.label} is unknown.`
           );
+          taxUndecidable = true;
+        } else if (exclusion === 'not-excluded') {
+          const exclusionConfidence: Confidence = policy.excludedHsPrefixes?.length
+            ? input.item.hs?.confidence ?? 'estimated'
+            : 'exact';
+          if (policy.belowThreshold === 'no-import-tax') {
+            tax = {
+              amountMinor: 0,
+              confidence: combineConfidence(
+                thresholdRule.confidence,
+                base.confidence,
+                exclusionConfidence
+              ),
+              sourceId: R('importTax.threshold'),
+            };
+            taxBasis = `${policy.basis} ${fmt(base.amountMinor)} is at or under the ${fmt(policy.amountMinor)} ${taxRules.label} threshold`;
+          } else {
+            tax = {
+              amountMinor: 0,
+              confidence: combineConfidence('estimated', exclusionConfidence),
+              sourceId: R('importTax.threshold'),
+            };
+            taxBasis = `Under ${fmt(policy.amountMinor)}, ${rules.country} requires the merchant to collect ${taxRules.label} at checkout`;
+            assumptions.push(
+              `Assumes the merchant collected ${taxRules.label} at checkout, as ${rules.country} requires for low-value imports.`
+            );
+          }
         }
+        // 'excluded': the category is carved out of the relief; fall through
+        // to the full computation.
       }
     }
   }
-  if (!tax && customsValue && duty && thresholdRule && rateRule && shipInBase) {
+  if (!tax && !taxUndecidable && customsValue && duty && thresholdRule && rateRule && shipInBase) {
     let base = customsValue.amountMinor + duty.amountMinor;
     let baseConfidence = combineConfidence(customsValue.confidence, duty.confidence);
     let baseNote = 'customs value + duty';
@@ -509,7 +559,48 @@ function crossBorderCharges(
     if (flat && pct !== null) {
       const advanced =
         duty && tax ? { amountMinor: duty.amountMinor + tax.amountMinor } : null;
-      if (pct && !advanced) {
+      if (feeRow.appliesAboveMinor !== undefined && !customsValue) {
+        pushUnknown(
+          lines,
+          'fee',
+          feeRow.label,
+          'Applies only above a customs-value threshold, and the customs value is unknown'
+        );
+      } else if (
+        feeRow.appliesAboveMinor !== undefined &&
+        customsValue &&
+        customsValue.amountMinor <= feeRow.appliesAboveMinor
+      ) {
+        lines.push({
+          kind: 'fee',
+          label: feeRow.label,
+          amountMinor: 0,
+          basis: `Customs value at or under ${fmt(feeRow.appliesAboveMinor)}: no charge`,
+          confidence: combineConfidence('estimated', flat.confidence, customsValue.confidence),
+          sourceId: R(`carrierFees.${feeRow.carrier}`),
+        });
+      } else if (feeRow.onlyWhenChargesDue && (!duty || !tax)) {
+        pushUnknown(
+          lines,
+          'fee',
+          feeRow.label,
+          'Charged only when import charges are due, which are unknown'
+        );
+      } else if (
+        feeRow.onlyWhenChargesDue &&
+        duty &&
+        tax &&
+        duty.amountMinor + tax.amountMinor === 0
+      ) {
+        lines.push({
+          kind: 'fee',
+          label: feeRow.label,
+          amountMinor: 0,
+          basis: 'No import charges to collect, so no handling fee',
+          confidence: combineConfidence('estimated', flat.confidence, duty.confidence, tax.confidence),
+          sourceId: R(`carrierFees.${feeRow.carrier}`),
+        });
+      } else if (pct && !advanced) {
         pushUnknown(
           lines,
           'fee',
@@ -543,6 +634,25 @@ function crossBorderCharges(
     warnings.push(`No carrier fee data for ${rules.country}${carrier ? ` (carrier ${carrier})` : ''}.`);
     pushUnknown(lines, 'fee', 'Customs fees', 'No fee schedule for this destination');
   }
+}
+
+/**
+ * Is this product carved out of a relief threshold? Mutual-prefix matching:
+ * a heading-level code ('6404') hits a subheading-level exclusion ('640420')
+ * and vice versa, deliberately erring toward 'excluded' — computing duty on
+ * a possibly-relieved item yields a labeled estimate, while relieving a
+ * possibly-excluded item would be a confidently wrong zero. No HS code at
+ * all makes the question undecidable.
+ */
+function exclusionStatus(
+  prefixes: string[] | undefined,
+  hsCode: string | undefined
+): 'excluded' | 'not-excluded' | 'undecidable' {
+  if (!prefixes || prefixes.length === 0) return 'not-excluded';
+  if (!hsCode) return 'undecidable';
+  return prefixes.some((p) => hsCode.startsWith(p) || p.startsWith(hsCode))
+    ? 'excluded'
+    : 'not-excluded';
 }
 
 function pushZero(

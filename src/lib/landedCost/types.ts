@@ -131,7 +131,23 @@ export interface SourcedValue<T> {
 export type ThresholdBasis = 'intrinsic-goods-value' | 'customs-value';
 
 export type ReliefPolicy =
-  | { kind: 'threshold'; amountMinor: number; basis: ThresholdBasis }
+  | {
+      kind: 'threshold';
+      amountMinor: number;
+      basis: ThresholdBasis;
+      /**
+       * HS prefixes the destination EXCLUDES from relief (e.g. Japan's
+       * 10,000-yen exemption excludes leather bags, knitwear, footwear).
+       * Matching is mutual-prefix (either string starts with the other) so a
+       * heading-level classification like '6404' hits a subheading-level
+       * exclusion; when ambiguity remains, the calculator refuses to relieve
+       * and computes duty instead — over-excluding produces a labeled
+       * estimate, never a confidently wrong zero. A product with NO HS
+       * classification under an exclusion-bearing threshold is undecidable:
+       * duty goes unknown.
+       */
+      excludedHsPrefixes?: string[];
+    }
   /** Verified fact that NO relief exists (e.g. US de minimis suspended). */
   | { kind: 'none' };
 
@@ -147,6 +163,8 @@ export type TaxThresholdPolicy =
        * event itself owes nothing but the price likely included it.
        */
       belowThreshold: 'no-import-tax' | 'merchant-collects';
+      /** Same semantics as ReliefPolicy.excludedHsPrefixes. */
+      excludedHsPrefixes?: string[];
     }
   | { kind: 'none' };
 
@@ -171,6 +189,19 @@ export interface CarrierFeeRule {
   flatMinor: SourcedValue<number>;
   /** Optional ad valorem component on top of the flat fee. */
   pctBps?: SourcedValue<number>;
+  /**
+   * The fee applies only when the customs value exceeds this amount
+   * (destination minor units); at or below it the fee is zero (e.g.
+   * Australia's import processing charge is $0 at or under AUD 1,000).
+   * Unknown customs value makes the fee unknown.
+   */
+  appliesAboveMinor?: number;
+  /**
+   * The fee is charged only when import charges are actually due (e.g.
+   * postal handling fees billed only on dutiable/taxable items). Zero duty
+   * and tax -> zero fee; unknown duty or tax -> unknown fee.
+   */
+  onlyWhenChargesDue?: boolean;
 }
 
 export interface DestinationRules {

@@ -173,6 +173,163 @@ describe('origin-specific duty rows', () => {
   });
 });
 
+describe('relief exclusions (excludedHsPrefixes)', () => {
+  const EXCLUSIONLAND: DestinationRules = {
+    ...FOBLAND,
+    country: 'EX',
+    dutyRelief: sourced({
+      kind: 'threshold' as const,
+      amountMinor: 10_000,
+      basis: 'intrinsic-goods-value' as const,
+      excludedHsPrefixes: ['6404'],
+    }),
+    importTax: {
+      ...FOBLAND.importTax,
+      threshold: sourced({
+        kind: 'threshold' as const,
+        amountMinor: 10_000,
+        basis: 'intrinsic-goods-value' as const,
+        belowThreshold: 'no-import-tax' as const,
+        excludedHsPrefixes: ['6404'],
+      }),
+    },
+  };
+  const hs = (code: string) => ({ code, confidence: 'estimated' as const, sourceId: 'test' });
+
+  it('an excluded category under the threshold still pays duty and tax', () => {
+    const out = calculateLandedCost(
+      baseInput({ priceMinor: 8_000, hs: hs('640411') }),
+      ctxFor(EXCLUSIONLAND)
+    );
+    // footwear rate 10% of FOB 80.00 = 8.00; tax 20% of (80 + 8 + 20 shipping)
+    expect(line(out.lines, 'duty').amountMinor).toBe(800);
+    expect(line(out.lines, 'tax').amountMinor).toBe(2_160);
+  });
+
+  it('a non-excluded category is relieved, capped by classification confidence', () => {
+    const out = calculateLandedCost(
+      baseInput({ priceMinor: 8_000, hs: hs('851800') }),
+      ctxFor(EXCLUSIONLAND)
+    );
+    expect(line(out.lines, 'duty')).toMatchObject({ amountMinor: 0, confidence: 'estimated' });
+    expect(line(out.lines, 'tax')).toMatchObject({ amountMinor: 0, confidence: 'estimated' });
+  });
+
+  it('no HS classification makes relief undecidable: unknown, never a guessed zero', () => {
+    const out = calculateLandedCost(baseInput({ priceMinor: 8_000 }), ctxFor(EXCLUSIONLAND));
+    expect(line(out.lines, 'duty').amountMinor).toBeNull();
+    expect(line(out.lines, 'tax').amountMinor).toBeNull();
+    expect(out.warnings.join(' ')).toContain('excludes some product categories');
+  });
+
+  it('matches mutually: a heading-level code hits a subheading-level exclusion', () => {
+    const subheadingLand: DestinationRules = {
+      ...EXCLUSIONLAND,
+      dutyRelief: sourced({
+        kind: 'threshold' as const,
+        amountMinor: 10_000,
+        basis: 'intrinsic-goods-value' as const,
+        excludedHsPrefixes: ['640420'],
+      }),
+    };
+    const out = calculateLandedCost(
+      baseInput({ priceMinor: 8_000, hs: hs('6404') }),
+      ctxFor(subheadingLand)
+    );
+    // Possibly-excluded errs toward computing duty, not toward a wrong zero.
+    expect(line(out.lines, 'duty').amountMinor).toBe(800);
+  });
+});
+
+describe('verified zero tax rate', () => {
+  it('a 0% rate makes tax exactly zero even when duty is unknown', () => {
+    const NOVATLAND: DestinationRules = {
+      ...UNVERIFIED_RATE_LAND, // duty rate unfilled -> duty unknown
+      country: 'NV',
+      importTax: { ...UNVERIFIED_RATE_LAND.importTax, rateBps: sourced(0) },
+    };
+    const out = calculateLandedCost(baseInput({ destCountry: 'NV' }), ctxFor(NOVATLAND));
+    expect(line(out.lines, 'duty').amountMinor).toBeNull();
+    expect(line(out.lines, 'tax')).toMatchObject({ amountMinor: 0, confidence: 'exact' });
+    expect(line(out.lines, 'tax').basis).toContain('0% rate');
+  });
+});
+
+describe('intrinsic-basis relief without a customs value', () => {
+  it('CIF destination with unknown shipping can still relieve duty on intrinsic value', () => {
+    const CIF_INTRINSIC: DestinationRules = {
+      ...CIFLAND,
+      country: 'CI',
+      dutyRelief: sourced({
+        kind: 'threshold' as const,
+        amountMinor: 10_000,
+        basis: 'intrinsic-goods-value' as const,
+      }),
+    };
+    // 80.00 item: relief (intrinsic <= 100.00) decides duty = 0 even though
+    // the CIF customs value is unknown; tax (above its 75.00 merchant
+    // threshold) still needs the customs value, so it stays unknown.
+    const out = calculateLandedCost(
+      baseInput({ destCountry: 'CI', priceMinor: 8_000, shipping: null }),
+      ctxFor(CIF_INTRINSIC)
+    );
+    expect(line(out.lines, 'duty').amountMinor).toBe(0);
+    expect(line(out.lines, 'tax').amountMinor).toBeNull();
+  });
+});
+
+describe('conditional carrier fees', () => {
+  const feeRow = (extra: object): DestinationRules => ({
+    ...FOBLAND,
+    country: 'FE',
+    carrierFees: [
+      { carrier: 'default', label: 'Processing fee', flatMinor: sourced(1_000), ...extra },
+    ],
+  });
+
+  it('appliesAboveMinor: zero at or under the value threshold, flat above it', () => {
+    const rules = feeRow({ appliesAboveMinor: 15_000 });
+    const under = calculateLandedCost(baseInput({ priceMinor: 12_000 }), ctxFor(rules));
+    expect(line(under.lines, 'fee')).toMatchObject({ amountMinor: 0 });
+    expect(line(under.lines, 'fee').basis).toContain('at or under');
+    const over = calculateLandedCost(baseInput({ priceMinor: 20_000 }), ctxFor(rules));
+    expect(line(over.lines, 'fee').amountMinor).toBe(1_000);
+  });
+
+  it('appliesAboveMinor with unknown customs value makes the fee unknown', () => {
+    const rules: DestinationRules = {
+      ...CIFLAND,
+      country: 'FE',
+      carrierFees: [
+        { carrier: 'default', label: 'Processing fee', flatMinor: sourced(1_000), appliesAboveMinor: 15_000 },
+      ],
+    };
+    const out = calculateLandedCost(baseInput({ destCountry: 'FE', shipping: null }), ctxFor(rules));
+    expect(line(out.lines, 'fee').amountMinor).toBeNull();
+  });
+
+  it('onlyWhenChargesDue: zero when duty and tax are zero, flat when charges exist, unknown when they are', () => {
+    const rules = feeRow({ onlyWhenChargesDue: true });
+    // 40.00 item: under both FOBLAND thresholds -> duty 0, tax 0 -> fee 0
+    const relieved = calculateLandedCost(baseInput({ priceMinor: 4_000 }), ctxFor(rules));
+    expect(line(relieved.lines, 'fee')).toMatchObject({ amountMinor: 0 });
+    expect(line(relieved.lines, 'fee').basis).toContain('No import charges');
+    // 200.00 item: duty and tax due -> flat fee applies
+    const charged = calculateLandedCost(baseInput({ priceMinor: 20_000 }), ctxFor(rules));
+    expect(line(charged.lines, 'fee').amountMinor).toBe(1_000);
+    // unknown duty -> unknown fee
+    const unknownRules: DestinationRules = {
+      ...UNVERIFIED_RATE_LAND,
+      country: 'FE',
+      carrierFees: [
+        { carrier: 'default', label: 'Processing fee', flatMinor: sourced(1_000), onlyWhenChargesDue: true },
+      ],
+    };
+    const unknown = calculateLandedCost(baseInput({ destCountry: 'FE' }), ctxFor(unknownRules));
+    expect(line(unknown.lines, 'fee').amountMinor).toBeNull();
+  });
+});
+
 describe('the legal guardrail: unverified or unfilled rules never render numbers', () => {
   it('unverified duty rate makes duty unknown and cascades into tax', () => {
     const out = calculateLandedCost(

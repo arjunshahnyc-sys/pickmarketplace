@@ -1,23 +1,28 @@
-// United States destination rules. SEEDED, NOT VERIFIED: every value is
-// null/unverified until checked against the sources. See rules/seed.ts.
+// United States destination rules.
+// Structural rows verified 2026-08-26 (live fetches, adversarially
+// re-checked, owner-approved; see the Customs Rules Worksheet artifact).
+// Per-HS duty rates remain unfilled pending HTSUS lookups.
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
-import { todo } from '../seed';
+import { todo, verified } from '../seed';
 
-const CBP = 'https://www.cbp.gov/trade/basic-import-export/internet-purchases';
+const V = '2026-08-26';
 const HTSUS = 'https://hts.usitc.gov/';
-const VALUATION = 'https://www.cbp.gov/trade/programs-administration/trade-valuation';
 
 export const US: DestinationRules = {
   country: 'US',
   currency: 'USD',
-  valuationBasis: todo<'CIF' | 'FOB'>(
-    VALUATION,
-    'US customs value is transaction value, commonly excluding international freight (FOB-style). Confirm and encode FOB if correct.'
+  valuationBasis: verified<'CIF' | 'FOB'>(
+    'FOB',
+    'https://www.ecfr.gov/current/title-19/chapter-I/part-152/subpart-E/section-152.102',
+    V,
+    '19 CFR 152.102(f): transaction value is exclusive of transportation, insurance, and related services incident to the international shipment. Foreign inland freight to the place of export can be included in some fact patterns.'
   ),
-  dutyRelief: todo<ReliefPolicy>(
-    CBP,
-    'Owner note 2026-08-26: the $800 de minimis was suspended for ALL origins effective 29 Aug 2025; CBP made the suspension indefinite by interim final rule on 24 Jun 2026; statutory elimination is scheduled 1 Jul 2027. If confirmed, encode { kind: "none" }.'
+  dutyRelief: verified<ReliefPolicy>(
+    { kind: 'none' },
+    'https://www.federalregister.gov/documents/2026/06/24/2026-12670/indefinite-suspension-of-the-de-minimis-exemption-for-merchandise-arriving-through-all-modes-other',
+    V,
+    'The $800 Section 321 de minimis is suspended for all origins: EO 14324 effective 2025-08-29; CBP interim final rule made it indefinite for non-postal modes effective 2026-06-24, with companion postal rule 2026-12669 effective 2026-07-24; statutory repeal takes effect 2027-07-01. Bona fide gifts and traveler personal articles keep their separate exemptions (not modeled).'
   ),
   dutyRates: [
     {
@@ -31,30 +36,41 @@ export const US: DestinationRules = {
   ],
   importTax: {
     label: 'Import tax',
-    rateBps: todo(
-      CBP,
-      'The US has no federal VAT/GST on imports. If confirmed, encode 0 with verification. State use tax is out of scope (stated as an assumption by the calculator for domestic purchases).'
+    rateBps: verified(
+      0,
+      'https://www.help.cbp.gov/s/article/Article-1225?language=en_US',
+      V,
+      'The US levies no federal VAT/GST on imports: CBP enumerates only duty, commodity-specific excise (alcohol/tobacco, out of scope), and user fees. State sales/use tax is outside customs and stated as an assumption for domestic purchases.'
     ),
-    baseIncludesShipping: todo(CBP),
-    threshold: todo<TaxThresholdPolicy>(
-      CBP,
-      'Likely { kind: "none" } given no federal import tax; verify.'
+    baseIncludesShipping: verified(
+      false,
+      'https://www.help.cbp.gov/s/article/Article-1225?language=en_US',
+      V,
+      'Vacuous at a 0% rate; false matches the FOB pattern (ad valorem MPF is computed on merchandise value excluding freight and insurance).'
+    ),
+    threshold: verified<TaxThresholdPolicy>(
+      { kind: 'none' },
+      'https://www.help.cbp.gov/s/article/Article-1225?language=en_US',
+      V,
+      'Vacuous: no federal import tax exists, so there is no tax threshold. Distinct from the (suspended) duty de minimis.'
     ),
   },
   carrierFees: [
     {
       carrier: 'default',
-      label: 'Brokerage and processing fees',
-      flatMinor: todo(
-        CBP,
-        'Check both CBP merchandise processing fee (MPF) for informal entries and typical express-carrier brokerage schedules (FedEx/UPS/DHL published tariffs).'
+      label: 'Customs processing fee',
+      flatMinor: verified(
+        739,
+        'https://www.cbp.gov/trade/basic-import-export/user-fee-table',
+        V,
+        'CBP dutiable mail fee, $7.39 per dutiable package (FY2026; adjusts annually). Courier/ACE informal-entry MPF tiers are $2.69/$8.06/$12.09; private-courier brokerage fees are separate and commercial. Postal figure chosen as the per-package default per owner decision 2026-08-26.'
       ),
-      pctBps: todo(CBP, 'MPF has ad valorem components on formal entries; verify applicability to consumer parcels.'),
+      onlyWhenChargesDue: true,
     },
   ],
   displayRounding: 'standard-minor-units',
   meta: {
-    sourceUrl: CBP,
-    notes: 'Primary sources: CBP (de minimis, fees), HTSUS via USITC (duty rates by heading and origin).',
+    sourceUrl: 'https://www.cbp.gov/trade/basic-import-export/internet-purchases',
+    notes: 'Primary sources: eCFR 19 CFR 152 (valuation), Federal Register (de minimis), CBP (fees), HTSUS via USITC (duty rates by heading and origin, still unfilled).',
   },
 };
