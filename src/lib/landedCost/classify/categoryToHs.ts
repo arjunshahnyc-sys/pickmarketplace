@@ -28,8 +28,11 @@ const CURATED: Record<string, CuratedHsEntry> = {
   speakers: { heading: '8518', label: 'Loudspeakers' },
   laptops: { heading: '8471', label: 'Portable computers' },
   tablets: { heading: '8471', label: 'Portable computers' },
-  monitors: { heading: '8528', label: 'Monitors' },
-  tvs: { heading: '8528', label: 'Television receivers' },
+  // Monitors and TVs are 6-digit deliberately: heading 8528 splits hard
+  // (computer monitors duty-free vs colour TVs at 14% in GB/EU, 5% in CA),
+  // so heading-level codes would hand one of them the wrong rate.
+  monitors: { heading: '852852', label: 'Computer monitors (ADP-connectable)' },
+  tvs: { heading: '852872', label: 'Colour television receivers' },
   phones: { heading: '8517', label: 'Telephones for cellular networks' },
   smartwatches: {
     heading: '8517',

@@ -9,7 +9,8 @@
 // window many times over, so re-verification will catch the 2028 switch.
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
-import { todo, verified } from '../seed';
+import { EU_DUTY_RATES } from '../euRates';
+import { verified } from '../seed';
 
 const V = '2026-08-26';
 const TARIC = 'https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp';
@@ -35,13 +36,9 @@ export const DE: DestinationRules = {
     V,
     'The EUR 150 duty exemption ended 2026-07-01 (zoll.de and the European Commission both confirm); replaced by a temporary flat EUR 3 per-item duty on consignments up to EUR 150, in force until 2028-07-01, after which normal ad valorem rates resume. Threshold basis follows the intrinsic-value test the EU uses for low-value consignments.'
   ),
-  dutyRates: [
-    {
-      hsPrefix: 'default',
-      label: 'Import duty',
-      rateBps: todo(TARIC, 'Ad valorem TARIC rates apply only ABOVE the EUR 150 flat-fee band; add per-heading rows for curated categories.'),
-    },
-  ],
+  // Shared EU Common Customs Tariff rates (see euRates.ts): apply only
+  // ABOVE the EUR 150 flat-fee band.
+  dutyRates: EU_DUTY_RATES,
   importTax: {
     label: 'Import VAT',
     rateBps: verified(

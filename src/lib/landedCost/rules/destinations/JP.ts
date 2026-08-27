@@ -5,11 +5,16 @@
 // amountMinor here IS yen.
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
-import { todo, verified } from '../seed';
+import { dutyRate, todo, verified } from '../seed';
 
 const V = '2026-08-26';
 const TARIFF = 'https://www.customs.go.jp/english/tariff/index.htm';
 const EXEMPT = 'https://www.customs.go.jp/english/c-answer_e/imtsukan/1006_e.htm';
+// Current schedule edition (2026-08-08), per-chapter static pages.
+const SCHEDULE = 'https://www.customs.go.jp/english/tariff/2026_08_08/data';
+
+const jpRate = (hsPrefix: string, bps: number, line: string, chapter: string, notes?: string, label?: string) =>
+  dutyRate(hsPrefix, bps, { line, sourceUrl: `${SCHEDULE}/e_${chapter}.htm`, lastVerified: V, notes, label });
 
 // The 10,000-yen exemption excludes "leather bags, handbags, gloves, etc.,
 // knitted apparel (T-shirt, sweater, etc.), ski boots, leather shoes and
@@ -41,11 +46,28 @@ export const JP: DestinationRules = {
     V,
     'Total customs value of 10,000 yen or less is exempt from customs duty and consumption tax, EXCEPT the excluded categories (see RELIEF_EXCLUSIONS). Split shipments from the same sender at the same time are aggregated. Basis is customs value (CIF), so relief is undecidable until shipping cost is known.'
   ),
+  // WTO (applied MFN) rates from the current schedule edition (2026-08-08),
+  // verified 2026-08-26. Where a General rate differs, the WTO rate governs
+  // for WTO-member origins.
   dutyRates: [
+    jpRate('8518', 0, '8518.30.000', '85', 'Free across the entire heading.'),
+    jpRate('8471', 0, '8471.30.000', '84', 'Free across the entire heading.'),
+    jpRate('8528', 0, '8528.72.010', '85', 'Free across the entire heading, monitors and TVs alike.'),
+    jpRate('8517', 0, '8517.13.000', '85', 'Free across the entire heading.'),
+    jpRate('8525', 0, '8525.89.000', '85', 'Free across the entire heading.'),
+    jpRate('9504', 0, '9504.50.000', '95', 'Consoles Free; applied MFN in the heading runs 0% to 3.2%.'),
+    jpRate('6404', 800, '6404.11.000', '64', 'Sports footwear 8%; heading disperses (some lines 6.7%, leather-trim lines higher). Note: 6404 is also excluded from the 10,000-yen relief.', 'Import duty (footwear)'),
+    jpRate('3304', 0, '3304.99.010', '33', 'WTO rate Free on every line (General 5.8% does not apply to WTO origins).', 'Import duty (cosmetics)'),
+    jpRate('3303', 0, '3303.00.000', '33', 'WTO rate Free (General 5.3% does not apply to WTO origins).', 'Import duty (fragrance)'),
+    jpRate('9102', 0, '9102.11.000', '91', 'All wrist-watch lines Free.'),
+    jpRate('4202', 800, '4202.92.000', '42', 'Backpack line 8%; heading runs 2.7% to 16% by material. Note: 4202 is also excluded from the 10,000-yen relief.', 'Import duty (bags)'),
+    jpRate('8516', 0, '8516.71.000', '85', 'Free across the entire heading.'),
+    jpRate('9503', 0, '9503.00.000', '95', 'Single line for the heading, Free.'),
+    jpRate('9506', 0, '9506.91.000', '95', 'Fitness equipment Free; only some ball lines reach 3.2%.'),
     {
       hsPrefix: 'default',
       label: 'Import duty',
-      rateBps: todo(TARIFF, "Per-heading rates from Japan's tariff schedule; add rows for curated categories."),
+      rateBps: todo(TARIFF, 'Headings outside the curated set stay unknown until looked up.'),
     },
   ],
   importTax: {

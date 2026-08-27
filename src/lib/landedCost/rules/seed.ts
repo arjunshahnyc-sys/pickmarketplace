@@ -15,7 +15,7 @@
 // row must have value === null, and a 'verified' row must carry a
 // lastVerified date.
 
-import type { SourcedValue } from '../types';
+import type { DutyRateRule, SourcedValue } from '../types';
 
 /** An unfilled, unverified row pointing at the source to check. */
 export function todo<T>(sourceUrl: string, notes?: string): SourcedValue<T> {
@@ -30,4 +30,29 @@ export function verified<T>(
   notes?: string
 ): SourcedValue<T> {
   return { value, sourceUrl, lastVerified, verification: 'verified', notes };
+}
+
+/** A verified per-heading duty rate row. `line` is the exact tariff line the
+ * rate was read from; dispersion within the heading goes in `notes`. */
+export function dutyRate(
+  hsPrefix: string,
+  rateBps: number,
+  opts: {
+    line: string;
+    sourceUrl: string;
+    lastVerified: string;
+    label?: string;
+    notes?: string;
+  }
+): DutyRateRule {
+  return {
+    hsPrefix,
+    label: opts.label ?? 'Import duty',
+    rateBps: verified(
+      rateBps,
+      opts.sourceUrl,
+      opts.lastVerified,
+      `Tariff line ${opts.line}.${opts.notes ? ` ${opts.notes}` : ''}`
+    ),
+  };
 }

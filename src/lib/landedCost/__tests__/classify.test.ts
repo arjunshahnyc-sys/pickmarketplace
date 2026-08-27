@@ -35,6 +35,11 @@ describe('curated category map', () => {
     expect(curatedHeadingFor('gaming-mice')?.heading).toBe('8471');
   });
 
+  it('splits monitors from TVs at the subheading level (rates diverge hard)', () => {
+    expect(curatedHeadingFor('monitors')?.heading).toBe('852852');
+    expect(curatedHeadingFor('tvs')?.heading).toBe('852872');
+  });
+
   it('refuses to map deliberately ambiguous retail buckets', () => {
     expect(curatedHeadingFor('Electronics')).toBeNull();
     expect(curatedHeadingFor('Clothing')).toBeNull();

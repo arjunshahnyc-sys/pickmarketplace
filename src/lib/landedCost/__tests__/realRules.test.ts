@@ -88,14 +88,62 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(summarizeTotal(out)).toMatchObject({ kind: 'subtotal', missing: ['shipping'] });
   });
 
-  it('GB over GBP 135: honestly unavailable while duty rates are unfilled', () => {
+  it('GB over GBP 135: still unavailable, now because CIF valuation needs the unknown shipping cost', () => {
+    // Rates are filled, but GB duty is assessed on a CIF customs value and
+    // our sources never provide shipping, so above-threshold GB stays
+    // honest-unknown until shipping data exists.
     const out = calculateLandedCost(
-      input({ priceMinor: 30_000, destCountry: 'GB', destCurrency: 'GBP' }),
+      input({ priceMinor: 30_000, destCountry: 'GB', destCurrency: 'GBP', hsCode: '6404' }),
       ctx('GB')
     );
     expect(line(out.lines, 'duty').amountMinor).toBeNull();
     expect(line(out.lines, 'tax').amountMinor).toBeNull();
+    expect(out.warnings.join(' ')).toContain('CIF valuation');
     expect(summarizeTotal(out).kind).toBe('unavailable');
+    expect(isTopSlotEligible(out)).toBe(false);
+  });
+
+  it('CA over CAD 150 with classified shoes: full duty, GST, and fee from real rates', () => {
+    // $200 -> CAD 270.00 FOB customs value, over the 150.00 duty threshold.
+    // Footwear 18% (T2026), GST 5% on duty-paid value, Canada Post fee due.
+    const out = calculateLandedCost(
+      input({ priceMinor: 20_000, destCountry: 'CA', destCurrency: 'CAD', hsCode: '6404' }),
+      ctx('CA')
+    );
+    expect(line(out.lines, 'duty').amountMinor).toBe(4_860); // 18% of 27000
+    expect(line(out.lines, 'duty').confidence).toBe('estimated'); // via classification
+    expect(line(out.lines, 'tax').amountMinor).toBe(1_593); // 5% of 31860
+    expect(line(out.lines, 'fee').amountMinor).toBe(995);
+    expect(out.totalMinor).toBe(27_000 + 4_860 + 1_593 + 995);
+    expect(isTopSlotEligible(out)).toBe(true);
+  });
+
+  it('CA: the monitor/TV split gives each subheading its own rate', () => {
+    const tv = calculateLandedCost(
+      input({ priceMinor: 20_000, destCountry: 'CA', destCurrency: 'CAD', hsCode: '852872' }),
+      ctx('CA')
+    );
+    expect(line(tv.lines, 'duty').amountMinor).toBe(1_350); // 5% of 27000
+    expect(line(tv.lines, 'duty').sourceId).toBe('CA.dutyRates.852872');
+    const monitor = calculateLandedCost(
+      input({ priceMinor: 20_000, destCountry: 'CA', destCurrency: 'CAD', hsCode: '852852' }),
+      ctx('CA')
+    );
+    expect(line(monitor.lines, 'duty').amountMinor).toBe(0);
+    expect(line(monitor.lines, 'duty').sourceId).toBe('CA.dutyRates.852852');
+  });
+
+  it('AU over AUD 1,000: duty computes (FOB) but GST stays unknown because its base adds shipping', () => {
+    // $800 -> AUD 1,200.00: over the threshold. Footwear duty 5% works off
+    // the FOB customs value alone; the GST base adds transport, which is
+    // unknown, so tax is honestly unknown and the offer is not eligible.
+    const out = calculateLandedCost(
+      input({ priceMinor: 80_000, destCountry: 'AU', destCurrency: 'AUD', hsCode: '6404' }),
+      ctx('AU')
+    );
+    expect(line(out.lines, 'duty').amountMinor).toBe(6_000); // 5% of 120000
+    expect(line(out.lines, 'tax').amountMinor).toBeNull();
+    expect(out.warnings.join(' ')).toContain('taxes shipping');
     expect(isTopSlotEligible(out)).toBe(false);
   });
 
@@ -177,12 +225,13 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(summarizeTotal(out)).toMatchObject({ kind: 'subtotal', missing: ['shipping'] });
   });
 
-  it('DE over EUR 150: ad valorem band, honestly unavailable until TARIC rates land', () => {
+  it('DE over EUR 150: rates are filled, but CIF valuation still needs the unknown shipping cost', () => {
     const out = calculateLandedCost(
-      input({ priceMinor: 30_000, destCountry: 'DE', destCurrency: 'EUR' }),
+      input({ priceMinor: 30_000, destCountry: 'DE', destCurrency: 'EUR', hsCode: '6404' }),
       ctx('DE')
     );
     expect(line(out.lines, 'duty').amountMinor).toBeNull();
+    expect(out.warnings.join(' ')).toContain('CIF valuation');
     expect(summarizeTotal(out).kind).toBe('unavailable');
   });
 
