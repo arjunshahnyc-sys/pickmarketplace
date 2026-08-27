@@ -14,6 +14,7 @@ import type { SearchResponse, Product } from '@/lib/types';
 import Header from '@/components/Header';
 import { formatPrice } from '@/lib/formatters';
 import { TrustedBy } from '@/components/TrustedBy';
+import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import { StatsSection } from '@/components/StatsSection';
 import { useSavedList } from '@/contexts/SavedListContext';
 import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
@@ -563,6 +564,11 @@ export default function Home() {
             </div>
           </motion.section>
         )}
+
+        {/* One World, One Marketplace: the landed-cost value prop. Gated on
+            the flag because it CLAIMS the capability; it appears the day
+            landed costs do, and never on a deployment that lacks them. */}
+        {!hasSearched && landedCostEnabled() && <GlobalMarketplaceSection />}
 
         {/* Trusted By Section */}
         {!hasSearched && <TrustedBy />}
