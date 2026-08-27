@@ -165,17 +165,33 @@ export function calculateLandedCost(
         }
   );
 
-  const shippingDest: Known | null = input.shipping
-    ? toDest(input.shipping.costMinor, input.shipping.currency)
-    : null;
+  // An estimated shipping amount (see input.shipping docs) is folded into
+  // shippingDest's confidence HERE so it caps not just the shipping line
+  // but everything computed from it downstream (CIF customs value, taxable
+  // base, fees on advanced charges).
+  let shippingDest: Known | null = null;
+  if (input.shipping) {
+    const conv = toDest(input.shipping.costMinor, input.shipping.currency);
+    if (conv) {
+      shippingDest = {
+        ...conv,
+        confidence: combineConfidence(conv.confidence, input.shipping.confidence ?? 'exact'),
+      };
+    }
+  }
   if (input.shipping && shippingDest) {
+    if (input.shipping.assumption) assumptions.push(input.shipping.assumption);
     lines.push({
       kind: 'shipping',
       label: 'Shipping',
       amountMinor: shippingDest.amountMinor,
-      basis: `Quoted by merchant${input.shipping.carrier ? ` via ${input.shipping.carrier}` : ''}`,
+      basis:
+        input.shipping.basis ??
+        `Quoted by merchant${input.shipping.carrier ? ` via ${input.shipping.carrier}` : ''}`,
       confidence: shippingDest.confidence,
-      sourceId: shippingDest.sourceId === 'fx:identity' ? 'input' : shippingDest.sourceId,
+      sourceId:
+        input.shipping.sourceId ??
+        (shippingDest.sourceId === 'fx:identity' ? 'input' : shippingDest.sourceId),
     });
   } else {
     if (!input.shipping) {

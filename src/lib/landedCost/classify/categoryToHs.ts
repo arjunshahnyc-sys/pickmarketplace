@@ -67,7 +67,9 @@ const CURATED: Record<string, CuratedHsEntry> = {
   },
 };
 
-function normalizeCategory(categoryId: string): string {
+// Exported: weightEstimates.ts keys on the same normalization so the two
+// category tables can never disagree about identity.
+export function normalizeCategory(categoryId: string): string {
   return categoryId.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 

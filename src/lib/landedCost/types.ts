@@ -56,11 +56,24 @@ export interface LandedCostInput {
     /** Confidence in the merchant config itself (country + incoterm). */
     configConfidence: Confidence;
   };
-  /** undefined = shipping cost unknown (the common case for scraped offers). */
+  /**
+   * undefined = shipping cost unknown. When present, this is either a
+   * merchant quote (confidence omitted = 'exact') or a labeled ESTIMATE
+   * assembled by enrichment from the shipping-estimate tables (confidence
+   * 'estimated', with basis/assumption text carried through to the line).
+   */
   shipping?: {
     costMinor: number;
     currency: CurrencyCode;
     carrier?: string;
+    /** Default 'exact' (a real quote). Estimates say 'estimated'. */
+    confidence?: Confidence;
+    /** Provenance of the amount; default 'input'. */
+    sourceId?: string;
+    /** Line basis text override, e.g. the estimate's service + weight. */
+    basis?: string;
+    /** Pushed into the breakdown's assumptions when present. */
+    assumption?: string;
   };
   destination: {
     country: string;
@@ -252,6 +265,35 @@ export interface DestinationRules {
   carrierFees: CarrierFeeRule[];
   /** See money.ts for what this means; per-country cash rounding would extend it. */
   displayRounding: 'standard-minor-units';
+  meta: { sourceUrl: string; notes?: string };
+}
+
+// ---------------------------------------------------------------------------
+// Shipping estimates: DATA, not code (rules/shippingEstimates.ts).
+// ---------------------------------------------------------------------------
+
+export interface ShippingEstimateBand {
+  /** Band applies to shipped weights up to and including this many grams. */
+  maxGrams: number;
+  /** Retail rate for the band, in the route's currency minor units. */
+  costMinor: SourcedValue<number>;
+}
+
+/**
+ * Published retail parcel rates for one origin->destination route, used to
+ * ESTIMATE shipping when no merchant quote exists. Estimates are always
+ * 'estimated' confidence with the service and assumed weight stated; a
+ * weight above the last band, or an unverified band, yields no estimate
+ * (shipping stays honestly unknown).
+ */
+export interface ShippingEstimateRoute {
+  origin: string;
+  destination: string;
+  currency: CurrencyCode;
+  /** The benchmarked service, e.g. 'USPS Priority Mail International'. */
+  service: string;
+  /** Ascending by maxGrams. */
+  bands: ShippingEstimateBand[];
   meta: { sourceUrl: string; notes?: string };
 }
 

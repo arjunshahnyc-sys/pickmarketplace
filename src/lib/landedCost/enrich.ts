@@ -6,12 +6,19 @@
 import type { Product } from '../types';
 import { calculateLandedCost, type CalcContext } from './calculate';
 import { resolveHsCodeSync } from './classify';
+import { typicalShippedWeight } from './classify/weightEstimates';
 import { NullFxProvider, type FxProvider } from './fx';
 import { merchantInputFor } from './merchants';
 import { rankByLandedCost, type RankedOffer, type RankResult } from './rank';
 import { EU_MEMBERSHIP } from './rules/eu';
 import { loadRulesFor } from './rules/loader';
-import type { LandedCostBreakdown, LandedCostInput, LineKind } from './types';
+import { collectShippingWarnings, getShippingEstimateRoute } from './rules/shippingEstimates';
+import type {
+  LandedCostBreakdown,
+  LandedCostInput,
+  LineKind,
+  ShippingEstimateRoute,
+} from './types';
 
 /**
  * THE FLOAT BOUNDARY. Feed prices arrive as float dollars (scrapers parse
@@ -34,6 +41,40 @@ export interface Destination {
   currency: string;
 }
 
+/**
+ * Build a labeled cross-border shipping ESTIMATE when the sources have no
+ * quote (they never do today): typical shipped weight for the category ->
+ * weight band -> verified published retail rate for the route. Any missing
+ * link (no weight entry, no route, over the last band, unverified band)
+ * returns undefined and shipping stays honestly unknown.
+ */
+export function estimateShipping(
+  categoryId: string | undefined,
+  merchantCountry: string | undefined,
+  destinationCountry: string,
+  routeTable?: Record<string, ShippingEstimateRoute>
+): LandedCostInput['shipping'] | undefined {
+  if (!merchantCountry || merchantCountry === destinationCountry) return undefined;
+  const weight = typicalShippedWeight(categoryId);
+  if (!weight) return undefined;
+  const route = routeTable
+    ? getShippingEstimateRoute(merchantCountry, destinationCountry, routeTable)
+    : getShippingEstimateRoute(merchantCountry, destinationCountry);
+  if (!route) return undefined;
+  const band = route.bands.find((b) => weight.grams <= b.maxGrams);
+  if (!band) return undefined;
+  const row = band.costMinor;
+  if (row.value === null || row.verification !== 'verified') return undefined;
+  return {
+    costMinor: row.value,
+    currency: route.currency,
+    confidence: 'estimated',
+    sourceId: `shipping-estimate:${route.origin}:${route.destination}:${band.maxGrams}g`,
+    basis: `Estimated: ${route.service}, typical ${weight.label} weight ~${weight.grams} g`,
+    assumption: `Shipping is estimated from ${route.service} retail rates at a typical weight for this product type; the merchant's actual shipping charge will differ.`,
+  };
+}
+
 export function buildLandedCostInput(
   product: Product,
   destination: Destination
@@ -45,6 +86,7 @@ export function buildLandedCostInput(
     brand: product.brand,
     categoryId: product.category,
   });
+  const merchant = merchantInputFor(product.retailer);
   return {
     item: {
       priceMinor,
@@ -52,9 +94,10 @@ export function buildLandedCostInput(
       categoryId: product.category,
       hs: hs ?? undefined,
     },
-    merchant: merchantInputFor(product.retailer),
-    // Shipping is never available from the current sources; stays unknown.
-    shipping: undefined,
+    merchant,
+    // The sources never quote shipping; a labeled estimate stands in where
+    // the tables allow, and shipping stays unknown otherwise.
+    shipping: estimateShipping(product.category, merchant.country, destination.country),
     destination,
   };
 }
@@ -72,7 +115,16 @@ export function withLandedCosts(
   fx: FxProvider = new NullFxProvider()
 ): Product[] {
   const { rules, rulesWarnings } = loadRulesFor(destination.country, now);
-  const ctx: CalcContext = { rules, eu: EU_MEMBERSHIP, fx, rulesWarnings };
+  const shippingRoute = getShippingEstimateRoute('US', destination.country);
+  const ctx: CalcContext = {
+    rules,
+    eu: EU_MEMBERSHIP,
+    fx,
+    rulesWarnings: [
+      ...rulesWarnings,
+      ...(shippingRoute ? collectShippingWarnings(shippingRoute, now) : []),
+    ],
+  };
   return products.map((product) => {
     const input = buildLandedCostInput(product, destination);
     if (!input) return product;
