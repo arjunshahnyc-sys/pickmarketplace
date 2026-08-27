@@ -6,6 +6,7 @@
 import type { Product } from '../types';
 import { calculateLandedCost, type CalcContext } from './calculate';
 import { resolveHsCodeSync } from './classify';
+import { fineCategoryFor } from './classify/fineCategory';
 import { typicalShippedWeight } from './classify/weightEstimates';
 import { NullFxProvider, type FxProvider } from './fx';
 import { merchantInputFor } from './merchants';
@@ -81,23 +82,27 @@ export function buildLandedCostInput(
 ): LandedCostInput | null {
   const priceMinor = dollarsToMinor(product.price);
   if (priceMinor === null) return null;
+  // The feed's display category is often too coarse ('Electronics') for the
+  // curated tables; re-derive a fine key from the product name for
+  // classification and weight lookups.
+  const categoryId = fineCategoryFor(product.name, product.category);
   const hs = resolveHsCodeSync({
     name: product.name,
     brand: product.brand,
-    categoryId: product.category,
+    categoryId,
   });
   const merchant = merchantInputFor(product.retailer);
   return {
     item: {
       priceMinor,
       currency: FEED_CURRENCY,
-      categoryId: product.category,
+      categoryId,
       hs: hs ?? undefined,
     },
     merchant,
     // The sources never quote shipping; a labeled estimate stands in where
     // the tables allow, and shipping stays unknown otherwise.
-    shipping: estimateShipping(product.category, merchant.country, destination.country),
+    shipping: estimateShipping(categoryId, merchant.country, destination.country),
     destination,
   };
 }

@@ -109,13 +109,15 @@ describe('end to end: ECB snapshot rates drive real cross-border estimates', () 
     const [enriched] = withLandedCosts(
       [product],
       { country: 'GB', currency: 'GBP' },
-      new Date('2026-08-26T00:00:00Z'),
+      new Date('2026-08-27T00:00:00Z'),
       provider
     );
     const b = enriched.landedCost!;
-    // GBP 79.00 intrinsic: under the 135 threshold -> duty relieved, VAT
-    // merchant-collects, fee waived. A real number, from live-shaped data.
-    expect(b.totalMinor).toBe(7_900);
-    expect(b.unknownComponents).toEqual(['shipping']);
+    // GBP 79.00 intrinsic (under the 135 threshold -> duty relieved, VAT
+    // merchant-collects, fee waived) plus the estimated FCPIS 2 lb shipping
+    // for 700 g headphones: $35.70 -> 28.20 GBP. Nothing unknown remains.
+    expect(b.lines.find((l) => l.kind === 'shipping')!.amountMinor).toBe(2_820);
+    expect(b.totalMinor).toBe(7_900 + 2_820);
+    expect(b.unknownComponents).toEqual([]);
   });
 });
