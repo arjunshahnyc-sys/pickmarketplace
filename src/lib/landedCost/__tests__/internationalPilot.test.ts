@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { currencySymbol } from '../../formatters';
 import { enhanceProductsWithGroupInfo } from '../../productGrouping';
 import { getRetailerTrust } from '../../retailerTrust';
+import { parseFirstPrice } from '../../scrapers';
 import type { Product } from '../../types';
 import { orderByLandedCost, priceToMinor, withLandedCosts } from '../enrich';
 import { FixtureFxProvider } from '../fx';
@@ -84,6 +85,86 @@ describe('currency plumbing', () => {
       expect(e.groupSize).toBeUndefined(); // no cross-currency "same item" group
       expect(e.matchType).not.toBe('similar'); // no cross-currency percent claims
     }
+  });
+});
+
+describe('all-markets rollout (probed live 2026-08-27)', () => {
+  it('parses every observed feed price format', () => {
+    expect(parseFirstPrice('€217.89')).toBe(217.89); // DE/FR: dot decimal with hl=en
+    expect(parseFirstPrice('¥35,343')).toBe(35_343); // JP: comma thousands, no decimals
+    expect(parseFirstPrice('$442.37')).toBe(442.37); // CA/AU
+    expect(parseFirstPrice('£174.99')).toBe(174.99); // GB
+    expect(parseFirstPrice('$15.99 - $29.99')).toBe(15.99); // ranges keep the low end
+  });
+
+  it('resolves market-scoped merchant identity per feed', () => {
+    expect(getMerchantConfig('Amazon.de', 'DE').country).toBe('DE');
+    expect(getMerchantConfig('Coolblue.de', 'DE').country).toBe('NL'); // Dutch chain: intra-EU
+    expect(getMerchantConfig('Fnac', 'FR').country).toBe('FR');
+    expect(getMerchantConfig('eBay', 'DE').country).toBe('DE');
+    expect(getMerchantConfig('eBay', 'FR').country).toBe('FR');
+    expect(getMerchantConfig('Walmart.ca', 'CA').country).toBe('CA');
+    expect(getMerchantConfig('Best Buy', 'CA').country).toBe('CA'); // binational: .ca storefront
+    expect(getMerchantConfig('Best Buy').country).toBe('US');
+    expect(getMerchantConfig('BIG W', 'AU').country).toBe('AU');
+    expect(getMerchantConfig('Target', 'AU').country).toBe('AU'); // different company from Target US
+    expect(getMerchantConfig('Target').country).toBe('US');
+  });
+
+  it('Japanese script names collapse honestly: Amazon resolves, unknowns stay unknown', () => {
+    expect(getMerchantConfig('Amazon公式サイト', 'JP').country).toBe('JP'); // collapses to 'amazon'
+    expect(getMerchantConfig('セカンドストリート', 'JP').country).toBeUndefined(); // collapses to ''
+    expect(getMerchantConfig('Yahoo!ショッピング - らいぶshop', 'JP').country).toBeUndefined();
+  });
+
+  it('new market majors carry the verified badge', () => {
+    for (const name of ['MediaMarkt', 'Fnac', 'Walmart.ca', 'JB Hi-Fi', 'BIG W', 'Amazon.de']) {
+      expect(getRetailerTrust(name).level, name).toBe('verified');
+    }
+  });
+
+  it('DE shopper: local, intra-EU, and US import all compute and rank together', () => {
+    const fx = new FixtureFxProvider(
+      { 'USD:EUR': { midMicros: 900_000, asOf: '2026-08-27T00:00:00Z' } },
+      { spreadBps: 0 }
+    );
+    const products = [
+      offer({ id: 'de-amazon', name: 'Sony Kopfhörer Headphones', price: 220, retailer: 'Amazon.de', currency: 'EUR', sourceMarket: 'DE', category: 'Electronics' }),
+      offer({ id: 'nl-coolblue', name: 'Sony Headphones Duo', price: 478, retailer: 'Coolblue.de', currency: 'EUR', sourceMarket: 'DE', category: 'Electronics', url: 'https://example.test/nl' }),
+      offer({ id: 'us-bestbuy', name: 'Sony Wireless Headphones', price: 248, retailer: 'Best Buy', currency: 'USD', sourceMarket: 'US', category: 'Electronics', url: 'https://example.test/us' }),
+    ];
+    const enriched = withLandedCosts(products, { country: 'DE', currency: 'EUR' }, NOW, fx);
+
+    const de = enriched.find((p) => p.id === 'de-amazon')!.landedCost!;
+    expect(de.lane).toBe('domestic');
+    expect(de.totalMinor).toBe(22_000);
+
+    const nl = enriched.find((p) => p.id === 'nl-coolblue')!.landedCost!;
+    expect(nl.lane).toBe('intra-eu'); // NL merchant, DE shopper: free movement
+    expect(nl.totalMinor).toBe(47_800);
+
+    const us = enriched.find((p) => p.id === 'us-bestbuy')!.landedCost!;
+    expect(us.lane).toBe('cross-border');
+    // 223.20 item + 29.57 shipping; over the EUR 150 band -> ad valorem 0%
+    // headphone duty, 19% VAT on 252.77, EUR 7.50 handling.
+    expect(us.totalMinor).toBe(22_320 + 2_957 + 0 + 4_803 + 750);
+    expect(us.unknownComponents).toEqual([]);
+
+    const { products: ranked } = orderByLandedCost(enriched);
+    expect(ranked.map((p) => p.id)).toEqual(['de-amazon', 'us-bestbuy', 'nl-coolblue']);
+  });
+
+  it('JP shopper: a yen-priced Amazon Japan offer computes as domestic', () => {
+    const enriched = withLandedCosts(
+      [offer({ id: 'jp-amazon', name: 'Sony WH-1000XM5 Wireless', price: 35_343, retailer: 'Amazon公式サイト', currency: 'JPY', sourceMarket: 'JP', category: 'Electronics' })],
+      { country: 'JP', currency: 'JPY' },
+      NOW,
+      FX
+    );
+    const b = enriched[0].landedCost!;
+    expect(b.lane).toBe('domestic');
+    expect(b.totalMinor).toBe(35_343); // yen minor units, exponent 0
+    expect(b.unknownComponents).toEqual(['shipping']);
   });
 });
 

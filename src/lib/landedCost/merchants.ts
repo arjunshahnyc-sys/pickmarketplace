@@ -101,8 +101,98 @@ const GB_MERCHANTS: Record<string, MerchantConfig> = {
   cex: GB_STOREFRONT,
 };
 
+// A storefront assumed at 'estimated' confidence for the given country.
+function storefront(country: string): MerchantConfig {
+  return {
+    country,
+    incoterm: 'unknown',
+    confidence: 'estimated',
+    notes: `${country} storefront assumed from brand; incoterm unverified.`,
+  };
+}
+
+// EU storefronts appear across EU market feeds (Amazon.fr shows up in the
+// German feed and vice versa), so DE and FR share one table with each
+// merchant's TRUE country: a Coolblue (NL) offer to a DE shopper then
+// resolves to the intra-EU lane instead of unknown. Names as probed live
+// 2026-08-27.
+const EU_MERCHANTS: Record<string, MerchantConfig> = {
+  amazonde: storefront('DE'),
+  otto: storefront('DE'),
+  mediamarkt: storefront('DE'),
+  saturn: storefront('DE'),
+  zalando: storefront('DE'),
+  cyberport: storefront('DE'),
+  kauflandde: storefront('DE'),
+  amazonfr: storefront('FR'),
+  fnac: storefront('FR'),
+  darty: storefront('FR'),
+  cdiscount: storefront('FR'),
+  boulanger: storefront('FR'),
+  laredoute: storefront('FR'),
+  coolbluede: storefront('NL'), // Dutch chain selling into DE: intra-EU
+  coolblue: storefront('NL'),
+  ebay: storefront('DE'), // in an EU feed, eBay is the local EU marketplace
+};
+
+const CA_MERCHANTS: Record<string, MerchantConfig> = {
+  amazonca: storefront('CA'),
+  walmartca: storefront('CA'),
+  // Binational brands listed in the CA feed are their .ca storefronts.
+  walmart: storefront('CA'),
+  bestbuy: storefront('CA'),
+  bestbuycanada: storefront('CA'),
+  bestbuycanadamarketplace: storefront('CA'),
+  costco: storefront('CA'),
+  homedepot: storefront('CA'),
+  thehomedepot: storefront('CA'),
+  staples: storefront('CA'),
+  canadiantire: storefront('CA'),
+  londondrugs: storefront('CA'),
+  thesource: storefront('CA'),
+  ebay: storefront('CA'),
+};
+
+const AU_MERCHANTS: Record<string, MerchantConfig> = {
+  amazonau: storefront('AU'),
+  amazoncomau: storefront('AU'),
+  jbhifi: storefront('AU'),
+  harveynorman: storefront('AU'),
+  thegoodguys: storefront('AU'),
+  bigw: storefront('AU'),
+  kmart: storefront('AU'),
+  // Target Australia is a different company from Target US; in the AU feed
+  // the name means the local chain.
+  target: storefront('AU'),
+  officeworks: storefront('AU'),
+  myer: storefront('AU'),
+  davidjones: storefront('AU'),
+  catch: storefront('AU'),
+  kogan: storefront('AU'),
+  sonyaustraliaonline: storefront('AU'),
+  ebay: storefront('AU'),
+};
+
+// Japanese storefront names are mostly script (セカンドストリート), which
+// collapse() reduces to '' — those stay honestly unknown. The entries here
+// are the names that collapse to stable latin keys ("Amazon公式サイト" ->
+// 'amazon', which in the JP feed is amazon.co.jp).
+const JP_MERCHANTS: Record<string, MerchantConfig> = {
+  amazon: storefront('JP'),
+  amazoncojp: storefront('JP'),
+  rakuten: storefront('JP'),
+  yodobashi: storefront('JP'),
+  biccamera: storefront('JP'),
+  yahooshopping: storefront('JP'),
+};
+
 const MARKET_TABLES: Record<string, Record<string, MerchantConfig>> = {
   GB: GB_MERCHANTS,
+  DE: EU_MERCHANTS,
+  FR: { ...EU_MERCHANTS, ebay: storefront('FR') },
+  CA: CA_MERCHANTS,
+  AU: AU_MERCHANTS,
+  JP: JP_MERCHANTS,
 };
 
 const UNKNOWN_MERCHANT: MerchantConfig = {

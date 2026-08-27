@@ -103,7 +103,7 @@ function ProductCard({
       aria-label={`${
         product.isFallback
           ? `Search for ${product.name} on ${product.retailer}`
-          : `View ${product.name} on ${product.retailer}, ${currencySymbol(product.currency)}${formatPrice(product.price)}`
+          : `View ${product.name} on ${product.retailer}, ${currencySymbol(product.currency)}${formatPrice(product.price, product.currency)}`
       }${
         trust.level === 'flagged'
           ? '. Warning: possible scam, not from a verified reseller'
@@ -174,7 +174,7 @@ function ProductCard({
         {/* Same-item chip: this exact product, cheapest of its listings */}
         {showLowestPrice && !product.isFallback && savingsAmount && savingsAmount > 0 && (
           <span className="absolute bottom-2 left-2 bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-            Same item · Save {currencySymbol(product.currency)}{savingsAmount.toFixed(2)}
+            Same item · Save {currencySymbol(product.currency)}{formatPrice(savingsAmount, product.currency)}
           </span>
         )}
         {/* Similar-alternative chip: a different product, much cheaper.
@@ -234,9 +234,9 @@ function ProductCard({
         {productGroupSize && productGroupSize > 1 && showLowestPrice && (
           <span className="text-xs text-neutral-500">from</span>
         )}
-        <span className="text-xl font-bold tabular-nums text-neutral-900">{currencySymbol(product.currency)}{formatPrice(product.price)}</span>
+        <span className="text-xl font-bold tabular-nums text-neutral-900">{currencySymbol(product.currency)}{formatPrice(product.price, product.currency)}</span>
         {product.originalPrice && product.originalPrice > product.price && (
-          <span className="text-sm line-through text-neutral-400 font-normal">{currencySymbol(product.currency)}{formatPrice(product.originalPrice)}</span>
+          <span className="text-sm line-through text-neutral-400 font-normal">{currencySymbol(product.currency)}{formatPrice(product.originalPrice, product.currency)}</span>
         )}
       </div>
 

@@ -2,15 +2,22 @@
 // SAFE FORMATTERS - Prevent crashes from undefined/null/NaN values
 // ============================================================================
 
+import { minorUnitExponent } from './landedCost/money';
+
 /**
- * Safely formats a price value to 2 decimal places
+ * Safely formats a price value with the currency's decimal count.
  * @param price - The price value (can be number, string, undefined, null)
- * @returns Formatted price string like "12.99" or "0.00" if invalid
+ * @param currency - Optional ISO code; omitted keeps the legacy 2-decimal
+ *   behavior (all pre-international call sites). JPY renders 0 decimals.
+ * @returns Formatted price string like "12.99" (or "0.00" if invalid)
  */
-export function formatPrice(price: any): string {
+export function formatPrice(price: any, currency?: string): string {
+  const decimals = currency ? minorUnitExponent(currency) : 2;
+  const invalid = (0).toFixed(decimals);
+
   // Handle undefined, null, empty string
   if (price === undefined || price === null || price === '') {
-    return '0.00';
+    return invalid;
   }
 
   // Convert to number if string
@@ -18,11 +25,10 @@ export function formatPrice(price: any): string {
 
   // Check if valid number
   if (isNaN(num) || !isFinite(num)) {
-    return '0.00';
+    return invalid;
   }
 
-  // Format to 2 decimal places
-  return num.toFixed(2);
+  return num.toFixed(decimals);
 }
 
 /**

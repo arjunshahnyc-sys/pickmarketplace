@@ -4,7 +4,7 @@ import { Tag, ArrowUpDown, BadgeCheck } from 'lucide-react';
 import SellerTrustKey from './SellerTrustKey';
 import { Product } from '@/lib/types';
 import { landedCostEnabled } from '@/lib/flags';
-import { currencySymbol } from '@/lib/formatters';
+import { currencySymbol, formatPrice } from '@/lib/formatters';
 
 interface SearchSectionProps {
   resultsCount: number;
@@ -209,7 +209,7 @@ export default function SearchSection({
           {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
           {products.length > 0 && singleCurrency && (
             <span className="ml-2 text-pick-teal font-semibold">
-              • {rangeSymbol}{minPrice.toFixed(2)} to {rangeSymbol}{maxPrice.toFixed(2)}
+              • {rangeSymbol}{formatPrice(minPrice, products[0]?.currency)} to {rangeSymbol}{formatPrice(maxPrice, products[0]?.currency)}
             </span>
           )}
         </div>

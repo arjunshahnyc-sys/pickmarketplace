@@ -93,6 +93,39 @@ const VERIFIED = new Set([
   'boots',
   'screwfix',
   'very',
+  // DE/FR majors.
+  'amazonde',
+  'otto',
+  'mediamarkt',
+  'saturn',
+  'zalando',
+  'amazonfr',
+  'fnac',
+  'darty',
+  'boulanger',
+  'coolblue',
+  'coolbluede',
+  // CA majors (binational brands are already listed above).
+  'amazonca',
+  'walmartca',
+  'bestbuycanada',
+  'canadiantire',
+  'londondrugs',
+  // AU majors.
+  'amazonau',
+  'amazoncomau',
+  'jbhifi',
+  'harveynorman',
+  'thegoodguys',
+  'bigw',
+  'officeworks',
+  'myer',
+  'davidjones',
+  // JP majors with stable latin collapses.
+  'amazoncojp',
+  'rakuten',
+  'yodobashi',
+  'biccamera',
 ]);
 
 // Marketplaces with widespread, well-documented scam/counterfeit/quality

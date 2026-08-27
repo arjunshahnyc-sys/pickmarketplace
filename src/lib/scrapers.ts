@@ -164,8 +164,11 @@ function buildDirectRetailerUrl(retailerSource: string, productTitle: string): s
 }
 
 // "$15.99 - $29.99" must parse as 15.99, not parseFloat('15.9929.99');
-// returns the first (lowest) number in the string.
-function parseFirstPrice(priceStr: string | undefined | null): number {
+// returns the first (lowest) number in the string. Handles every feed
+// market's format (probed live 2026-08-27: hl:'en' yields "€217.89",
+// "¥35,343" — dot decimals, comma thousands, everywhere). Exported for the
+// per-market format tests.
+export function parseFirstPrice(priceStr: string | undefined | null): number {
   const match = priceStr?.match(/\d+(?:,\d{3})*(?:\.\d+)?/);
   return match ? parseFloat(match[0].replace(/,/g, '')) : 0;
 }
@@ -179,14 +182,22 @@ export interface ScraperResult {
 // ─── Google Shopping via Serper.dev API ────────────────────────────────────
 
 /**
- * Shopping-feed markets the pipeline can query. Each market's feed prices in
- * its own currency; adding a market means adding its currency here and
- * verifying its price format parses. The default 'us' keeps every legacy
- * call site byte-identical.
+ * Shopping-feed markets the pipeline can query. Each market's feed prices
+ * in its own currency; adding a market means adding it here after PROBING
+ * its live price format (all markets verified 2026-08-27: Serper with
+ * hl:'en' returns dot-decimal English formatting everywhere, e.g.
+ * "€217.89", "¥35,343", so parseFirstPrice handles every feed). maxPrice
+ * is the junk-price ceiling in the market's own currency: the legacy
+ * 10,000 bound would drop nearly every JPY offer.
  */
 export const FEED_MARKETS = {
-  us: { gl: 'us', country: 'US', currency: 'USD' },
-  gb: { gl: 'gb', country: 'GB', currency: 'GBP' },
+  us: { gl: 'us', country: 'US', currency: 'USD', maxPrice: 10_000 },
+  gb: { gl: 'gb', country: 'GB', currency: 'GBP', maxPrice: 10_000 },
+  de: { gl: 'de', country: 'DE', currency: 'EUR', maxPrice: 10_000 },
+  fr: { gl: 'fr', country: 'FR', currency: 'EUR', maxPrice: 10_000 },
+  ca: { gl: 'ca', country: 'CA', currency: 'CAD', maxPrice: 15_000 },
+  au: { gl: 'au', country: 'AU', currency: 'AUD', maxPrice: 15_000 },
+  jp: { gl: 'jp', country: 'JP', currency: 'JPY', maxPrice: 2_000_000 },
 } as const;
 export type FeedMarket = keyof typeof FEED_MARKETS;
 
@@ -245,8 +256,9 @@ export async function searchGoogleShoppingAPI(
         continue; // Skip irrelevant results
       }
 
-      // Price validation: drop obviously invalid prices
-      if (price <= 0 || price > 10000) {
+      // Price validation: drop obviously invalid prices (ceiling is
+      // per-market currency, see FEED_MARKETS)
+      if (price <= 0 || price > marketInfo.maxPrice) {
         continue; // Skip products with invalid prices
       }
 

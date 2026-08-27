@@ -5,9 +5,16 @@ import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 import { landedCostEnabled } from "@/lib/flags";
 
 // Destination countries whose local shopping feed joins the US one when the
-// landed-cost flag is on. GB pilots; other destinations keep US-only until
-// their market's currency parsing and merchant tables are built.
-const MARKET_BY_DEST: Record<string, FeedMarket> = { GB: "gb" };
+// landed-cost flag is on. All six destinations active (price formats probed
+// and merchant tables built 2026-08-27).
+const MARKET_BY_DEST: Record<string, FeedMarket> = {
+  GB: "gb",
+  DE: "de",
+  FR: "fr",
+  CA: "ca",
+  AU: "au",
+  JP: "jp",
+};
 
 export async function GET(req: NextRequest) {
   try {
