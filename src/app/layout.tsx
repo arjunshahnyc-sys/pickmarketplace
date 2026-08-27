@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SavedListProvider } from "@/contexts/SavedListContext";
 import { DestinationProvider } from "@/contexts/DestinationContext";
@@ -69,6 +70,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SavedListDrawer />
           </SavedListProvider>
         </AuthProvider>
+        {/* Same-origin script + beacon (/_vercel/insights/*), so the strict
+            CSP's 'self' policy covers it without changes. */}
+        <Analytics />
       </body>
     </html>
   );
