@@ -8,7 +8,10 @@ const isDev = process.env.NODE_ENV === "development";
 // hence img-src https:. Dev additions cover HMR (eval + websocket).
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // Dev additions: eval for HMR, va.vercel-scripts.com for the Vercel
+  // Analytics DEBUG script (production analytics is same-origin under
+  // /_vercel/insights and needs no exception).
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval' https://va.vercel-scripts.com" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https: data: blob:",
   `connect-src 'self'${isDev ? " ws:" : ""}`,

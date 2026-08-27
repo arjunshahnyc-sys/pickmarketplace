@@ -46,7 +46,12 @@ export default function LandedCostPanel({ breakdown }: { breakdown: LandedCostBr
   if (summary.kind === 'unavailable') {
     headline = 'Total cost estimate unavailable';
   } else if (summary.kind === 'range') {
-    headline = `Est. total ${money(summary.lowMinor, currency)} to ${money(summary.highMinor, currency)}`;
+    // A degenerate range (all import lines zero in both scenarios) reads as
+    // a rendering bug; collapse it to the single figure it is.
+    headline =
+      summary.lowMinor === summary.highMinor
+        ? `Est. total ${money(summary.lowMinor, currency)}`
+        : `Est. total ${money(summary.lowMinor, currency)} to ${money(summary.highMinor, currency)}`;
     if (summary.missing.includes('shipping')) headline += ' + shipping';
   } else if (summary.kind === 'subtotal') {
     headline = `Est. total ${money(summary.totalMinor, currency)}`;

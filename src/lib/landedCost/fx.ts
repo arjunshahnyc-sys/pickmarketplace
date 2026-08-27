@@ -88,6 +88,57 @@ export class NullFxProvider implements FxProvider {
   }
 }
 
+/**
+ * Provider backed by a rate-table snapshot (in production: ECB reference
+ * rates served by /api/fx). Keys are `${from}:${to}`, values are major-unit
+ * mid rates in micros.
+ *
+ * STALENESS CAP: reference rates older than maxAgeDays (default 7; normal
+ * weekend/holiday gaps are 1-3 days) yield NO quotes rather than old ones.
+ * An outage therefore degrades to "estimate unavailable", never to totals
+ * silently converted at last week's rate.
+ */
+export class TableFxProvider implements FxProvider {
+  readonly id: string;
+  private readonly pairsMicros: Record<string, number>;
+  private readonly asOf: string;
+  private readonly spreadBps: number;
+  private readonly stale: boolean;
+
+  constructor(
+    snapshot: {
+      pairsMicros: Record<string, number>;
+      /** ISO date the rates were published for. */
+      asOf: string;
+      spreadBps: number;
+      sourceId: string;
+      maxAgeDays?: number;
+    },
+    now: Date
+  ) {
+    this.id = snapshot.sourceId;
+    this.pairsMicros = snapshot.pairsMicros;
+    this.asOf = snapshot.asOf;
+    this.spreadBps = snapshot.spreadBps;
+    const maxAgeDays = snapshot.maxAgeDays ?? 7;
+    const ageMs = now.getTime() - new Date(snapshot.asOf).getTime();
+    this.stale = !Number.isFinite(ageMs) || ageMs > maxAgeDays * 86_400_000;
+  }
+
+  getQuote(from: CurrencyCode, to: CurrencyCode): FxQuote | null {
+    if (this.stale) return null;
+    const midMicros = this.pairsMicros[`${from}:${to}`];
+    if (!midMicros) return null;
+    return {
+      midMicros,
+      asOf: this.asOf,
+      spreadBps: this.spreadBps,
+      sourceId: this.id,
+      confidence: 'estimated',
+    };
+  }
+}
+
 /** Test/fixture provider with pinned rates. Keys are `${from}:${to}`. */
 export class FixtureFxProvider implements FxProvider {
   readonly id = 'fx:fixture';

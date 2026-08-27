@@ -21,6 +21,7 @@ import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { sortProducts } from '@/lib/sortResults';
 import { landedCostEnabled } from '@/lib/flags';
 import { orderByLandedCost, withLandedCosts } from '@/lib/landedCost/enrich';
+import { useFxProvider } from '@/lib/landedCost/useFxProvider';
 import { useDestination } from '@/contexts/DestinationContext';
 import { getRetailerTrust } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
@@ -49,6 +50,7 @@ function formatCheckedAt(checkedAt?: string): string {
 export default function Home() {
   const { isSaved, toggleItem } = useSavedList();
   const { destination } = useDestination();
+  const fxProvider = useFxProvider();
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -329,8 +331,10 @@ export default function Home() {
     if (landedCostEnabled()) {
       // Attach a landed-cost breakdown for the shopper's destination to
       // every offer (per-line provenance and confidence; unknowns stay
-      // unknown). The date only feeds rules-staleness warnings.
-      filtered = withLandedCosts(filtered, destination, new Date());
+      // unknown). The date only feeds rules-staleness warnings. FX starts
+      // as the null provider and upgrades once /api/fx delivers ECB rates,
+      // which recomputes this memo via the fxProvider dependency.
+      filtered = withLandedCosts(filtered, destination, new Date(), fxProvider);
     }
 
     if (landedCostEnabled() && sortBy === 'total-cost') {
@@ -348,7 +352,7 @@ export default function Home() {
     // reference is the top relevance-ordered result, so re-sorting by price
     // doesn't change which product the alternatives are compared against.
     return enhanceProductsWithGroupInfo(filtered, results[0]);
-  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, destination]);
+  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, destination, fxProvider]);
 
   // Each toggle's count is computed against the OTHER active filter, so the
   // number on the button always matches what clicking it would show.
