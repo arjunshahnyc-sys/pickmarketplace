@@ -177,9 +177,26 @@ export interface ScraperResult {
 }
 
 // ─── Google Shopping via Serper.dev API ────────────────────────────────────
-export async function searchGoogleShoppingAPI(query: string): Promise<ScraperResult> {
+
+/**
+ * Shopping-feed markets the pipeline can query. Each market's feed prices in
+ * its own currency; adding a market means adding its currency here and
+ * verifying its price format parses. The default 'us' keeps every legacy
+ * call site byte-identical.
+ */
+export const FEED_MARKETS = {
+  us: { gl: 'us', country: 'US', currency: 'USD' },
+  gb: { gl: 'gb', country: 'GB', currency: 'GBP' },
+} as const;
+export type FeedMarket = keyof typeof FEED_MARKETS;
+
+export async function searchGoogleShoppingAPI(
+  query: string,
+  market: FeedMarket = 'us'
+): Promise<ScraperResult> {
   const products: Product[] = [];
   const apiKey = process.env.SERPER_API_KEY;
+  const marketInfo = FEED_MARKETS[market];
 
   if (!apiKey) {
     console.log('[Serper] API key not configured, skipping Google Shopping results');
@@ -196,7 +213,7 @@ export async function searchGoogleShoppingAPI(query: string): Promise<ScraperRes
         },
         body: JSON.stringify({
           q: query,
-          gl: 'us',
+          gl: marketInfo.gl,
           hl: 'en',
           num: 30, // Increased from 20 to get more results before filtering
         }),
@@ -234,15 +251,25 @@ export async function searchGoogleShoppingAPI(query: string): Promise<ScraperRes
       }
 
       if (name) {
-        // Build direct retailer URL instead of using Google intermediary link
-        const directUrl = buildDirectRetailerUrl(retailer, name);
+        // Build direct retailer URL instead of using Google intermediary
+        // link. US market only: the deep-link builders point at .com US
+        // storefronts, which would be the WRONG store for another market's
+        // merchant (Amazon.co.uk must not deep-link to amazon.com).
+        const directUrl = market === 'us' ? buildDirectRetailerUrl(retailer, name) : null;
         const productUrl = directUrl || item.link || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`;
 
         products.push({
-          // Stable identity so React keys don't fall back to array index
-          id: `serper:${retailer}:${name}`.toLowerCase(),
+          // Stable identity so React keys don't fall back to array index.
+          // Non-US ids carry the market so the same listing name in two
+          // markets stays two offers; US ids keep their legacy shape.
+          id: (market === 'us'
+            ? `serper:${retailer}:${name}`
+            : `serper:${market}:${retailer}:${name}`
+          ).toLowerCase(),
           name,
           price,
+          currency: marketInfo.currency,
+          sourceMarket: marketInfo.country,
           image: img,
           retailer,
           url: productUrl,
@@ -300,6 +327,8 @@ export async function searchTarget(query: string): Promise<ScraperResult> {
           id: tcin ? `target:${tcin}` : `target:${name.toLowerCase()}`,
           name,
           price,
+          currency: 'USD',
+          sourceMarket: 'US',
           originalPrice: origPrice && origPrice > price ? origPrice : undefined,
           image: img,
           retailer: "Target",

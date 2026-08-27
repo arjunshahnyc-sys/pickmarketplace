@@ -43,9 +43,13 @@ function groupProducts(products: Product[]): Product[][] {
     const group = [product];
     processed.add(index);
 
-    // Find similar products
+    // Find similar products. Same-name listings in different currencies are
+    // different offers from different markets: their prices cannot share
+    // savings math, so they never share a group. (US-only results all carry
+    // one currency, leaving legacy behavior untouched.)
     for (let i = index + 1; i < products.length; i++) {
       if (processed.has(i)) continue;
+      if ((products[i].currency ?? 'USD') !== (product.currency ?? 'USD')) continue;
 
       const similarity = calculateSimilarity(product.name, products[i].name);
       if (similarity >= 0.6) {
@@ -93,6 +97,9 @@ const GENERIC_NAME_WORDS = new Set([
  * match, is much cheaper, and carries reviews good enough to trust.
  */
 function findSimilarMatch(product: Product, anchor: Product): EnhancedProduct['similarTo'] {
+  // Cross-currency price ratios are meaningless; similar-pick claims only
+  // compare offers priced in the anchor's currency.
+  if ((product.currency ?? 'USD') !== (anchor.currency ?? 'USD')) return undefined;
   const similarity = calculateSimilarity(product.name, anchor.name);
   if (similarity < 0.25 || similarity >= 0.6) return undefined;
   if (product.price > anchor.price * 0.75) return undefined;

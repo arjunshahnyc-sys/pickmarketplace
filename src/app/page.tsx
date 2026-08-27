@@ -163,7 +163,14 @@ export default function Home() {
     setSearchErrorMessage(null);
 
     try {
-      const response = await fetch(`/api/search-live?q=${encodeURIComponent(searchQuery)}`);
+      // The shopper's destination adds their local market feed server-side
+      // (flag-gated there too); without the flag the param is never sent.
+      const destParam = landedCostEnabled()
+        ? `&dest=${encodeURIComponent(destination.country)}`
+        : '';
+      const response = await fetch(
+        `/api/search-live?q=${encodeURIComponent(searchQuery)}${destParam}`
+      );
       const data: any = await response.json();
       setResults(data.results || []);
       // Even error responses carry retailerSearchLinks we can offer as a fallback
@@ -185,6 +192,17 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  // Re-run the active search when the destination changes: the destination
+  // decides which market feeds the server queries (flag-on only), so a
+  // shopper switching to GB gets UK offers into the running results. Also
+  // fires when the geo default lands after a search.
+  const destCountry = destination.country;
+  useEffect(() => {
+    if (!landedCostEnabled() || !hasSearched || !query) return;
+    handleSearch(query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destCountry]);
 
   // Load trending products and check for URL query on mount
   useEffect(() => {

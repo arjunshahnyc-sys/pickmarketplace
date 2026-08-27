@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildRetailerDeepLinks } from "@/lib/scrapers";
+import { buildRetailerDeepLinks, type FeedMarket } from "@/lib/scrapers";
 import { performLiveSearch } from "@/lib/searchService";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { landedCostEnabled } from "@/lib/flags";
+
+// Destination countries whose local shopping feed joins the US one when the
+// landed-cost flag is on. GB pilots; other destinations keep US-only until
+// their market's currency parsing and merchant tables are built.
+const MARKET_BY_DEST: Record<string, FeedMarket> = { GB: "gb" };
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,7 +46,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const data = await performLiveSearch(q);
+    // Flag-gated: without the flag (or without a mapped destination) this is
+    // the legacy US-only search, byte-identical.
+    const dest = landedCostEnabled() ? req.nextUrl.searchParams.get("dest") : null;
+    const extraMarket = dest ? MARKET_BY_DEST[dest.toUpperCase()] : undefined;
+    const data = await performLiveSearch(q, extraMarket ? [extraMarket] : []);
 
     // Every price source failed: report an outage instead of a 200 that
     // renders as "no results found" for a query that may match plenty.

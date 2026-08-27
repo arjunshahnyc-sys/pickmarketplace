@@ -38,6 +38,16 @@ export interface Product {
   /** True for example/deep-link cards shown when live results are thin */
   isFallback?: boolean;
   /**
+   * ISO 4217 currency of `price`. Absent = USD (the legacy US feed shape;
+   * flag-off responses are US-only and unchanged in meaning).
+   */
+  currency?: string;
+  /**
+   * ISO country of the shopping feed this offer came from ('US', 'GB').
+   * Absent = US. Merchant-country inference and dedup are scoped by it.
+   */
+  sourceMarket?: string;
+  /**
    * Landed-cost breakdown for the shopper's destination. Attached only when
    * LANDED_COST_ENABLED is on (see lib/landedCost/enrich.ts); absent
    * otherwise and on server-rendered category pages.

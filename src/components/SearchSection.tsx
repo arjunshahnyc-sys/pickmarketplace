@@ -4,6 +4,7 @@ import { Tag, ArrowUpDown, BadgeCheck } from 'lucide-react';
 import SellerTrustKey from './SellerTrustKey';
 import { Product } from '@/lib/types';
 import { landedCostEnabled } from '@/lib/flags';
+import { currencySymbol } from '@/lib/formatters';
 
 interface SearchSectionProps {
   resultsCount: number;
@@ -38,7 +39,12 @@ export default function SearchSection({
   onSearch,
   saleCount = 0,
 }: SearchSectionProps) {
-  // PINCHPOINT 3 FIX - Calculate price range
+  // PINCHPOINT 3 FIX - Calculate price range. Only meaningful when every
+  // offer shares one currency: mixed-market results (international pilot)
+  // hide the range rather than compare pounds to dollars numerically.
+  const currencies = new Set(products.map((p) => p.currency ?? 'USD'));
+  const singleCurrency = currencies.size <= 1;
+  const rangeSymbol = currencySymbol(products[0]?.currency);
   const minPrice = products.length > 0 ? Math.min(...products.map(p => p.price)) : 0;
   const maxPrice = products.length > 0 ? Math.max(...products.map(p => p.price)) : 0;
 
@@ -201,9 +207,9 @@ export default function SearchSection({
         {/* Results Count with Price Range - PINCHPOINT 3 */}
         <div className="text-sm text-black/60 mt-2">
           {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
-          {products.length > 0 && (
+          {products.length > 0 && singleCurrency && (
             <span className="ml-2 text-pick-teal font-semibold">
-              • ${minPrice.toFixed(2)} to ${maxPrice.toFixed(2)}
+              • {rangeSymbol}{minPrice.toFixed(2)} to {rangeSymbol}{maxPrice.toFixed(2)}
             </span>
           )}
         </div>

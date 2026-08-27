@@ -82,6 +82,17 @@ const VERIFIED = new Set([
   'dickssportinggoods',
   'apple',
   'nike',
+  // GB majors (international pilot): first-party fulfilment chains.
+  'amazoncouk',
+  'currys',
+  'curryspcworld',
+  'argos',
+  'johnlewis',
+  'costcowholesaleuk',
+  'ao',
+  'boots',
+  'screwfix',
+  'very',
 ]);
 
 // Marketplaces with widespread, well-documented scam/counterfeit/quality

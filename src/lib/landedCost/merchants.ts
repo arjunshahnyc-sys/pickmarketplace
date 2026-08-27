@@ -70,6 +70,41 @@ const MERCHANTS: Record<string, MerchantConfig> = {
   nike: US_STOREFRONT,
 };
 
+// GB-market storefronts (the international pilot). Same discipline as the
+// US table: assumed from brand at 'estimated' confidence, incoterm unknown
+// until verified. Names collapse via retailerTrust's collapse():
+// "Amazon.co.uk" -> 'amazoncouk', "Currys PC World" -> 'curryspcworld'.
+const GB_STOREFRONT: MerchantConfig = {
+  country: 'GB',
+  incoterm: 'unknown',
+  confidence: 'estimated',
+  notes: 'GB storefront assumed from brand; incoterm unverified.',
+};
+
+const GB_MERCHANTS: Record<string, MerchantConfig> = {
+  amazoncouk: GB_STOREFRONT,
+  // In the GB feed, "eBay" is the eBay UK marketplace; without this row it
+  // would fall through to the US table and mislabel GB-local listings as
+  // imports. (The reverse error is impossible: US-feed offers never consult
+  // this table.)
+  ebay: GB_STOREFRONT,
+  currys: GB_STOREFRONT,
+  curryspcworld: GB_STOREFRONT,
+  argos: GB_STOREFRONT,
+  johnlewis: GB_STOREFRONT,
+  costcowholesaleuk: GB_STOREFRONT,
+  ao: GB_STOREFRONT,
+  aocom: GB_STOREFRONT,
+  boots: GB_STOREFRONT,
+  screwfix: GB_STOREFRONT,
+  very: GB_STOREFRONT,
+  cex: GB_STOREFRONT,
+};
+
+const MARKET_TABLES: Record<string, Record<string, MerchantConfig>> = {
+  GB: GB_MERCHANTS,
+};
+
 const UNKNOWN_MERCHANT: MerchantConfig = {
   country: undefined,
   incoterm: 'unknown',
@@ -77,23 +112,42 @@ const UNKNOWN_MERCHANT: MerchantConfig = {
   notes: 'Unrecognized merchant: country and duty handling are unknown.',
 };
 
+/**
+ * Config for a merchant name seen in a given market's feed. The market's
+ * own table wins; a miss falls through to the US table (a US brand in a
+ * foreign feed usually ships from the US, and treating it as an import errs
+ * toward overstating, never a wrong domestic zero); anything else is
+ * unknown. No market = the legacy US-feed lookup, unchanged.
+ */
 export function getMerchantConfig(
   retailerName: string,
+  sourceMarket?: string,
   table: Record<string, MerchantConfig> = MERCHANTS
 ): MerchantConfig {
-  return table[collapse(retailerName)] ?? UNKNOWN_MERCHANT;
+  const key = collapse(retailerName);
+  if (sourceMarket) {
+    const marketTable = MARKET_TABLES[sourceMarket.toUpperCase()];
+    const hit = marketTable?.[key];
+    if (hit) return hit;
+  }
+  return table[key] ?? UNKNOWN_MERCHANT;
 }
 
-/** Shape a merchant for LandedCostInput. */
-export function merchantInputFor(retailerName: string): {
+/** Shape a merchant for LandedCostInput. Ids are market-scoped so
+ * amazon.co.uk and amazon.com never collide in ranking tiebreaks. */
+export function merchantInputFor(
+  retailerName: string,
+  sourceMarket?: string
+): {
   id: string;
   country?: string;
   incoterm: Incoterm;
   configConfidence: Confidence;
 } {
-  const config = getMerchantConfig(retailerName);
+  const config = getMerchantConfig(retailerName, sourceMarket);
+  const market = sourceMarket?.toUpperCase() ?? 'US';
   return {
-    id: collapse(retailerName),
+    id: market === 'US' ? collapse(retailerName) : `${market.toLowerCase()}:${collapse(retailerName)}`,
     country: config.country,
     incoterm: config.incoterm,
     configConfidence: config.confidence,

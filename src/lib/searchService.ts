@@ -3,7 +3,7 @@
 // The extension-era routes (/api/search, /api/ask, /api/similar) that shared
 // this module were removed along with the browser extension.
 
-import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks } from './scrapers';
+import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
 import { toAffiliateUrl } from './affiliate';
 import type { Product, RetailerSearchLink } from './types';
 
@@ -33,39 +33,64 @@ const TTL_EMPTY = 60 * 1000;
 const MAX_CACHE_SIZE = 100;
 const CACHE_EVICTION_COUNT = 20;
 
-/** Live search (Serper + Target) with a 30-minute in-memory cache. */
-export async function performLiveSearch(q: string): Promise<LiveSearchData> {
-  const key = q.toLowerCase().trim();
+/**
+ * Live search (Serper + Target) with a 30-minute in-memory cache.
+ *
+ * `extraMarkets` adds non-US Google Shopping feeds beside the US one (the
+ * landed-cost flow passes the shopper's market so local offers compete with
+ * US imports). Empty = the legacy US-only search, byte-identical, on the
+ * legacy cache key.
+ */
+export async function performLiveSearch(
+  q: string,
+  extraMarkets: FeedMarket[] = []
+): Promise<LiveSearchData> {
+  const markets = Array.from(new Set(extraMarkets)).sort();
+  const key =
+    markets.length === 0
+      ? q.toLowerCase().trim()
+      : `${q.toLowerCase().trim()}|${markets.join(',')}`;
 
   const cached = cache.get(key);
   if (cached && Date.now() - cached.ts < (cached.data.results.length > 0 ? TTL : TTL_EMPTY)) {
     return cached.data;
   }
 
-  // Search both APIs in parallel
-  const [googleSearch, targetSearch] = await Promise.all([
+  // Search every source in parallel
+  const [googleSearch, targetSearch, ...extraSearches] = await Promise.all([
     searchGoogleShoppingAPI(q),
     searchTarget(q),
+    ...markets.map((m) => searchGoogleShoppingAPI(q, m)),
   ]);
   const googleResults = googleSearch.products;
   const targetResults = targetSearch.products;
-  const allSourcesFailed = Boolean(googleSearch.sourceError && targetSearch.sourceError);
+  const allSourcesFailed = Boolean(
+    googleSearch.sourceError &&
+      targetSearch.sourceError &&
+      extraSearches.every((s) => s.sourceError)
+  );
 
   // Combine and deduplicate results. Target goes first because dedup keeps
   // the first occurrence, and Target copies carry a direct product URL and
   // originalPrice (sale data) that Google Shopping mirrors of the same
-  // listing lack.
-  const allResults = [...targetResults, ...googleResults];
+  // listing lack. Extra-market feeds follow the US ones.
+  const allResults = [
+    ...targetResults,
+    ...googleResults,
+    ...extraSearches.flatMap((s) => s.products),
+  ];
 
-  // Deduplicate by product name (case-insensitive)
+  // Deduplicate by product name (case-insensitive), scoped per market: the
+  // same listing name in two markets is two different offers (different
+  // price, currency, and merchant storefront), never a duplicate.
   const seen = new Set<string>();
   const uniqueResults = allResults
     .filter((product) => {
-      const normalizedName = product.name.toLowerCase().trim();
-      if (seen.has(normalizedName)) {
+      const dedupKey = `${product.sourceMarket ?? 'US'}|${product.name.toLowerCase().trim()}`;
+      if (seen.has(dedupKey)) {
         return false;
       }
-      seen.add(normalizedName);
+      seen.add(dedupKey);
       return true;
     })
     // Commission tracking is applied last, to the link only, never to

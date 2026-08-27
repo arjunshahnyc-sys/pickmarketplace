@@ -4,6 +4,7 @@
 // same on client and server and is fully testable.
 
 import type { Product } from '../types';
+import { minorUnitExponent } from './money';
 import { calculateLandedCost, type CalcContext } from './calculate';
 import { resolveHsCodeSync } from './classify';
 import { fineCategoryFor } from './classify/fineCategory';
@@ -22,20 +23,21 @@ import type {
 } from './types';
 
 /**
- * THE FLOAT BOUNDARY. Feed prices arrive as float dollars (scrapers parse
- * "  $15.99 " into 15.99); this is the single place a float becomes integer
- * minor units. Returns null for garbage instead of guessing.
+ * THE FLOAT BOUNDARY. Feed prices arrive as float major units (scrapers
+ * parse "  $15.99 " or "£174.99" into a number); this is the single place a
+ * float becomes integer minor units, exponent-aware per currency. Returns
+ * null for garbage instead of guessing.
  */
-export function dollarsToMinor(price: number): number | null {
+export function priceToMinor(price: number, currency: string): number | null {
   if (typeof price !== 'number' || !Number.isFinite(price) || price < 0) return null;
-  const minor = Math.round(price * 100);
+  const minor = Math.round(price * 10 ** minorUnitExponent(currency));
   return Number.isSafeInteger(minor) ? minor : null;
 }
 
-// Both live price sources are US-locked (Serper gl:'us', Target store
-// 3991), so feed prices are USD by construction. When a non-USD source
-// lands, currency must come from the source, not this constant.
-const FEED_CURRENCY = 'USD';
+/** Legacy name for the USD case; prefer priceToMinor. */
+export function dollarsToMinor(price: number): number | null {
+  return priceToMinor(price, 'USD');
+}
 
 export interface Destination {
   country: string;
@@ -80,7 +82,8 @@ export function buildLandedCostInput(
   product: Product,
   destination: Destination
 ): LandedCostInput | null {
-  const priceMinor = dollarsToMinor(product.price);
+  const currency = product.currency ?? 'USD';
+  const priceMinor = priceToMinor(product.price, currency);
   if (priceMinor === null) return null;
   // The feed's display category is often too coarse ('Electronics') for the
   // curated tables; re-derive a fine key from the product name for
@@ -91,11 +94,11 @@ export function buildLandedCostInput(
     brand: product.brand,
     categoryId,
   });
-  const merchant = merchantInputFor(product.retailer);
+  const merchant = merchantInputFor(product.retailer, product.sourceMarket);
   return {
     item: {
       priceMinor,
-      currency: FEED_CURRENCY,
+      currency,
       categoryId,
       hs: hs ?? undefined,
     },
@@ -149,7 +152,7 @@ export function orderByLandedCost(products: Product[]): {
       offers.push({
         offer: product,
         breakdown: product.landedCost,
-        itemPriceMinor: dollarsToMinor(product.price) ?? 0,
+        itemPriceMinor: priceToMinor(product.price, product.currency ?? 'USD') ?? 0,
         merchantId: product.retailer,
         offerId: product.id ?? product.url,
       });

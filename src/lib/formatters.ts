@@ -26,6 +26,25 @@ export function formatPrice(price: any): string {
 }
 
 /**
+ * Display symbol for an offer's currency. Undefined and USD both render '$'
+ * (the legacy US-feed shape), so flag-off surfaces are unchanged; non-US
+ * market offers (international pilot) show their own symbol.
+ */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  GBP: '£',
+  EUR: '€',
+  CAD: 'CA$',
+  AUD: 'A$',
+  JPY: '¥',
+};
+
+export function currencySymbol(currency?: string): string {
+  if (!currency) return '$';
+  return CURRENCY_SYMBOLS[currency] ?? `${currency} `;
+}
+
+/**
  * Safely formats a rating to 1 decimal place
  * @param rating - The rating value
  * @returns Formatted rating like "4.5" or "0.0" if invalid
