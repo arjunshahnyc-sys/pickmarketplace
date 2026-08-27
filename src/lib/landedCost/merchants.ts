@@ -68,6 +68,28 @@ const MERCHANTS: Record<string, MerchantConfig> = {
   dickssportinggoods: US_STOREFRONT,
   apple: US_STOREFRONT,
   nike: US_STOREFRONT,
+  // Harvested from recurring live search results (2026-08-27): established
+  // US chains that were showing "import charges unknown".
+  academysportsoutdoors: US_STOREFRONT,
+  golfgalaxy: US_STOREFRONT,
+  stanley1913: US_STOREFRONT,
+  zumiez: US_STOREFRONT,
+  petco: US_STOREFRONT,
+  petsmart: US_STOREFRONT,
+  ulta: US_STOREFRONT,
+  ultabeauty: US_STOREFRONT,
+  sephora: US_STOREFRONT,
+  bathbodyworks: US_STOREFRONT,
+  bathandbodyworks: US_STOREFRONT,
+  footlocker: US_STOREFRONT,
+  finishline: US_STOREFRONT,
+  jcpenney: US_STOREFRONT,
+  dillards: US_STOREFRONT,
+  belk: US_STOREFRONT,
+  qvc: US_STOREFRONT,
+  crateandbarrel: US_STOREFRONT,
+  williamssonoma: US_STOREFRONT,
+  potterybarn: US_STOREFRONT,
 };
 
 // GB-market storefronts (the international pilot). Same discipline as the

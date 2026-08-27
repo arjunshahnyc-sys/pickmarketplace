@@ -20,6 +20,12 @@ describe('merchant config lookup', () => {
     }
   });
 
+  it('harvested US chains are recognized (the "unknown seller" coverage fix)', () => {
+    for (const name of ['Academy Sports + Outdoors', 'Golf Galaxy', 'Stanley 1913', 'Ulta Beauty']) {
+      expect(getMerchantConfig(name).country, name).toBe('US');
+    }
+  });
+
   it('unrecognized merchants get no country and unknown everything', () => {
     const config = getMerchantConfig('Random Storefront 123');
     expect(config.country).toBeUndefined();
