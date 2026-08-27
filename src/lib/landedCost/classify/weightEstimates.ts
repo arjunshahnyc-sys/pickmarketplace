@@ -36,6 +36,7 @@ const TYPICAL_SHIPPED_WEIGHT: Record<string, WeightEstimate> = {
   kitchen: { grams: 4_000, label: 'kitchen appliance' },
   toys: { grams: 900, label: 'toy' },
   sports: { grams: 2_500, label: 'fitness item' },
+  drinkware: { grams: 700, label: 'boxed tumbler' },
   // Deliberately absent: monitors, tvs (freight-class, not parcel rates),
   // and the ambiguous buckets (Electronics, Clothing, Home, Other).
 };

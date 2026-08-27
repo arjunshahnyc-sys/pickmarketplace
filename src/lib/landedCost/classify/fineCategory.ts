@@ -35,6 +35,7 @@ const RULES: Array<[RegExp, string]> = [
   [/blender|air fryer|toaster|mixer|kettle|microwave|cookware|instant pot/i, 'kitchen'],
   [/\btoy\b|\blego\b|\bdoll\b|puzzle|plush/i, 'toys'],
   [/yoga|dumbbell|fitness|exercise|treadmill|kettlebell|resistance band/i, 'sports'],
+  [/tumbler|water bottle|flask|thermos|travel mug/i, 'drinkware'],
 ];
 
 /**

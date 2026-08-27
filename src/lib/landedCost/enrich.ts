@@ -57,7 +57,9 @@ export function estimateShipping(
   destinationCountry: string,
   routeTable?: Record<string, ShippingEstimateRoute>
 ): LandedCostInput['shipping'] | undefined {
-  if (!merchantCountry || merchantCountry === destinationCountry) return undefined;
+  // Domestic estimation is allowed too (the US:US route exists); lanes
+  // without an encoded route simply stay unknown.
+  if (!merchantCountry) return undefined;
   const weight = typicalShippedWeight(categoryId);
   if (!weight) return undefined;
   const route = routeTable

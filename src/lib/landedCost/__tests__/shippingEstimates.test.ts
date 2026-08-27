@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { panelLines } from '../../../components/LandedCostPanel';
 import { calculateLandedCost } from '../calculate';
 import { fineCategoryFor } from '../classify/fineCategory';
 import { typicalShippedWeight } from '../classify/weightEstimates';
-import { buildLandedCostInput, estimateShipping } from '../enrich';
+import { buildLandedCostInput, estimateShipping, summarizeTotal, withLandedCosts } from '../enrich';
 import { FixtureFxProvider } from '../fx';
 import { isTopSlotEligible } from '../rank';
 import { EU_MEMBERSHIP } from '../rules/eu';
 import { loadRulesFor } from '../rules/loader';
 import { collectShippingWarnings, getShippingEstimateRoute } from '../rules/shippingEstimates';
 import type { ShippingEstimateRoute } from '../types';
-import { baseInput, CIFLAND, ctxFor, sourced, unverified } from './fixtures';
+import { baseInput, CIFLAND, ctxFor, FOBLAND, sourced, unverified } from './fixtures';
 
 const FIXTURE_ROUTE: ShippingEstimateRoute = {
   origin: 'US',
@@ -142,8 +143,15 @@ describe('fineCategoryFor', () => {
   });
 
   it('falls back to the feed category, inventing nothing', () => {
-    expect(fineCategoryFor('Stanley Quencher H2.0 Tumbler', 'Kitchen')).toBe('Kitchen');
+    expect(fineCategoryFor('Le Creuset Dutch Oven', 'Kitchen')).toBe('Kitchen');
     expect(fineCategoryFor('Mystery Item', undefined)).toBeUndefined();
+  });
+
+  it('drinkware maps (the Owala/Stanley gap caught live)', () => {
+    expect(fineCategoryFor('Stanley Quencher H2.0 Tumbler', 'Kitchen')).toBe('drinkware');
+    expect(fineCategoryFor('Owala FreeSip Water Bottle', 'Other')).toBe('drinkware');
+    expect(typicalShippedWeight('drinkware')?.grams).toBe(700);
+    expect(estimateShipping('drinkware', 'US', 'US')!.costMinor).toBe(1_300); // 2 lb GA band
   });
 
   it('the end-to-end gap the browser caught: Electronics-bucketed headphones classify and estimate', () => {
@@ -198,6 +206,67 @@ describe('the Japan unlock', () => {
     expect(out.totalMinor).toBe(7_350 + 5_571 + 0 + 1_292 + 200);
     expect(out.unknownComponents).toEqual([]);
     expect(isTopSlotEligible(out)).toBe(true);
+  });
+});
+
+describe('US domestic shipping estimates (Ground Advantage zone-4 benchmark)', () => {
+  it('domestic offers with mapped categories get estimated shipping', () => {
+    const shoes = estimateShipping('shoes', 'US', 'US')!; // 1500 g -> 5 lb band
+    expect(shoes.costMinor).toBe(1_580);
+    expect(shoes.basis).toContain('Ground Advantage');
+    expect(estimateShipping('headphones', 'US', 'US')!.costMinor).toBe(1_300);
+    // No GB:GB route exists: non-US domestic lanes stay honestly unknown.
+    expect(estimateShipping('shoes', 'GB', 'GB')).toBeUndefined();
+  });
+
+  it('a US shopper now sees a COMPLETE domestic total', () => {
+    const enriched = withLandedCosts(
+      [
+        {
+          id: 'us-shoes',
+          name: 'Nike Air Zoom Running Shoes',
+          price: 89.99,
+          image: '',
+          retailer: 'Target',
+          category: 'Shoes',
+          currency: 'USD',
+          sourceMarket: 'US',
+          url: 'https://example.test/us-shoes',
+        },
+      ],
+      { country: 'US', currency: 'USD' },
+      new Date('2026-08-27T00:00:00Z')
+    );
+    const b = enriched[0].landedCost!;
+    expect(b.lane).toBe('domestic');
+    expect(b.lines.find((l) => l.kind === 'shipping')!.amountMinor).toBe(1_580);
+    expect(b.totalMinor).toBe(8_999 + 1_580);
+    expect(b.unknownComponents).toEqual([]);
+    expect(summarizeTotal(b).kind).toBe('total'); // complete, no missing pieces
+  });
+});
+
+describe('panelLines collapse', () => {
+  it('collapses the three structural zeros on domestic and intra-EU panels', () => {
+    const domestic = calculateLandedCost(
+      baseInput({ merchantCountry: 'US', destCountry: 'US', shipping: null }),
+      ctxFor(null)
+    );
+    const lines = panelLines(domestic);
+    expect(lines).toHaveLength(3); // item, shipping, one collapsed line
+    expect(lines[2].label).toBe('No import charges (domestic purchase)');
+    expect(lines[2].amountMinor).toBe(0);
+  });
+
+  it('never collapses lanes where import charges are real or unknown', () => {
+    const crossBorder = calculateLandedCost(baseInput({ priceMinor: 20_000 }), ctxFor(FOBLAND));
+    expect(panelLines(crossBorder)).toHaveLength(5); // full line-by-line view
+    const ddp = calculateLandedCost(
+      baseInput({ incoterm: 'DDP', destCountry: 'ZZ' }),
+      ctxFor(null)
+    );
+    // DDP zeros carry "prepaid by merchant" information: keep them visible.
+    expect(panelLines(ddp)).toHaveLength(5);
   });
 });
 

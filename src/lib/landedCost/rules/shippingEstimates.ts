@@ -63,7 +63,34 @@ function route(
   };
 }
 
+// US domestic route: USPS Ground Advantage retail at ZONE 4 as a national
+// mid-distance benchmark (domestic pricing is zone-based on both ZIPs,
+// which we do not have; the zone simplification is owner-approved
+// 2026-08-27 and stated in the service label). Prices verified 2026-08-27
+// against the live Notice 123 (effective 2026-07-12), rows matched
+// verbatim on an independent re-fetch. Bands reuse the pound steps; the
+// FCPIS-specific 4 lb step carries the 5 lb price (GA has no 4 lb cliff
+// worth modeling).
+const US_DOMESTIC: ShippingEstimateRoute = {
+  origin: 'US',
+  destination: 'US',
+  currency: 'USD',
+  service: 'USPS Ground Advantage retail (zone 4 benchmark)',
+  bands: [
+    { maxGrams: 454, costMinor: verified(1_060, NOTICE_123, V, 'GA retail zone 4, weight not over 1 lb. Notice 123 effective 2026-07-12.') },
+    { maxGrams: 908, costMinor: verified(1_300, NOTICE_123, V, 'GA retail zone 4, weight not over 2 lb.') },
+    { maxGrams: 1_361, costMinor: verified(1_370, NOTICE_123, V, 'GA retail zone 4, weight not over 3 lb.') },
+    { maxGrams: 2_268, costMinor: verified(1_580, NOTICE_123, V, 'GA retail zone 4, weight not over 5 lb.') },
+    { maxGrams: 4_536, costMinor: verified(1_940, NOTICE_123, V, 'GA retail zone 4, weight not over 10 lb.') },
+  ],
+  meta: {
+    sourceUrl: NOTICE_123,
+    notes: 'Many US retailers ship free over order thresholds; this retail benchmark deliberately errs toward overstating, and every estimate is labeled.',
+  },
+};
+
 const ROUTES: Record<string, ShippingEstimateRoute> = {
+  'US:US': US_DOMESTIC,
   'US:GB': route('GB', 20, [3_195, 3_570, 4_925, 6_425, 9_445, 11_840]),
   'US:DE': route('DE', 16, [2_995, 3_285, 4_860, 6_625, 9_985, 12_715]),
   'US:FR': route('FR', 15, [2_940, 3_285, 4_775, 6_505, 8_835, 11_350]),

@@ -37,6 +37,41 @@ function confidenceTag(line: BreakdownLine): string | null {
   return 'est.';
 }
 
+/**
+ * Lines as displayed: for domestic and intra-EU lanes, the three
+ * structurally-zero import lines (duty, tax, fee) collapse into one
+ * plain-language line, so the panel reads as an answer rather than a form
+ * of zeros. Any lane where an import amount could be nonzero or unknown
+ * keeps the full line-by-line view. Exported for tests.
+ */
+export function panelLines(breakdown: LandedCostBreakdown): BreakdownLine[] {
+  const collapsible = breakdown.lane === 'domestic' || breakdown.lane === 'intra-eu';
+  const importLines = breakdown.lines.filter((l) =>
+    ['duty', 'tax', 'fee'].includes(l.kind)
+  );
+  if (!collapsible || !importLines.every((l) => l.amountMinor === 0)) {
+    return breakdown.lines;
+  }
+  const collapsed: BreakdownLine = {
+    kind: 'duty',
+    label:
+      breakdown.lane === 'domestic'
+        ? 'No import charges (domestic purchase)'
+        : 'No import charges (intra-EU delivery)',
+    amountMinor: 0,
+    basis: importLines[0].basis,
+    confidence: importLines.reduce(
+      (worst, l) => (l.confidence === 'estimated' ? 'estimated' : worst),
+      importLines[0].confidence
+    ),
+    sourceId: importLines[0].sourceId,
+  };
+  return [
+    ...breakdown.lines.filter((l) => !['duty', 'tax', 'fee'].includes(l.kind)),
+    collapsed,
+  ];
+}
+
 export default function LandedCostPanel({ breakdown }: { breakdown: LandedCostBreakdown }) {
   const summary = summarizeTotal(breakdown);
   const currency = breakdown.currency;
@@ -85,7 +120,7 @@ export default function LandedCostPanel({ breakdown }: { breakdown: LandedCostBr
         )}
 
         <ul className="space-y-1">
-          {breakdown.lines.map((line) => (
+          {panelLines(breakdown).map((line) => (
             <li
               key={`${line.kind}-${line.label}`}
               className="flex items-baseline justify-between gap-2 text-[11px]"

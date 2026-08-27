@@ -60,6 +60,11 @@ const CURATED: Record<string, CuratedHsEntry> = {
     notes: 'Kitchen bucket mixes appliances (8516/8509) and cookware (7323). Estimated only.',
   },
   toys: { heading: '9503', label: 'Toys' },
+  drinkware: {
+    heading: '9617',
+    label: 'Vacuum flasks and insulated drinkware',
+    notes: 'Non-insulated cups classify elsewhere (plastic 3924, steel 7323). Estimated only.',
+  },
   sports: {
     heading: '9506',
     label: 'Sports and fitness equipment',

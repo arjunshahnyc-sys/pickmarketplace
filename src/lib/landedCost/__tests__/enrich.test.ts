@@ -37,7 +37,7 @@ describe('dollarsToMinor (the float boundary)', () => {
 });
 
 describe('buildLandedCostInput', () => {
-  it('wires merchant config, classification, and unknown shipping together', () => {
+  it('wires merchant config, classification, and shipping estimation together', () => {
     const input = buildLandedCostInput(
       product({ id: 'shoe', price: 89.99, retailer: 'Target', category: 'shoes' }),
       { country: 'US', currency: 'USD' }
@@ -46,7 +46,9 @@ describe('buildLandedCostInput', () => {
     expect(input.item.currency).toBe('USD');
     expect(input.item.hs).toMatchObject({ code: '6404', confidence: 'estimated' });
     expect(input.merchant).toMatchObject({ id: 'target', country: 'US', incoterm: 'unknown' });
-    expect(input.shipping).toBeUndefined();
+    // Domestic shipping estimates arrived 2026-08-27 (Ground Advantage
+    // zone-4 benchmark): boxed shoes ride the 5 lb band.
+    expect(input.shipping).toMatchObject({ costMinor: 1_580, confidence: 'estimated' });
   });
 
   it('returns null for an unusable price', () => {
