@@ -27,6 +27,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
       <select
         id={compact ? 'dest-country-m' : 'dest-country'}
         value={destination.country}
+        title="Delivery country for cost estimates. Starts at your approximate location; your choice here always wins and is remembered."
         onChange={(e) => setCountry(e.target.value)}
         className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
       >

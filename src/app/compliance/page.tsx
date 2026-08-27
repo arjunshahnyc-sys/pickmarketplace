@@ -126,6 +126,7 @@ export default function CompliancePage() {
                   <li><strong>Labeled uncertainty:</strong> every estimated figure is marked as an estimate, and components we cannot compute are shown as unknown rather than assumed to be zero.</li>
                   <li><strong>Ranges, not false precision:</strong> when we cannot tell whether a merchant collects duties at checkout, we show a range instead of a single number.</li>
                   <li><strong>Verify before you buy:</strong> always confirm final pricing, shipping, and any import charges with the retailer and carrier before purchasing.</li>
+                  <li><strong>Location default:</strong> the delivery country starts at your approximate location (country level only, derived from your network connection by our hosting provider). We do not store it, and picking a country in the header always overrides it and is remembered instead.</li>
                 </ul>
               </section>
             )}
