@@ -148,6 +148,11 @@ const VERIFIED = new Set([
   'biccamera',
 ]);
 
+// Exported for the product-card badge: every verified retailer shows a logo
+// instead of its text name, and a test keeps the logo map in sync with this
+// set (src/lib/__tests__/retailerLogos.test.ts).
+export const VERIFIED_RETAILERS: ReadonlySet<string> = VERIFIED;
+
 // Marketplaces with widespread, well-documented scam/counterfeit/quality
 // complaints. Distinctive multi-part names also match collapsed substrings
 // ("DHgate Official Store"); every key matches as an exact token.

@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
 import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
+import { getRetailerLogo } from "./RetailerLogos";
 import { affiliateLinksEnabled } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
 import LandedCostPanel from "./LandedCostPanel";
@@ -53,6 +54,7 @@ function ProductCard({
   const { isSaved, toggleItem } = useSavedList();
   const saved = isSaved(product.url);
   const trust = getRetailerTrust(product.retailer);
+  const retailerLogo = getRetailerLogo(product.retailer);
 
   // Track the failed URL, not a boolean: memoized cards get recycled under
   // index keys, and a bare flag would keep showing the fallback after the
@@ -187,9 +189,27 @@ function ProductCard({
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-neutral-600">
-          {product.retailer}
-        </span>
+        {retailerLogo ? (
+          // Fixed-size box so every card's logo badge is identical;
+          // object-contain centers wordmarks of any aspect ratio inside it.
+          // alt carries the retailer name so screen readers hear the same
+          // label the text badge gave them.
+          <span
+            title={product.retailer}
+            className="inline-flex items-center justify-center w-[72px] h-5 shrink-0 rounded-full bg-gray-100"
+          >
+            <img
+              src={retailerLogo.src}
+              alt={product.retailer}
+              className="w-14 h-3.5 object-contain"
+              loading="lazy"
+            />
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-neutral-600">
+            {product.retailer}
+          </span>
+        )}
         {trust.level === 'verified' && (
           <span
             title={trust.description}
