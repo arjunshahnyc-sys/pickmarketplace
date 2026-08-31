@@ -2,23 +2,45 @@
 //
 // Google Shopping results carry whatever merchant name Serper reports
 // (scrapers.ts uses item.source verbatim), so results can come from anyone —
-// major retailers, marketplace resellers, or scam-prone storefronts. This
-// module buckets a merchant name into three tiers:
+// major retailers, marketplace platforms, independent marketplace sellers,
+// or scam-prone storefronts. Classification is driven by the merchant trust
+// registry (src/lib/trust/registry.ts); this module adds the flagged list
+// and shapes the result for the UI:
 //
-//   verified — major US retailers with real fulfillment and buyer protection
-//   flagged  — marketplaces with documented scam/counterfeit records
-//              (e.g. Temu's 2025 FTC INFORM Act penalty, Wish's counterfeit
-//              history, DHgate/AliExpress replica trade, Shein's 2026 Texas
-//              AG suit) — shown with a "possible scam" warning
-//   unknown  — everything else; shown as an unverified seller
+//   verified            registered brand-direct or national-retailer entry
+//   marketplace         registered platform mixing first- and third-party
+//                       inventory (Amazon, eBay, Etsy, Rakuten)
+//   marketplace-seller  "Platform - Seller" names: an independent seller on
+//                       a registered marketplace, NOT the platform itself
+//   flagged             marketplaces with documented scam/counterfeit
+//                       records (e.g. Temu's 2025 FTC INFORM Act penalty,
+//                       Wish's counterfeit history, DHgate/AliExpress
+//                       replica trade, Shein's 2026 Texas AG suit)
+//   unknown             everything else; default deny — shown unverified
 //
-// Verified names must match EXACTLY (after normalization) — substring
+// Registry names must match EXACTLY (after normalization) — substring
 // matching would let "Pineapple Boutique" match "apple" or a marketplace
 // seller like "Walmart - SaveMore Deals" inherit Walmart's badge.
 // Flagged names match per-token so "AliExpress US Store" still flags,
 // while short keys like "wish" can't fire inside longer words.
+//
+// When a listing URL carries a real merchant domain, it must match the
+// entry's registered domains or the badge is withheld (lookalike guard);
+// Google intermediary links carry no signal. See registry.domainSignal.
 
-export type TrustLevel = 'verified' | 'flagged' | 'unknown';
+import { collapse, tokens, splitSellerSuffix } from './trust/identity';
+import { domainSignal, resolveMerchant, REGISTRY } from './trust/registry';
+
+// Re-exported so the historical import sites (RetailerLogos, landedCost
+// merchants config) keep one shared identity function.
+export { collapse } from './trust/identity';
+
+export type TrustLevel =
+  | 'verified'
+  | 'marketplace'
+  | 'marketplace-seller'
+  | 'flagged'
+  | 'unknown';
 
 export interface RetailerTrust {
   level: TrustLevel;
@@ -26,132 +48,19 @@ export interface RetailerTrust {
   description: string;
 }
 
-// Collapse a merchant name to a comparable key: lowercase, drop a leading
-// "the" and a trailing domain suffix, strip everything that isn't a letter
-// or digit. "Best Buy" -> "bestbuy", "Macy's" -> "macys", "Temu.com" ->
-// "temu", "The Home Depot" -> "homedepot"
-// Exported: landedCost/merchants.ts keys its config on the same collapse so
-// trust badges and merchant config can never disagree about identity.
-export function collapse(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/^\s*the\s+/, '')
-    .replace(/\.(com|net|org|co|us|shop|store)$/i, '')
-    .replace(/[^a-z0-9]/g, '');
+export interface TrustContext {
+  /** Feed market the offer came from (Product.sourceMarket), e.g. 'GB'. */
+  market?: string;
+  /** The listing URL the card links to, for the domain lookalike guard. */
+  url?: string;
 }
 
-// Tokens of the name with apostrophes removed: "AliExpress US Store" ->
-// ["aliexpress", "us", "store"], "Sam's Club" -> ["sams", "club"]
-function tokens(name: string): string[] {
-  return name
-    .toLowerCase()
-    .replace(/['’]/g, '')
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean);
-}
-
-// Major retailers, stored in collapsed form. Includes every store the site
-// advertises checking, plus large chains with first-party fulfillment.
-const VERIFIED = new Set([
-  'amazon',
-  'walmart',
-  'target',
-  'bestbuy',
-  'costco',
-  'ebay',
-  'homedepot',
-  'lowes',
-  'macys',
-  'nordstrom',
-  'wayfair',
-  'kroger',
-  'kohls',
-  'samsclub',
-  'bhphoto',
-  'bhphotovideo',
-  'adorama',
-  'newegg',
-  'staples',
-  'officedepot',
-  'officedepotofficemax',
-  'bhphotovideoaudio',
-  'rei',
-  'chewy',
-  'gamestop',
-  'microcenter',
-  'dickssportinggoods',
-  'apple',
-  'nike',
-  // US chains harvested from recurring live results (2026-08-27).
-  'academysportsoutdoors',
-  'golfgalaxy',
-  'stanley1913',
-  'zumiez',
-  'petco',
-  'petsmart',
-  'ulta',
-  'ultabeauty',
-  'sephora',
-  'bathbodyworks',
-  'bathandbodyworks',
-  'footlocker',
-  'finishline',
-  'jcpenney',
-  'dillards',
-  'belk',
-  'crateandbarrel',
-  'williamssonoma',
-  'potterybarn',
-  // GB majors (international pilot): first-party fulfilment chains.
-  'amazoncouk',
-  'currys',
-  'curryspcworld',
-  'argos',
-  'johnlewis',
-  'costcowholesaleuk',
-  'ao',
-  'boots',
-  'screwfix',
-  'very',
-  // DE/FR majors.
-  'amazonde',
-  'otto',
-  'mediamarkt',
-  'saturn',
-  'zalando',
-  'amazonfr',
-  'fnac',
-  'darty',
-  'boulanger',
-  'coolblue',
-  'coolbluede',
-  // CA majors (binational brands are already listed above).
-  'amazonca',
-  'walmartca',
-  'bestbuycanada',
-  'canadiantire',
-  'londondrugs',
-  // AU majors.
-  'amazonau',
-  'amazoncomau',
-  'jbhifi',
-  'harveynorman',
-  'thegoodguys',
-  'bigw',
-  'officeworks',
-  'myer',
-  'davidjones',
-  // JP majors with stable latin collapses.
-  'amazoncojp',
-  'rakuten',
-  'yodobashi',
-  'biccamera',
-]);
-
-// Exported for the product-card badge: every verified retailer shows a logo
-// instead of its text name, and a test keeps the logo map in sync with this
-// set (src/lib/__tests__/retailerLogos.test.ts).
-export const VERIFIED_RETAILERS: ReadonlySet<string> = VERIFIED;
+// Every collapsed alias of a trust-reviewed registry entry. Kept as an
+// export because the badge-logo sync test walks it: every recognized seller
+// must resolve to a logo asset.
+export const VERIFIED_RETAILERS: ReadonlySet<string> = new Set(
+  REGISTRY.filter((e) => e.tier !== 'config-only').flatMap((e) => e.aliases)
+);
 
 // Marketplaces with widespread, well-documented scam/counterfeit/quality
 // complaints. Distinctive multi-part names also match collapsed substrings
@@ -184,7 +93,17 @@ const FLAGGED_SUBSTRING = new Set([
 // "Best Wish Store" must not.
 const FLAGGED_EXACT = new Set(['wish']);
 
-export function getRetailerTrust(retailer: string): RetailerTrust {
+const UNKNOWN_TRUST: RetailerTrust = {
+  level: 'unknown',
+  label: 'Unverified seller',
+  description:
+    "Pick doesn't recognize this seller. Check the store's reviews before buying.",
+};
+
+export function getRetailerTrust(
+  retailer: string,
+  context?: TrustContext
+): RetailerTrust {
   const collapsed = collapse(retailer);
   const parts = tokens(retailer);
 
@@ -203,18 +122,54 @@ export function getRetailerTrust(retailer: string): RetailerTrust {
     };
   }
 
-  if (VERIFIED.has(collapsed)) {
+  const entry = resolveMerchant(retailer, context?.market);
+  if (entry && entry.tier !== 'config-only') {
+    // Lookalike guard: a real, non-intermediary URL that isn't on the
+    // merchant's registered domains withholds the badge.
+    if (domainSignal(context?.url, entry) === 'mismatch') {
+      return {
+        level: 'unknown',
+        label: 'Unverified seller',
+        description: `This listing links to a site that isn't ${entry.displayName}'s official domain. Verify the seller before buying.`,
+      };
+    }
+    if (entry.tier === 'marketplace') {
+      return {
+        level: 'marketplace',
+        label: 'Marketplace',
+        description: `${entry.displayName} hosts listings from ${entry.displayName} itself and from independent third-party sellers. Check the specific seller at checkout.`,
+      };
+    }
     return {
       level: 'verified',
       label: 'Verified retailer',
-      description: 'Sold and fulfilled by a major retailer Pick recognizes.',
+      description: `${entry.displayName}'s official store, recognized by Pick. Verified describes the seller, not the product.`,
     };
   }
 
-  return {
-    level: 'unknown',
-    label: 'Unverified seller',
-    description:
-      "Pick doesn't recognize this seller. Check the store's reviews before buying.",
-  };
+  // "Platform - Seller": an independent seller on a registered marketplace.
+  // Distinct from both the platform badge and plain unknown, so first-party
+  // and third-party inventory can never be confused.
+  const split = splitSellerSuffix(retailer);
+  if (split) {
+    const platform = resolveMerchant(split.platform, context?.market);
+    if (platform?.allowsThirdPartySellers) {
+      return {
+        level: 'marketplace-seller',
+        label: 'Marketplace seller',
+        description: `Sold by "${split.seller}", an independent seller on ${platform.displayName} — not by ${platform.displayName} itself. Check the seller's ratings before buying.`,
+      };
+    }
+  }
+
+  return UNKNOWN_TRUST;
+}
+
+/**
+ * Whether a trust level counts as "recognized" for the results filter:
+ * registered retailers and registered marketplace platforms do; independent
+ * marketplace sellers, unknowns, and flagged sellers don't.
+ */
+export function isRecognizedSeller(level: TrustLevel): boolean {
+  return level === 'verified' || level === 'marketplace';
 }

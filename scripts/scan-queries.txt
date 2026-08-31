@@ -1,0 +1,15 @@
+# Representative queries for the merchant scan (one per line, # = comment).
+# Spread across categories so the merchant mix isn't skewed to one vertical.
+# Cost: one Serper credit per query per market.
+wireless headphones
+laptop stand
+water bottle 24oz
+running shoes
+coffee maker
+office chair
+lego set
+skincare moisturizer
+cordless drill
+bookshelf
+winter jacket
+gaming mouse

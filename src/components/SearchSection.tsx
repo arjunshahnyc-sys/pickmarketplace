@@ -130,8 +130,8 @@ export default function SearchSection({
               disabled={verifiedCount === 0 && !showVerifiedOnly}
               title={
                 verifiedCount === 0 && !showVerifiedOnly
-                  ? 'No results from verified major retailers'
-                  : 'Only show results sold by major retailers Pick recognizes'
+                  ? 'No results from sellers Pick recognizes'
+                  : 'Only show results from retailers and marketplaces Pick recognizes'
               }
               className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
                 showVerifiedOnly

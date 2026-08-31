@@ -1,9 +1,11 @@
 // Per-merchant configuration: storefront country and incoterm.
 //
-// THIS FILE IS THE EDITABLE CONFIG the brief calls for. To correct or add a
-// merchant: add/edit its row, with a note saying how you know. Keys are
-// collapsed merchant names (see retailerTrust.ts collapse()), the same
-// identity the trust badges use.
+// Since 2026-08-31 this is DERIVED from the merchant trust registry
+// (src/lib/trust/registry.ts) — one entry there drives the trust badge, the
+// badge logo, and this landed-cost config, so the three can never drift the
+// way the old hand-maintained tables did (B&H and Office Depot variants were
+// verified but unconfigured; QVC and CeX the reverse). To correct or add a
+// merchant, edit the registry.
 //
 // INCOTERM SEMANTICS:
 //   'DDP'     the merchant collects duties/taxes at checkout; the engine
@@ -15,13 +17,12 @@
 //             makes us look broken, which is why unknown never resolves to
 //             a single number.
 //
-// Today every configured merchant is a US storefront observed through
-// US-locked sources, so country is 'US' with confidence 'estimated' (brand
-// knowledge, not verification). International storefronts of the same
-// brands (amazon.co.uk etc.) are DIFFERENT merchants and get their own rows
-// when international sources land.
+// Storefront countries are assumed from brand knowledge, so every derived
+// row carries confidence 'estimated' — never better — and that confidence
+// flows into every line the config decides.
 
 import { collapse } from '../retailerTrust';
+import { REGISTRY, type MerchantEntry } from '../trust/registry';
 import type { Confidence, Incoterm } from './types';
 
 export interface MerchantConfig {
@@ -33,189 +34,42 @@ export interface MerchantConfig {
   notes?: string;
 }
 
-const US_STOREFRONT: MerchantConfig = {
-  country: 'US',
-  incoterm: 'unknown',
-  confidence: 'estimated',
-  notes: 'US storefront assumed from brand; incoterm unverified.',
-};
-
-const MERCHANTS: Record<string, MerchantConfig> = {
-  amazon: US_STOREFRONT,
-  walmart: US_STOREFRONT,
-  target: US_STOREFRONT,
-  bestbuy: US_STOREFRONT,
-  costco: US_STOREFRONT,
-  ebay: US_STOREFRONT,
-  homedepot: US_STOREFRONT,
-  lowes: US_STOREFRONT,
-  macys: US_STOREFRONT,
-  nordstrom: US_STOREFRONT,
-  wayfair: US_STOREFRONT,
-  kroger: US_STOREFRONT,
-  kohls: US_STOREFRONT,
-  samsclub: US_STOREFRONT,
-  bhphoto: US_STOREFRONT,
-  bhphotovideo: US_STOREFRONT,
-  adorama: US_STOREFRONT,
-  newegg: US_STOREFRONT,
-  staples: US_STOREFRONT,
-  officedepot: US_STOREFRONT,
-  rei: US_STOREFRONT,
-  chewy: US_STOREFRONT,
-  gamestop: US_STOREFRONT,
-  microcenter: US_STOREFRONT,
-  dickssportinggoods: US_STOREFRONT,
-  apple: US_STOREFRONT,
-  nike: US_STOREFRONT,
-  // Harvested from recurring live search results (2026-08-27): established
-  // US chains that were showing "import charges unknown".
-  academysportsoutdoors: US_STOREFRONT,
-  golfgalaxy: US_STOREFRONT,
-  stanley1913: US_STOREFRONT,
-  zumiez: US_STOREFRONT,
-  petco: US_STOREFRONT,
-  petsmart: US_STOREFRONT,
-  ulta: US_STOREFRONT,
-  ultabeauty: US_STOREFRONT,
-  sephora: US_STOREFRONT,
-  bathbodyworks: US_STOREFRONT,
-  bathandbodyworks: US_STOREFRONT,
-  footlocker: US_STOREFRONT,
-  finishline: US_STOREFRONT,
-  jcpenney: US_STOREFRONT,
-  dillards: US_STOREFRONT,
-  belk: US_STOREFRONT,
-  qvc: US_STOREFRONT,
-  crateandbarrel: US_STOREFRONT,
-  williamssonoma: US_STOREFRONT,
-  potterybarn: US_STOREFRONT,
-};
-
-// GB-market storefronts (the international pilot). Same discipline as the
-// US table: assumed from brand at 'estimated' confidence, incoterm unknown
-// until verified. Names collapse via retailerTrust's collapse():
-// "Amazon.co.uk" -> 'amazoncouk', "Currys PC World" -> 'curryspcworld'.
-const GB_STOREFRONT: MerchantConfig = {
-  country: 'GB',
-  incoterm: 'unknown',
-  confidence: 'estimated',
-  notes: 'GB storefront assumed from brand; incoterm unverified.',
-};
-
-const GB_MERCHANTS: Record<string, MerchantConfig> = {
-  amazoncouk: GB_STOREFRONT,
-  // In the GB feed, "eBay" is the eBay UK marketplace; without this row it
-  // would fall through to the US table and mislabel GB-local listings as
-  // imports. (The reverse error is impossible: US-feed offers never consult
-  // this table.)
-  ebay: GB_STOREFRONT,
-  currys: GB_STOREFRONT,
-  curryspcworld: GB_STOREFRONT,
-  argos: GB_STOREFRONT,
-  johnlewis: GB_STOREFRONT,
-  costcowholesaleuk: GB_STOREFRONT,
-  ao: GB_STOREFRONT,
-  aocom: GB_STOREFRONT,
-  boots: GB_STOREFRONT,
-  screwfix: GB_STOREFRONT,
-  very: GB_STOREFRONT,
-  cex: GB_STOREFRONT,
-};
-
-// A storefront assumed at 'estimated' confidence for the given country.
-function storefront(country: string): MerchantConfig {
+function configFor(e: MerchantEntry): MerchantConfig {
   return {
-    country,
-    incoterm: 'unknown',
+    country: e.storefrontCountry,
+    incoterm: e.incoterm,
     confidence: 'estimated',
-    notes: `${country} storefront assumed from brand; incoterm unverified.`,
+    notes:
+      e.notes ??
+      `${e.storefrontCountry} storefront assumed from brand; incoterm unverified. (registry: ${e.id})`,
   };
 }
 
-// EU storefronts appear across EU market feeds (Amazon.fr shows up in the
-// German feed and vice versa), so DE and FR share one table with each
-// merchant's TRUE country: a Coolblue (NL) offer to a DE shopper then
-// resolves to the intra-EU lane instead of unknown. Names as probed live
-// 2026-08-27.
-const EU_MERCHANTS: Record<string, MerchantConfig> = {
-  amazonde: storefront('DE'),
-  otto: storefront('DE'),
-  mediamarkt: storefront('DE'),
-  saturn: storefront('DE'),
-  zalando: storefront('DE'),
-  cyberport: storefront('DE'),
-  kauflandde: storefront('DE'),
-  amazonfr: storefront('FR'),
-  fnac: storefront('FR'),
-  darty: storefront('FR'),
-  cdiscount: storefront('FR'),
-  boulanger: storefront('FR'),
-  laredoute: storefront('FR'),
-  coolbluede: storefront('NL'), // Dutch chain selling into DE: intra-EU
-  coolblue: storefront('NL'),
-  ebay: storefront('DE'), // in an EU feed, eBay is the local EU marketplace
-};
+// The US-market table plus one table per international market, derived from
+// each registry entry's markets and aliases. Registry validation guarantees
+// an alias maps to exactly one entry per market.
+function buildTables(): {
+  us: Record<string, MerchantConfig>;
+  byMarket: Record<string, Record<string, MerchantConfig>>;
+} {
+  const us: Record<string, MerchantConfig> = {};
+  const byMarket: Record<string, Record<string, MerchantConfig>> = {};
+  for (const e of REGISTRY) {
+    const config = configFor(e);
+    for (const market of e.markets) {
+      const table =
+        market === 'us' ? us : (byMarket[market.toUpperCase()] ??= {});
+      for (const alias of e.aliases) {
+        table[alias] = config;
+      }
+    }
+  }
+  return { us, byMarket };
+}
 
-const CA_MERCHANTS: Record<string, MerchantConfig> = {
-  amazonca: storefront('CA'),
-  walmartca: storefront('CA'),
-  // Binational brands listed in the CA feed are their .ca storefronts.
-  walmart: storefront('CA'),
-  bestbuy: storefront('CA'),
-  bestbuycanada: storefront('CA'),
-  bestbuycanadamarketplace: storefront('CA'),
-  costco: storefront('CA'),
-  homedepot: storefront('CA'),
-  thehomedepot: storefront('CA'),
-  staples: storefront('CA'),
-  canadiantire: storefront('CA'),
-  londondrugs: storefront('CA'),
-  thesource: storefront('CA'),
-  ebay: storefront('CA'),
-};
-
-const AU_MERCHANTS: Record<string, MerchantConfig> = {
-  amazonau: storefront('AU'),
-  amazoncomau: storefront('AU'),
-  jbhifi: storefront('AU'),
-  harveynorman: storefront('AU'),
-  thegoodguys: storefront('AU'),
-  bigw: storefront('AU'),
-  kmart: storefront('AU'),
-  // Target Australia is a different company from Target US; in the AU feed
-  // the name means the local chain.
-  target: storefront('AU'),
-  officeworks: storefront('AU'),
-  myer: storefront('AU'),
-  davidjones: storefront('AU'),
-  catch: storefront('AU'),
-  kogan: storefront('AU'),
-  sonyaustraliaonline: storefront('AU'),
-  ebay: storefront('AU'),
-};
-
-// Japanese storefront names are mostly script (セカンドストリート), which
-// collapse() reduces to '' — those stay honestly unknown. The entries here
-// are the names that collapse to stable latin keys ("Amazon公式サイト" ->
-// 'amazon', which in the JP feed is amazon.co.jp).
-const JP_MERCHANTS: Record<string, MerchantConfig> = {
-  amazon: storefront('JP'),
-  amazoncojp: storefront('JP'),
-  rakuten: storefront('JP'),
-  yodobashi: storefront('JP'),
-  biccamera: storefront('JP'),
-  yahooshopping: storefront('JP'),
-};
-
-const MARKET_TABLES: Record<string, Record<string, MerchantConfig>> = {
-  GB: GB_MERCHANTS,
-  DE: EU_MERCHANTS,
-  FR: { ...EU_MERCHANTS, ebay: storefront('FR') },
-  CA: CA_MERCHANTS,
-  AU: AU_MERCHANTS,
-  JP: JP_MERCHANTS,
-};
+const TABLES = buildTables();
+const MERCHANTS: Record<string, MerchantConfig> = TABLES.us;
+const MARKET_TABLES: Record<string, Record<string, MerchantConfig>> = TABLES.byMarket;
 
 const UNKNOWN_MERCHANT: MerchantConfig = {
   country: undefined,

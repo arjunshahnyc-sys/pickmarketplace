@@ -51,8 +51,11 @@ describe('market-scoped merchant identity', () => {
 
   it('GB majors carry the verified trust badge', () => {
     expect(getRetailerTrust('Currys').level).toBe('verified');
-    expect(getRetailerTrust('Amazon.co.uk').level).toBe('verified');
     expect(getRetailerTrust('John Lewis').level).toBe('verified');
+    // Registry review 2026-08-31: Amazon storefronts are the distinct
+    // marketplace tier (mixed first- and third-party inventory), not the
+    // plain verified badge.
+    expect(getRetailerTrust('Amazon.co.uk').level).toBe('marketplace');
   });
 });
 
@@ -118,9 +121,11 @@ describe('all-markets rollout (probed live 2026-08-27)', () => {
   });
 
   it('new market majors carry the verified badge', () => {
-    for (const name of ['MediaMarkt', 'Fnac', 'Walmart.ca', 'JB Hi-Fi', 'BIG W', 'Amazon.de']) {
+    for (const name of ['MediaMarkt', 'Fnac', 'Walmart.ca', 'JB Hi-Fi', 'BIG W']) {
       expect(getRetailerTrust(name).level, name).toBe('verified');
     }
+    // Registry review 2026-08-31: Amazon storefronts are marketplace tier.
+    expect(getRetailerTrust('Amazon.de').level).toBe('marketplace');
   });
 
   it('DE shopper: local, intra-EU, and US import all compute and rank together', () => {

@@ -24,7 +24,7 @@ import { landedCostEnabled } from '@/lib/flags';
 import { orderByLandedCost, withLandedCosts } from '@/lib/landedCost/enrich';
 import { useFxProvider } from '@/lib/landedCost/useFxProvider';
 import { useDestination } from '@/contexts/DestinationContext';
-import { getRetailerTrust } from '@/lib/retailerTrust';
+import { getRetailerTrust, isRecognizedSeller } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -340,10 +340,12 @@ export default function Home() {
       );
     }
 
-    // Apply "Verified sellers only" filter
+    // Apply "Verified sellers only" filter: registered retailers AND
+    // registered marketplace platforms count; independent marketplace
+    // sellers, unknowns, and flagged sellers don't.
     if (showVerifiedOnly) {
-      filtered = filtered.filter(
-        (p: Product) => getRetailerTrust(p.retailer).level === 'verified'
+      filtered = filtered.filter((p: Product) =>
+        isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
       );
     }
 
@@ -377,7 +379,9 @@ export default function Home() {
   // number on the button always matches what clicking it would show.
   const saleCount = useMemo(() => {
     const pool = showVerifiedOnly
-      ? results.filter((p: Product) => getRetailerTrust(p.retailer).level === 'verified')
+      ? results.filter((p: Product) =>
+          isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
+        )
       : results;
     return pool.filter((p: Product) => p.originalPrice && p.originalPrice > p.price).length;
   }, [results, showVerifiedOnly]);
@@ -385,7 +389,9 @@ export default function Home() {
     const pool = showOnSaleOnly
       ? results.filter((p: Product) => p.originalPrice && p.originalPrice > p.price)
       : results;
-    return pool.filter((p: Product) => getRetailerTrust(p.retailer).level === 'verified').length;
+    return pool.filter((p: Product) =>
+      isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
+    ).length;
   }, [results, showOnSaleOnly]);
 
   // Trending card, rendered twice (real + loop clone). Clones are untabbable;

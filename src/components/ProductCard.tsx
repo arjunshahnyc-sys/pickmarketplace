@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
-import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle } from "lucide-react";
+import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle, Store, Users } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
 import { getRetailerLogo } from "./RetailerLogos";
 import { affiliateLinksEnabled } from "@/lib/affiliate";
@@ -53,8 +53,13 @@ function ProductCard({
 
   const { isSaved, toggleItem } = useSavedList();
   const saved = isSaved(product.url);
-  const trust = getRetailerTrust(product.retailer);
-  const retailerLogo = getRetailerLogo(product.retailer);
+  // Market-scoped identity: "Target" in the AU feed is Target Australia,
+  // not Target US. The URL feeds the registry's lookalike guard.
+  const trust = getRetailerTrust(product.retailer, {
+    market: product.sourceMarket,
+    url: product.url,
+  });
+  const retailerLogo = getRetailerLogo(product.retailer, product.sourceMarket);
 
   // Track the failed URL, not a boolean: memoized cards get recycled under
   // index keys, and a bare flag would keep showing the fallback after the
@@ -111,7 +116,9 @@ function ProductCard({
           ? '. Warning: possible scam, not from a verified reseller'
           : trust.level === 'unknown'
             ? '. Unverified seller'
-            : ''
+            : trust.level === 'marketplace-seller'
+              ? '. Independent marketplace seller'
+              : ''
       }`}
       onClick={handleClick}
     >
@@ -217,6 +224,24 @@ function ProductCard({
           >
             <BadgeCheck className="w-3 h-3" aria-hidden="true" />
             Verified
+          </span>
+        )}
+        {trust.level === 'marketplace' && (
+          <span
+            title={trust.description}
+            className="inline-flex items-center gap-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-50 text-sky-700"
+          >
+            <Store className="w-3 h-3" aria-hidden="true" />
+            Marketplace
+          </span>
+        )}
+        {trust.level === 'marketplace-seller' && (
+          <span
+            title={trust.description}
+            className="inline-flex items-center gap-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"
+          >
+            <Users className="w-3 h-3" aria-hidden="true" />
+            Marketplace seller
           </span>
         )}
         {trust.level === 'unknown' && (
