@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { affiliateLinksEnabled } from '@/lib/affiliate';
 
 export const metadata: Metadata = {
   title: 'Cookie Policy - Pick Marketplace',
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function CookiePolicyPage() {
-  const lastUpdated = 'July 14, 2026';
+  const lastUpdated = 'September 1, 2026';
 
   return (
     <>
@@ -65,7 +66,9 @@ export default function CookiePolicyPage() {
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <h3 className="font-semibold text-black mb-2">Affiliate Cookies</h3>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    Pick does not currently set any affiliate tracking cookies, because we don't participate in retailer affiliate programs. If we join affiliate programs in the future, clicking through to a retailer may set affiliate cookies, and we will update this policy before that happens.
+                    {affiliateLinksEnabled()
+                      ? 'When you click through to a retailer, our affiliate network and the retailer may set cookies that credit Pick for the visit. They are set on the retailer side after you leave Pick, they cost you nothing, and they never affect which results appear or how they are ranked.'
+                      : "Pick does not currently set any affiliate tracking cookies, because we don't participate in retailer affiliate programs. If we join affiliate programs in the future, clicking through to a retailer may set affiliate cookies, and we will update this policy before that happens."}
                   </p>
                 </div>
               </div>
@@ -113,7 +116,12 @@ export default function CookiePolicyPage() {
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mt-4">
                 <li><strong>Session cookies:</strong> Deleted when you close your browser</li>
                 <li><strong>Preference cookies:</strong> Typically stored for 1 year</li>
-                <li><strong>Affiliate cookies:</strong> None set today; this will be updated if we join retailer affiliate programs</li>
+                <li>
+                  <strong>Affiliate cookies:</strong>{' '}
+                  {affiliateLinksEnabled()
+                    ? 'Set by the retailer or our affiliate network when you click through, with retention controlled by them; commonly 1 to 30 days'
+                    : 'None set today; this will be updated if we join retailer affiliate programs'}
+                </li>
               </ul>
             </section>
 
