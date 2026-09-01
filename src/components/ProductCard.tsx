@@ -5,7 +5,7 @@ import { useSavedList } from "@/contexts/SavedListContext";
 import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle, Store, Users } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
 import { getRetailerLogo } from "./RetailerLogos";
-import { affiliateLinksEnabled } from "@/lib/affiliate";
+import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
 import LandedCostPanel from "./LandedCostPanel";
 import type { Product } from "@/lib/types";
@@ -99,8 +99,10 @@ function ProductCard({
       href={product.url}
       target="_blank"
       // rel=sponsored is a machine-readable paid-link claim; only make it
-      // when the links actually carry commission tracking
-      rel={affiliateLinksEnabled() ? "noopener noreferrer sponsored" : "noopener noreferrer"}
+      // when THIS link actually carries commission tracking. Per-link, not
+      // site-wide: commission-excluded merchants (Amazon) keep a plain rel
+      // even when affiliate links are live everywhere else.
+      rel={isAffiliateUrl(product.url) ? "noopener noreferrer sponsored" : "noopener noreferrer"}
       className={`bg-white rounded-xl border p-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition slide-in block relative ${
         trust.level === 'flagged' ? 'border-red-300' : 'border-gray-200/70'
       } ${isCompareMode ? 'cursor-pointer' : ''} ${

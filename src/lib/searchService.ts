@@ -95,7 +95,15 @@ export async function performLiveSearch(
     })
     // Commission tracking is applied last, to the link only, never to
     // ordering. Results stay ranked by the sources' relevance order.
-    .map((product) => ({ ...product, url: toAffiliateUrl(product.url) }));
+    // Identity is passed through because some merchants (Amazon) are barred
+    // from tagging entirely; see isCommissionExcluded.
+    .map((product) => ({
+      ...product,
+      url: toAffiliateUrl(product.url, {
+        retailer: product.retailer,
+        market: product.sourceMarket,
+      }),
+    }));
 
   // Always generate retailer search links
   const retailerLinks = buildRetailerDeepLinks(q);
