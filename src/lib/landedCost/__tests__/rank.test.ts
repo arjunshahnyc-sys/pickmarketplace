@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { isTopSlotEligible, rankByLandedCost, rankKeyMinor, type RankedOffer } from '../rank';
+import {
+  isTopSlotEligible,
+  rankByLandedCost,
+  rankKeyMinor,
+  totalResolution,
+  type RankedOffer,
+} from '../rank';
 import type { Lane, LandedCostBreakdown, LineKind } from '../types';
+
+// Bucketed ordering, owner-approved 2026-08-31 (replacing the 2026-08-26
+// displacement rule): resolved totals first, labeled partials second,
+// unavailable last in stable incoming order. Only a resolved offer can be
+// the top slot.
 
 function breakdown(over: {
   totalMinor: number;
@@ -32,21 +43,58 @@ function offer(
 
 const ids = <T,>(xs: RankedOffer<T>[]) => xs.map((x) => x.offerId);
 
+describe('totalResolution buckets', () => {
+  it('a fully known breakdown is resolved; a clean range too', () => {
+    expect(totalResolution(breakdown({ totalMinor: 100 }))).toBe('resolved');
+    expect(
+      totalResolution(
+        breakdown({ totalMinor: 300, lane: 'cross-border', totalRange: { lowMinor: 250, highMinor: 300 } })
+      )
+    ).toBe('resolved');
+  });
+
+  it('unknown optional components make it partial, on any lane', () => {
+    expect(totalResolution(breakdown({ totalMinor: 100, unknownComponents: ['shipping'] }))).toBe('partial');
+    expect(totalResolution(breakdown({ totalMinor: 100, unknownComponents: ['tax'] }))).toBe('partial');
+    expect(
+      totalResolution(breakdown({ totalMinor: 100, lane: 'cross-border', unknownComponents: ['shipping'] }))
+    ).toBe('partial');
+  });
+
+  it('unknown item, unknown lane, or unknown required import charges are unavailable', () => {
+    expect(totalResolution(breakdown({ totalMinor: 0, unknownComponents: ['item'] }))).toBe('unavailable');
+    expect(totalResolution(breakdown({ totalMinor: 100, lane: 'unknown' }))).toBe('unavailable');
+    expect(
+      totalResolution(breakdown({ totalMinor: 100, lane: 'cross-border', unknownComponents: ['duty'] }))
+    ).toBe('unavailable');
+    expect(
+      totalResolution(breakdown({ totalMinor: 100, lane: 'cross-border', unknownComponents: ['tax'] }))
+    ).toBe('unavailable');
+  });
+});
+
 describe('rankKeyMinor and eligibility', () => {
   it('ranges rank on their low end', () => {
     expect(rankKeyMinor(breakdown({ totalMinor: 300, totalRange: { lowMinor: 250, highMinor: 300 } }))).toBe(250);
     expect(rankKeyMinor(breakdown({ totalMinor: 300 }))).toBe(300);
   });
 
-  it('domestic offers with unknown shipping stay eligible (owner decision)', () => {
-    expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'domestic', unknownComponents: ['shipping'] }))).toBe(true);
-  });
-
-  it('cross-border offers need duty and tax; unknown lane is never eligible', () => {
-    expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'cross-border', unknownComponents: ['shipping'] }))).toBe(true);
+  it('only a fully resolved offer may take the top slot', () => {
+    expect(isTopSlotEligible(breakdown({ totalMinor: 100 }))).toBe(true);
+    expect(
+      isTopSlotEligible(
+        breakdown({ totalMinor: 300, lane: 'cross-border', totalRange: { lowMinor: 250, highMinor: 300 } })
+      )
+    ).toBe(true);
+    // Partial offers (unknown shipping or tax) are rankable but never #1:
+    // deliberate tightening of the 2026-08-26 shipping-tolerated rule.
+    expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'domestic', unknownComponents: ['shipping'] }))).toBe(false);
+    expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'domestic', unknownComponents: ['tax'] }))).toBe(false);
     expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'cross-border', unknownComponents: ['duty'] }))).toBe(false);
-    expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'cross-border', unknownComponents: ['tax'] }))).toBe(false);
     expect(isTopSlotEligible(breakdown({ totalMinor: 100, lane: 'unknown' }))).toBe(false);
+    // The unconvertible-item hole is closed: such an offer summarizes as
+    // unavailable, so it can never be #1 either.
+    expect(isTopSlotEligible(breakdown({ totalMinor: 0, unknownComponents: ['item'] }))).toBe(false);
   });
 });
 
@@ -54,7 +102,10 @@ describe('rankByLandedCost', () => {
   it('sorts ascending on the low estimate, ranges included', () => {
     const { ranked, topSlotOfferId } = rankByLandedCost([
       offer('flat300', breakdown({ totalMinor: 300 })),
-      offer('range250to400', breakdown({ totalMinor: 400, totalRange: { lowMinor: 250, highMinor: 400 } })),
+      offer(
+        'range250to400',
+        breakdown({ totalMinor: 400, lane: 'cross-border', totalRange: { lowMinor: 250, highMinor: 400 } })
+      ),
       offer('flat100', breakdown({ totalMinor: 100 })),
     ]);
     expect(ids(ranked)).toEqual(['flat100', 'range250to400', 'flat300']);
@@ -87,35 +138,42 @@ describe('rankByLandedCost', () => {
     expect(ids(b.ranked)).toEqual(ids(c.ranked));
   });
 
-  it('an offer never wins the top slot on missing required data', () => {
-    const cheapButUnknownDuty = offer(
-      'cheap-unknown',
-      breakdown({ totalMinor: 50, lane: 'cross-border', unknownComponents: ['duty'] })
+  it('buckets: resolved totals, then partials, then unavailable at the bottom', () => {
+    const resolvedExpensive = offer('resolved-900', breakdown({ totalMinor: 900 }));
+    const resolvedCheap = offer('resolved-200', breakdown({ totalMinor: 200 }));
+    const partialCheapest = offer(
+      'partial-50',
+      breakdown({ totalMinor: 50, unknownComponents: ['shipping'] })
     );
-    const alsoUnknown = offer(
-      'also-unknown',
-      breakdown({ totalMinor: 60, lane: 'cross-border', unknownComponents: ['tax'] })
-    );
-    const eligible = offer('eligible', breakdown({ totalMinor: 200 }));
-    const expensive = offer('expensive', breakdown({ totalMinor: 900 }));
+    const unavailable = offer('unavailable', breakdown({ totalMinor: 10, lane: 'unknown' }));
 
     const { ranked, topSlotOfferId } = rankByLandedCost([
-      expensive,
-      cheapButUnknownDuty,
-      eligible,
-      alsoUnknown,
+      unavailable,
+      partialCheapest,
+      resolvedExpensive,
+      resolvedCheap,
     ]);
-    expect(topSlotOfferId).toBe('eligible');
-    // Displaced leaders keep their relative order right below the winner.
-    expect(ids(ranked)).toEqual(['eligible', 'cheap-unknown', 'also-unknown', 'expensive']);
+    // The cheapest KNOWN subtotal does not beat a resolved total: partials
+    // sort within their own bucket, below every resolved offer.
+    expect(ids(ranked)).toEqual(['resolved-200', 'resolved-900', 'partial-50', 'unavailable']);
+    expect(topSlotOfferId).toBe('resolved-200');
   });
 
-  it('with no eligible offer there is no top slot and order is untouched', () => {
-    const a = offer('a', breakdown({ totalMinor: 50, lane: 'unknown' }));
-    const b = offer('b', breakdown({ totalMinor: 60, lane: 'unknown' }));
-    const { ranked, topSlotOfferId } = rankByLandedCost([b, a]);
+  it('unavailable offers sink in stable incoming order, never sorted by price', () => {
+    const a = offer('a', breakdown({ totalMinor: 900, lane: 'unknown' }));
+    const b = offer('b', breakdown({ totalMinor: 50, lane: 'unknown' }));
+    const { ranked, topSlotOfferId } = rankByLandedCost([a, b]);
     expect(topSlotOfferId).toBeNull();
-    expect(ids(ranked)).toEqual(['a', 'b']); // still sorted, just no winner
+    // a arrived first and stays first despite its higher known sum.
+    expect(ids(ranked)).toEqual(['a', 'b']);
+  });
+
+  it('with only partials, nothing wins the top slot', () => {
+    const p = offer('p', breakdown({ totalMinor: 100, unknownComponents: ['tax'] }));
+    const q = offer('q', breakdown({ totalMinor: 200, unknownComponents: ['shipping'] }));
+    const { ranked, topSlotOfferId } = rankByLandedCost([q, p]);
+    expect(ids(ranked)).toEqual(['p', 'q']);
+    expect(topSlotOfferId).toBeNull();
   });
 
   it('does not mutate its input', () => {

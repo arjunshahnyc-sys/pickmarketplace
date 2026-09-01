@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { calculateLandedCost, type CalcContext } from '../calculate';
 import { summarizeTotal } from '../enrich';
 import { FixtureFxProvider } from '../fx';
-import { isTopSlotEligible } from '../rank';
+import { isTopSlotEligible, totalResolution } from '../rank';
 import { EU_MEMBERSHIP } from '../rules/eu';
 import { loadRulesFor } from '../rules/loader';
 import type { BreakdownLine, LandedCostInput, LineKind } from '../types';
@@ -84,7 +84,10 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(out.assumptions.join(' ')).toContain('collected Import VAT at checkout');
     expect(line(out.lines, 'fee')).toMatchObject({ amountMinor: 0 });
     expect(out.totalMinor).toBe(7_900);
-    expect(isTopSlotEligible(out)).toBe(true);
+    // Partial (shipping unknown): rankable, but never #1 under the
+    // 2026-08-31 bucket rules.
+    expect(totalResolution(out)).toBe('partial');
+    expect(isTopSlotEligible(out)).toBe(false);
     expect(summarizeTotal(out)).toMatchObject({ kind: 'subtotal', missing: ['shipping'] });
   });
 
@@ -115,7 +118,10 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(line(out.lines, 'tax').amountMinor).toBe(1_593); // 5% of 31860
     expect(line(out.lines, 'fee').amountMinor).toBe(995);
     expect(out.totalMinor).toBe(27_000 + 4_860 + 1_593 + 995);
-    expect(isTopSlotEligible(out)).toBe(true);
+    // Partial (shipping unknown): rankable, but never #1 under the
+    // 2026-08-31 bucket rules.
+    expect(totalResolution(out)).toBe('partial');
+    expect(isTopSlotEligible(out)).toBe(false);
   });
 
   it('CA: the monitor/TV split gives each subheading its own rate', () => {
@@ -159,7 +165,10 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(line(out.lines, 'tax').amountMinor).toBe(540);
     expect(line(out.lines, 'fee').amountMinor).toBe(995); // charges due -> Canada Post fee
     expect(out.totalMinor).toBe(10_800 + 540 + 995);
-    expect(isTopSlotEligible(out)).toBe(true);
+    // Partial (shipping unknown): rankable, but never #1 under the
+    // 2026-08-31 bucket rules.
+    expect(totalResolution(out)).toBe('partial');
+    expect(isTopSlotEligible(out)).toBe(false);
   });
 
   it('CA under CAD 40: everything relieved, fee waived', () => {
@@ -185,7 +194,10 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(out.assumptions.join(' ')).toContain('collected GST at checkout');
     expect(line(out.lines, 'fee')).toMatchObject({ amountMinor: 0 });
     expect(line(out.lines, 'fee').basis).toContain('at or under');
-    expect(isTopSlotEligible(out)).toBe(true);
+    // Partial (shipping unknown): rankable, but never #1 under the
+    // 2026-08-31 bucket rules.
+    expect(totalResolution(out)).toBe('partial');
+    expect(isTopSlotEligible(out)).toBe(false);
   });
 
   it('AU without classification: relief is undecidable because of the excise carve-outs', () => {
@@ -221,7 +233,10 @@ describe('real rules, fresh as of 2026-08-26', () => {
     expect(line(out.lines, 'fee').amountMinor).toBe(750);
     expect(out.totalMinor).toBe(9_000 + 300 + 750);
     expect(out.assumptions.join(' ')).toContain('single-item consignment');
-    expect(isTopSlotEligible(out)).toBe(true);
+    // Partial (shipping unknown): rankable, but never #1 under the
+    // 2026-08-31 bucket rules.
+    expect(totalResolution(out)).toBe('partial');
+    expect(isTopSlotEligible(out)).toBe(false);
     expect(summarizeTotal(out)).toMatchObject({ kind: 'subtotal', missing: ['shipping'] });
   });
 

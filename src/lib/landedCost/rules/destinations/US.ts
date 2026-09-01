@@ -5,6 +5,7 @@
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
 import { todo, verified } from '../seed';
+import { US_STATE_SALES_TAX_DECIBPS } from '../usSalesTax';
 
 const V = '2026-08-26';
 const HTSUS = 'https://hts.usitc.gov/';
@@ -68,6 +69,18 @@ export const US: DestinationRules = {
       onlyWhenChargesDue: true,
     },
   ],
+  // US consumer prices are listed TAX-EXCLUSIVE; checkout adds state sales
+  // tax on the delivery address. State-level base rates only (verified
+  // 2026-08-31, see usSalesTax.ts); local surtaxes are an assumption, never
+  // an invented average.
+  domesticSalesTax: {
+    label: 'Sales tax',
+    ratesDeciBps: US_STATE_SALES_TAX_DECIBPS,
+    meta: {
+      sourceUrl: 'https://www.taxadmin.org/state-tax-agencies',
+      notes: 'One row per state + DC from each Department of Revenue or statute; unit is deci-basis-points. See usSalesTax.ts for scheduled changes on record (DC 2026-10-01).',
+    },
+  },
   displayRounding: 'standard-minor-units',
   meta: {
     sourceUrl: 'https://www.cbp.gov/trade/basic-import-export/internet-purchases',

@@ -156,7 +156,11 @@ describe('all-markets rollout (probed live 2026-08-27)', () => {
     expect(us.unknownComponents).toEqual([]);
 
     const { products: ranked } = orderByLandedCost(enriched);
-    expect(ranked.map((p) => p.id)).toEqual(['de-amazon', 'us-bestbuy', 'nl-coolblue']);
+    // Bucket rules (2026-08-31): the US import is the only RESOLVED total
+    // (its shipping estimate completes it), so it leads; the two EU offers
+    // have unknown shipping (no EU-origin routes yet) and rank as labeled
+    // partials below it, by their known subtotals.
+    expect(ranked.map((p) => p.id)).toEqual(['us-bestbuy', 'de-amazon', 'nl-coolblue']);
   });
 
   it('JP shopper: a yen-priced Amazon Japan offer computes as domestic', () => {
@@ -174,7 +178,7 @@ describe('all-markets rollout (probed live 2026-08-27)', () => {
 });
 
 describe('the payoff: local offer vs US import for a GB shopper', () => {
-  it('both compute, both are eligible, and the cheaper landed total wins', () => {
+  it('a resolved import total outranks a partial local subtotal', () => {
     const products = [
       offer({
         id: 'us-target',
@@ -211,10 +215,11 @@ describe('the payoff: local offer vs US import for a GB shopper', () => {
     expect(us.unknownComponents).toEqual([]);
 
     const { products: ranked, topSlotOfferId } = orderByLandedCost(enriched);
-    // The full US landed total (154.60) undercuts the UK local price (150.00
-    // plus unknown shipping)? No: ranking uses known totals, and 150.00 wins.
-    expect(topSlotOfferId).toBe('gb-currys');
-    expect(ranked[0].id).toBe('gb-currys');
-    expect(ranked[1].id).toBe('us-target');
+    // Bucket rules (2026-08-31): the US offer's 154.60 is a COMPLETE landed
+    // total; the local 150.00 is a partial (shipping unknown) and a partial
+    // may never outrank or win on a number it does not actually have.
+    expect(topSlotOfferId).toBe('us-target');
+    expect(ranked[0].id).toBe('us-target');
+    expect(ranked[1].id).toBe('gb-currys');
   });
 });

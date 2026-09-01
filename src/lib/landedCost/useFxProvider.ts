@@ -21,18 +21,37 @@ function fxSpreadBps(): number {
   return Number.isSafeInteger(raw) && raw >= 0 && raw <= 1_000 ? raw : 150;
 }
 
-export function useFxProvider(): FxProvider {
-  const [provider, setProvider] = useState<FxProvider>(() => new NullFxProvider());
+/**
+ * 'loading' until /api/fx answers: the UI shows a computing state rather
+ * than a wrong "unavailable" for totals that are merely waiting on rates.
+ * 'unavailable' once the fetch failed: unavailability is then the honest,
+ * final answer for cross-currency conversions.
+ */
+export type FxStatus = 'loading' | 'ready' | 'unavailable';
+
+export function useFxProvider(): { provider: FxProvider; status: FxStatus } {
+  const [state, setState] = useState<{ provider: FxProvider; status: FxStatus }>(() => ({
+    provider: new NullFxProvider(),
+    status: landedCostEnabled() ? 'loading' : 'unavailable',
+  }));
 
   useEffect(() => {
     if (!landedCostEnabled()) return;
     let cancelled = false;
+    const fail = () => {
+      // Keep the null provider; unavailability is the honest fallback.
+      if (!cancelled) setState((s) => ({ provider: s.provider, status: 'unavailable' }));
+    };
     fetch('/api/fx')
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { pairsMicros?: Record<string, number>; asOf?: string; sourceId?: string } | null) => {
-        if (cancelled || !data?.pairsMicros || !data.asOf) return;
-        setProvider(
-          new TableFxProvider(
+        if (cancelled) return;
+        if (!data?.pairsMicros || !data.asOf) {
+          fail();
+          return;
+        }
+        setState({
+          provider: new TableFxProvider(
             {
               pairsMicros: data.pairsMicros,
               asOf: data.asOf,
@@ -40,16 +59,15 @@ export function useFxProvider(): FxProvider {
               sourceId: data.sourceId ?? 'fx:ecb',
             },
             new Date()
-          )
-        );
+          ),
+          status: 'ready',
+        });
       })
-      .catch(() => {
-        // Keep the null provider; unavailability is the honest fallback.
-      });
+      .catch(fail);
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return provider;
+  return state;
 }

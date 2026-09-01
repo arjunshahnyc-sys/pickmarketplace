@@ -13,6 +13,9 @@ export function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   return NextResponse.json({
-    destination: geoDefaultDestination(req.headers.get('x-vercel-ip-country')),
+    destination: geoDefaultDestination(
+      req.headers.get('x-vercel-ip-country'),
+      req.headers.get('x-vercel-ip-country-region')
+    ),
   });
 }

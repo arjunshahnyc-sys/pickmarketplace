@@ -37,7 +37,7 @@
 //   - unknown: lines show the DAP scenario, totalRange spans DDP-low to
 //     DAP-high, and every import line is capped at 'estimated'.
 
-import { applyRateBps, formatMinorUnits, sumMinor } from './money';
+import { applyRateBps, formatMinorUnits, mulDivRound, sumMinor } from './money';
 import { convertMinor } from './fx';
 import {
   combineConfidence,
@@ -179,6 +179,7 @@ export function calculateLandedCost(
       };
     }
   }
+  if (input.shipping?.warning) warnings.push(input.shipping.warning);
   if (input.shipping && shippingDest) {
     if (input.shipping.assumption) assumptions.push(input.shipping.assumption);
     lines.push({
@@ -213,9 +214,8 @@ export function calculateLandedCost(
   if (lane === 'domestic') {
     const c = combineConfidence('exact', input.merchant.configConfidence);
     pushZero(lines, 'duty', 'Import duty', 'Domestic purchase: no import charges', c);
-    pushZero(lines, 'tax', 'Import tax', 'Domestic purchase: no import charges', c);
+    domesticSalesTaxLine(input, ctx, lines, warnings, assumptions, itemDest, resolve, c);
     pushZero(lines, 'fee', 'Customs fees', 'Domestic purchase: no import charges', c);
-    assumptions.push('Domestic sales tax charged at checkout, if any, is not included.');
   } else if (lane === 'intra-eu') {
     pushZero(lines, 'duty', 'Import duty', 'Intra-EU delivery: free movement of goods', laneConfidence);
     pushZero(lines, 'tax', 'VAT', 'Intra-EU delivery: VAT is included in the listed price', laneConfidence);
@@ -685,6 +685,90 @@ function crossBorderCharges(
     warnings.push(`No carrier fee data for ${rules.country}${carrier ? ` (carrier ${carrier})` : ''}.`);
     pushUnknown(lines, 'fee', 'Customs fees', 'No fee schedule for this destination');
   }
+}
+
+/**
+ * Domestic-lane tax line. Destinations with tax-inclusive consumer prices
+ * (or no domesticSalesTax rules) keep the historical zero line + assumption.
+ * The US lists prices tax-exclusive, so its rules carry per-state base
+ * rates: with a known subdivision and a verified rate row, the line is a
+ * labeled ESTIMATE on the item price (local surtaxes and shipping-tax
+ * treatment vary by address and are stated as assumptions, never guessed);
+ * with no subdivision or no verified row, the line is honestly unknown.
+ */
+function domesticSalesTaxLine(
+  input: LandedCostInput,
+  ctx: CalcContext,
+  lines: BreakdownLine[],
+  warnings: string[],
+  assumptions: string[],
+  itemDest: Known | null,
+  resolve: <T>(sv: SourcedValue<T>, rowId: string) => Resolved<T> | null,
+  laneConfidence: Confidence
+): void {
+  const st = ctx.rules?.domesticSalesTax;
+  if (!st) {
+    pushZero(lines, 'tax', 'Import tax', 'Domestic purchase: no import charges', laneConfidence);
+    assumptions.push('Domestic sales tax charged at checkout, if any, is not included.');
+    return;
+  }
+  const sub = input.destination.subdivision;
+  if (!sub) {
+    warnings.push(
+      `${st.label} depends on the delivery state; pick a state to include it in the total.`
+    );
+    pushUnknown(lines, 'tax', st.label, 'Depends on the delivery state; none selected');
+    return;
+  }
+  const rowId = `${ctx.rules!.country}.salesTax.${sub}`;
+  const row = st.ratesDeciBps[sub];
+  if (!row) {
+    warnings.push(`No ${st.label} rate is on file for ${sub}.`);
+    pushUnknown(lines, 'tax', `${st.label} (${sub})`, `No rate on file for ${sub}`);
+    return;
+  }
+  const rate = resolve(row, rowId);
+  if (!rate) {
+    pushUnknown(lines, 'tax', `${st.label} (${sub})`, 'Rate row is unverified or unfilled');
+    return;
+  }
+  if (!itemDest) {
+    pushUnknown(
+      lines,
+      'tax',
+      `${st.label} (${sub})`,
+      'Item price is unknown in the destination currency'
+    );
+    return;
+  }
+  if (rate.value === 0) {
+    lines.push({
+      kind: 'tax',
+      label: `${st.label} (${sub})`,
+      amountMinor: 0,
+      basis: `No state-level sales tax in ${sub}`,
+      confidence: combineConfidence('estimated', itemDest.confidence, laneConfidence),
+      sourceId: rowId,
+    });
+    assumptions.push('Local sales taxes, where allowed, are not included.');
+    return;
+  }
+  // Rate is in deci-bps (6.875% = 6875): amount = item * rate / 100_000.
+  const amount = mulDivRound(itemDest.amountMinor, rate.value, 100_000);
+  const pct = (rate.value / 1000).toFixed(3).replace(/\.?0+$/, '');
+  lines.push({
+    kind: 'tax',
+    label: `${st.label} (${sub})`,
+    amountMinor: amount,
+    basis: `Item price x ${pct}% ${sub} state base rate`,
+    // Never better than estimated: the state base rate is real, but the
+    // shopper's combined rate depends on local surtaxes we do not invent.
+    confidence: combineConfidence('estimated', itemDest.confidence, laneConfidence),
+    sourceId: rowId,
+  });
+  assumptions.push(
+    `Sales tax is estimated at the ${sub} state base rate; local surtaxes vary by address and are not included, and whether shipping is taxed varies by state.`
+  );
 }
 
 /**

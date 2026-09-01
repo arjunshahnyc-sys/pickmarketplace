@@ -28,6 +28,13 @@ export interface FxQuote {
 
 export interface FxProvider {
   readonly id: string;
+  /**
+   * Stable identity of this provider's rate snapshot, for memoizing results
+   * computed from it. Undefined = results built on this provider must NOT
+   * be cached (NullFxProvider's unavailability is a transient loading state,
+   * and fixtures vary per test).
+   */
+  readonly cacheKey?: string;
   /** null = this provider cannot quote the pair. Same-currency needs no quote. */
   getQuote(from: CurrencyCode, to: CurrencyCode): FxQuote | null;
 }
@@ -100,6 +107,7 @@ export class NullFxProvider implements FxProvider {
  */
 export class TableFxProvider implements FxProvider {
   readonly id: string;
+  readonly cacheKey: string;
   private readonly pairsMicros: Record<string, number>;
   private readonly asOf: string;
   private readonly spreadBps: number;
@@ -123,6 +131,7 @@ export class TableFxProvider implements FxProvider {
     const maxAgeDays = snapshot.maxAgeDays ?? 7;
     const ageMs = now.getTime() - new Date(snapshot.asOf).getTime();
     this.stale = !Number.isFinite(ageMs) || ageMs > maxAgeDays * 86_400_000;
+    this.cacheKey = `${this.id}:${this.asOf}:${this.spreadBps}:${this.stale ? 'stale' : 'live'}`;
   }
 
   getQuote(from: CurrencyCode, to: CurrencyCode): FxQuote | null {

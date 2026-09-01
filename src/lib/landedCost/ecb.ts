@@ -61,3 +61,32 @@ export function usdCrossPairsMicros(
   }
   return pairs;
 }
+
+/**
+ * The FULL ordered pair matrix among the given currencies, keyed 'X:Y' in
+ * micros: X:Y = (EUR->Y) / (EUR->X), exact in integer micros. Needed because
+ * the shopper's display currency is a free choice (a GB shopper may display
+ * USD, which needs GBP:USD, not just USD:GBP), and TableFxProvider does
+ * exact-key lookups with no inversion by design (an inverted rate would be
+ * a derived number the table never contained). Currencies missing from the
+ * ECB table are silently absent; those pairs then honestly have no quote.
+ */
+export function allCrossPairsMicros(
+  table: EcbTable,
+  currencies: string[]
+): Record<string, number> {
+  const eurRate = (c: string): number | undefined =>
+    c === 'EUR' ? 1_000_000 : table.eurMicros[c];
+  const pairs: Record<string, number> = {};
+  for (const from of currencies) {
+    const eurFrom = eurRate(from);
+    if (!eurFrom) continue;
+    for (const to of currencies) {
+      if (from === to) continue;
+      const eurTo = eurRate(to);
+      if (!eurTo) continue;
+      pairs[`${from}:${to}`] = mulDivRound(1_000_000, eurTo, eurFrom);
+    }
+  }
+  return pairs;
+}

@@ -22,7 +22,12 @@
 // flows into every line the config decides.
 
 import { collapse } from '../retailerTrust';
-import { REGISTRY, type MerchantEntry } from '../trust/registry';
+import {
+  REGISTRY,
+  resolveMerchant,
+  type MerchantEntry,
+  type MerchantShippingPolicy,
+} from '../trust/registry';
 import type { Confidence, Incoterm } from './types';
 
 export interface MerchantConfig {
@@ -97,6 +102,24 @@ export function getMerchantConfig(
     if (hit) return hit;
   }
   return table[key] ?? UNKNOWN_MERCHANT;
+}
+
+/**
+ * The merchant's published standard-shipping policy for the offer's feed
+ * market, if the registry carries one. The policy's own market must match
+ * the feed market it is being asked for: a US entry reached through a
+ * foreign feed's fallthrough is an import lane, where domestic checkout
+ * policies do not apply.
+ */
+export function getShippingPolicy(
+  retailerName: string,
+  sourceMarket?: string
+): MerchantShippingPolicy | undefined {
+  const entry = resolveMerchant(retailerName, sourceMarket);
+  const policy = entry?.shippingPolicy;
+  if (!policy) return undefined;
+  const market = (sourceMarket ?? 'us').toLowerCase();
+  return policy.market === market ? policy : undefined;
 }
 
 /** Shape a merchant for LandedCostInput. Ids are market-scoped so

@@ -51,7 +51,7 @@ function formatCheckedAt(checkedAt?: string): string {
 export default function Home() {
   const { isSaved, toggleItem } = useSavedList();
   const { destination } = useDestination();
-  const fxProvider = useFxProvider();
+  const { provider: fxProvider, status: fxStatus } = useFxProvider();
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -795,6 +795,7 @@ export default function Home() {
                           isCompareMode={isCompareMode}
                           isSelected={selectedProducts.some((p) => p.url === product.url)}
                           onSelect={handleProductSelect}
+                          fxPending={fxStatus === 'loading'}
                         />
                       </motion.div>
                     ))}

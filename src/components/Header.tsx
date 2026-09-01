@@ -17,7 +17,8 @@ import { PickLogo } from './PickLogo';
 const CURRENCY_OPTIONS = ['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY'];
 
 function DestinationPicker({ compact = false }: { compact?: boolean }) {
-  const { destination, setCountry, setCurrency, countries } = useDestination();
+  const { destination, setCountry, setCurrency, setSubdivision, countries, subdivisions } =
+    useDestination();
   return (
     <div className={`flex items-center gap-1.5 ${compact ? 'py-2' : ''}`}>
       <Globe className="w-4 h-4 text-pick-muted" aria-hidden="true" />
@@ -37,6 +38,27 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
           </option>
         ))}
       </select>
+      {subdivisions.length > 0 && (
+        <>
+          <label className="sr-only" htmlFor={compact ? 'dest-state-m' : 'dest-state'}>
+            Delivery state for the sales tax estimate
+          </label>
+          <select
+            id={compact ? 'dest-state-m' : 'dest-state'}
+            value={destination.subdivision ?? ''}
+            title="Delivery state, used only to estimate sales tax. Without it the total shows tax as unresolved."
+            onChange={(e) => setSubdivision(e.target.value)}
+            className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+          >
+            <option value="">State…</option>
+            {subdivisions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
       <label className="sr-only" htmlFor={compact ? 'dest-currency-m' : 'dest-currency'}>
         Display currency
       </label>

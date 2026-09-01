@@ -4,11 +4,15 @@
 // for the supported destination currencies.
 
 import { NextResponse } from 'next/server';
-import { parseEcbDailyXml, usdCrossPairsMicros } from '@/lib/landedCost/ecb';
+import { allCrossPairsMicros, parseEcbDailyXml } from '@/lib/landedCost/ecb';
 import { landedCostEnabled } from '@/lib/flags';
 
 const ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
-const TARGETS = ['GBP', 'CAD', 'AUD', 'EUR', 'JPY'];
+// The full ordered pair matrix over the supported currencies, not just
+// USD->X: feed prices arrive in each market's own currency and the display
+// currency is the shopper's free choice, so GBP:USD and EUR:JPY are as real
+// as USD:GBP. TableFxProvider does exact-key lookups with no inversion.
+const CURRENCIES = ['USD', 'GBP', 'CAD', 'AUD', 'EUR', 'JPY'];
 // ECB publishes once per business day around 16:00 CET; 6 hours keeps us at
 // most one refresh behind while sending the ECB a handful of requests a day.
 const TTL_MS = 6 * 60 * 60 * 1000;
@@ -45,8 +49,11 @@ export async function GET() {
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`ECB returned ${res.status}`);
     const table = parseEcbDailyXml(await res.text());
-    const pairsMicros = table && usdCrossPairsMicros(table, TARGETS);
-    if (!table || !pairsMicros) throw new Error('ECB response did not parse');
+    if (!table) throw new Error('ECB response did not parse');
+    const pairsMicros = allCrossPairsMicros(table, CURRENCIES);
+    if (Object.keys(pairsMicros).length === 0) {
+      throw new Error('ECB response did not parse');
+    }
 
     const data: FxPayload = {
       pairsMicros,

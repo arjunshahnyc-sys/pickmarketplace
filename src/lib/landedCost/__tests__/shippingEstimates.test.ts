@@ -219,7 +219,33 @@ describe('US domestic shipping estimates (Ground Advantage zone-4 benchmark)', (
     expect(estimateShipping('shoes', 'GB', 'GB')).toBeUndefined();
   });
 
-  it('a US shopper now sees a COMPLETE domestic total', () => {
+  it('a policy-less merchant rides the carrier benchmark; tax needs a state', () => {
+    const enriched = withLandedCosts(
+      [
+        {
+          id: 'us-shoes',
+          name: 'Nike Air Zoom Running Shoes',
+          price: 89.99,
+          image: '',
+          retailer: 'GameStop', // no published shipping policy in the registry
+          category: 'Shoes',
+          currency: 'USD',
+          sourceMarket: 'US',
+          url: 'https://example.test/us-shoes',
+        },
+      ],
+      { country: 'US', currency: 'USD' },
+      new Date('2026-08-27T00:00:00Z')
+    );
+    const b = enriched[0].landedCost!;
+    expect(b.lane).toBe('domestic');
+    expect(b.lines.find((l) => l.kind === 'shipping')!.amountMinor).toBe(1_580);
+    // No delivery state chosen: sales tax is a named gap, not a silent zero.
+    expect(b.unknownComponents).toEqual(['tax']);
+    expect(summarizeTotal(b)).toMatchObject({ kind: 'subtotal', missing: ['tax'] });
+  });
+
+  it('a US shopper with a state sees a COMPLETE domestic total', () => {
     const enriched = withLandedCosts(
       [
         {
@@ -234,13 +260,16 @@ describe('US domestic shipping estimates (Ground Advantage zone-4 benchmark)', (
           url: 'https://example.test/us-shoes',
         },
       ],
-      { country: 'US', currency: 'USD' },
+      { country: 'US', currency: 'USD', subdivision: 'TX' },
       new Date('2026-08-27T00:00:00Z')
     );
     const b = enriched[0].landedCost!;
     expect(b.lane).toBe('domestic');
-    expect(b.lines.find((l) => l.kind === 'shipping')!.amountMinor).toBe(1_580);
-    expect(b.totalMinor).toBe(8_999 + 1_580);
+    // Shipping 0 per Target's published free-over-$35 policy; sales tax at
+    // the TX 6.25% state base rate: 562.4375 -> 562.
+    expect(b.lines.find((l) => l.kind === 'shipping')!.amountMinor).toBe(0);
+    expect(b.lines.find((l) => l.kind === 'tax')!.amountMinor).toBe(562);
+    expect(b.totalMinor).toBe(8_999 + 562);
     expect(b.unknownComponents).toEqual([]);
     expect(summarizeTotal(b).kind).toBe('total'); // complete, no missing pieces
   });

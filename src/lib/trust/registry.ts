@@ -35,9 +35,37 @@
 //   third-party sellers, so "sold by Walmart" and "sold by ABOUTYES on
 //   Walmart Marketplace" can never be confused.
 
+import type { SourcedValue } from '../landedCost/types';
 import { collapse, registrableDomain } from './identity';
 
-export const REGISTRY_VERSION = '2026-08-31.1';
+export const REGISTRY_VERSION = '2026-09-01.1';
+
+/**
+ * A merchant's PUBLISHED standard-shipping policy for its own domestic
+ * checkout: tier 2 of the shipping source hierarchy (below a real per-offer
+ * quote, above the carrier-benchmark rate tables). Every number is a
+ * SourcedValue citing the merchant's own policy page: the calculator's
+ * verification gate applies, so an unverified row never becomes a figure.
+ * Fields that a policy page states as "varies" are simply absent; the
+ * resolver then falls through to the next tier rather than inventing a
+ * value.
+ */
+export interface MerchantShippingPolicy {
+  /** Storefront market whose domestic checkout this policy covers. */
+  market: RegistryMarket;
+  currency: string;
+  /** The merchant's own published shipping/delivery policy page. */
+  policyUrl: string;
+  /** Order value at/above which standard shipping is free (minor units). */
+  freeOverMinor?: SourcedValue<number>;
+  /** Published flat standard rate below the threshold; absent = unpublished/varies. */
+  flatBelowMinor?: SourcedValue<number>;
+  /** Standard shipping is free with no minimum. */
+  alwaysFree?: SourcedValue<boolean>;
+  /** Conditions on the free tier (membership, loyalty signup), stated as an assumption. */
+  conditions?: string;
+  notes?: string;
+}
 
 export type TrustTier =
   | 'brand-direct'
@@ -93,6 +121,8 @@ export interface MerchantEntry {
    * independent sellers (drives the "Marketplace seller" treatment).
    */
   allowsThirdPartySellers?: boolean;
+  /** Published standard-shipping policy for the storefront's domestic checkout. */
+  shippingPolicy?: MerchantShippingPolicy;
   notes?: string;
 }
 
@@ -120,6 +150,7 @@ interface EntrySpec {
   country?: string;
   added?: { date: string; reason: string };
   thirdParty?: boolean;
+  shipping?: MerchantShippingPolicy;
   notes?: string;
 }
 
@@ -141,9 +172,187 @@ function entry(spec: EntrySpec): MerchantEntry {
     storefrontCountry: spec.country ?? 'US',
     incoterm: 'unknown',
     ...(spec.thirdParty ? { allowsThirdPartySellers: true } : {}),
+    ...(spec.shipping ? { shippingPolicy: spec.shipping } : {}),
     ...(spec.notes ? { notes: spec.notes } : {}),
   };
 }
+
+// ─── Published US shipping policies ────────────────────────────────────────
+// Research pass 2026-08-31: 4 finder agents fetched each merchant's own
+// policy page; two verifier batches (nike.. and ulta..) adversarially
+// confirmed every claim the same day; the other two verifier agents died on
+// session limits, so those merchants' figures (walmart, target, bestbuy,
+// lowes, rei, staples, wayfair) were re-fetched and confirmed against the
+// live pages directly on 2026-09-01. Merchants whose pages publish no
+// usable figure (amazon: no dollar threshold published; home depot: policy
+// page broken; costco: per-item fees; ikea/acehardware: checkout-calculated)
+// are deliberately ABSENT - the resolver falls to the carrier benchmark
+// rather than inventing a number. Where a merchant has member and guest
+// tiers, the GUEST tier is encoded (worst case) with the member tier noted.
+
+function usPolicy(spec: {
+  url: string;
+  v: string; // lastVerified
+  freeOver?: number;
+  flat?: number;
+  alwaysFree?: boolean;
+  conditions?: string;
+  notes?: string;
+}): MerchantShippingPolicy {
+  const sv = <T>(value: T): SourcedValue<T> => ({
+    value,
+    sourceUrl: spec.url,
+    lastVerified: spec.v,
+    verification: 'verified',
+  });
+  return {
+    market: 'us',
+    currency: 'USD',
+    policyUrl: spec.url,
+    ...(spec.freeOver !== undefined ? { freeOverMinor: sv(spec.freeOver) } : {}),
+    ...(spec.flat !== undefined ? { flatBelowMinor: sv(spec.flat) } : {}),
+    ...(spec.alwaysFree ? { alwaysFree: sv(true) } : {}),
+    ...(spec.conditions ? { conditions: spec.conditions } : {}),
+    ...(spec.notes ? { notes: spec.notes } : {}),
+  };
+}
+
+const P: Record<string, MerchantShippingPolicy> = {
+  'walmart-us': usPolicy({
+    url: 'https://www.walmart.com/help/article/the-walmart-site-and-app-experience/27f2678cb25a40a7b57a359fec3ca67f',
+    v: '2026-09-01',
+    freeOver: 3500,
+    flat: 699,
+    conditions:
+      'Pharmacy, photo, wireless, and tires excluded from the $35 minimum; heavy/oversized freight carries surcharges; Walmart+ members pay no below-minimum fee.',
+  }),
+  'target-us': usPolicy({
+    url: 'https://www.target.com/help/article/000055608',
+    v: '2026-09-01',
+    freeOver: 3500,
+    flat: 599,
+    conditions:
+      'Free over $35 excluding tax and promotional discounts, or on any order paid with a Target Circle Card; large/heavy items can carry per-unit delivery fees.',
+  }),
+  'bestbuy-us': usPolicy({
+    url: 'https://www.bestbuy.com/site/help-topics/free-shipping/pcmcat276800050002.c?id=pcmcat276800050002',
+    v: '2026-09-01',
+    freeOver: 3500,
+    conditions:
+      'Never applies to Marketplace products; $35 total is after coupons, before taxes; large TVs, appliances, and scheduled-delivery items differ; below-threshold rates are checkout-calculated (not published).',
+  }),
+  'lowes-us': usPolicy({
+    url: 'https://www.lowes.com/l/help/shipping-delivery',
+    v: '2026-09-01',
+    freeOver: 2500,
+    conditions:
+      'Parcel orders under 150 lbs to the contiguous US; excludes special orders, hazardous-material orders, major appliances, and marketplace sellers; below-threshold rates are weight-based at checkout (not published).',
+  }),
+  'rei-us': usPolicy({
+    url: 'https://www.rei.com/terms/free-shipping',
+    v: '2026-09-01',
+    freeOver: 6000,
+    conditions:
+      'Non-member tier; REI Co-op Members ship free with no minimum. Oversize charges still apply to heavy/large items; below-threshold rate is not published.',
+  }),
+  'staples-us': usPolicy({
+    url: 'https://www.staples.com/sbd/content/help/new/tips.html',
+    v: '2026-09-01',
+    freeOver: 7500,
+    conditions:
+      'Applies to "most orders" per the published policy; below-threshold rate is not published.',
+  }),
+  'wayfair-us': usPolicy({
+    url: 'https://www.wayfair.com/customerservice/shipping_info.php',
+    v: '2026-09-01',
+    freeOver: 3500,
+    flat: 499,
+    conditions:
+      'Contiguous US standard ground; items with their own per-item shipping charges are excluded and do not count toward the $35.',
+  }),
+  'nike-us': usPolicy({
+    url: 'https://www.nike.com/help/a/shipping-delivery',
+    v: '2026-08-31',
+    freeOver: 7500,
+    flat: 800,
+    conditions:
+      'Guest tier; Nike Members get free standard at $50+ and $5 below.',
+  }),
+  'apple-us': usPolicy({
+    url: 'https://www.apple.com/shop/help/shipping_delivery',
+    v: '2026-08-31',
+    alwaysFree: true,
+    conditions: 'Standard delivery is free for all online orders; faster options cost extra.',
+  }),
+  'dyson-us': usPolicy({
+    url: 'https://www.dyson.com/inside-dyson/terms/delivery-details',
+    v: '2026-08-31',
+    freeOver: 5000,
+    flat: 499,
+  }),
+  'macys-us': usPolicy({
+    url: 'https://www.macys.com/customer-service/articles/shipping-options-times',
+    v: '2026-08-31',
+    freeOver: 4900,
+    flat: 1095,
+    conditions:
+      'Baseline non-member tier, pre-tax; a $10 surcharge applies to AK, HI, military addresses, and US territories.',
+  }),
+  'nordstrom-us': usPolicy({
+    url: 'https://www.nordstrom.com/browse/services/shipping-methods-charges/free-shipping-and-returns',
+    v: '2026-08-31',
+    alwaysFree: true,
+    conditions: 'Free standard shipping anywhere in the US with no minimum or membership.',
+  }),
+  'kohls-us': usPolicy({
+    url: 'https://www.kohls.com/faq/article/5',
+    v: '2026-08-31',
+    freeOver: 4900,
+    flat: 895,
+  }),
+  'ulta-us': usPolicy({
+    url: 'https://www.ulta.com/guestservices/all',
+    v: '2026-08-31',
+    flat: 695,
+    notes:
+      'No unconditional free tier is published (free-shipping promotions run periodically), so the published $6.95 standard rate applies at every order value.',
+  }),
+  'sephora-us': usPolicy({
+    url: 'https://www.sephora.com/beauty/shipping-information',
+    v: '2026-08-31',
+    freeOver: 5000,
+    flat: 695,
+    conditions:
+      'Guest-checkout tier, excluding taxes; Beauty Insider members (free signup) ship free with no minimum.',
+  }),
+  'dickssportinggoods-us': usPolicy({
+    url: 'https://www.dickssportinggoods.com/s/shipping-value-promo-details',
+    v: '2026-08-31',
+    freeOver: 7500,
+    conditions:
+      'No-account tier with exclusions (oversized items etc.); below-threshold rates are size/weight-based at checkout (not published).',
+  }),
+  'academysports-us': usPolicy({
+    url: 'https://www.academy.com/help/free-shipping-qualification',
+    v: '2026-08-31',
+    freeOver: 5000,
+    conditions:
+      'Signed-out tier, pre-tax, standard ground to contiguous states EXCLUDING California; below-threshold rate is not published.',
+  }),
+  'bhphoto-us': usPolicy({
+    url: 'https://www.bhphotovideo.com/find/HelpCenter/Shipping.jsp',
+    v: '2026-08-31',
+    alwaysFree: true,
+    conditions: 'Most items, contiguous US; expedited free over $49 on most orders.',
+  }),
+  'officedepot-us': usPolicy({
+    url: 'https://www.officedepot.com/l/help/delivery',
+    v: '2026-08-31',
+    freeOver: 5000,
+    conditions:
+      'Qualifying orders, contiguous US; non-qualifying orders carry a $9.95 MINIMUM fee that varies upward (not a flat rate, so no below-threshold figure is encoded).',
+  }),
+};
 
 // ─── The registry ──────────────────────────────────────────────────────────
 
@@ -166,40 +375,40 @@ export const REGISTRY: readonly MerchantEntry[] = [
   }),
 
   // US market ─ national retailers and brand-direct stores
-  entry({ id: 'walmart-us', name: 'Walmart', domain: 'walmart.com', thirdParty: true }),
-  entry({ id: 'target-us', name: 'Target', domain: 'target.com', thirdParty: true }),
-  entry({ id: 'bestbuy-us', name: 'Best Buy', domain: 'bestbuy.com', thirdParty: true }),
+  entry({ id: 'walmart-us', shipping: P['walmart-us'], name: 'Walmart', domain: 'walmart.com', thirdParty: true }),
+  entry({ id: 'target-us', shipping: P['target-us'], name: 'Target', domain: 'target.com', thirdParty: true }),
+  entry({ id: 'bestbuy-us', shipping: P['bestbuy-us'], name: 'Best Buy', domain: 'bestbuy.com', thirdParty: true }),
   entry({ id: 'costco-us', name: 'Costco', domain: 'costco.com' }),
   entry({ id: 'homedepot-us', name: 'Home Depot', domain: 'homedepot.com' }),
-  entry({ id: 'lowes-us', name: "Lowe's", domain: 'lowes.com' }),
-  entry({ id: 'macys-us', name: "Macy's", domain: 'macys.com' }),
-  entry({ id: 'nordstrom-us', name: 'Nordstrom', domain: 'nordstrom.com' }),
-  entry({ id: 'wayfair-us', name: 'Wayfair', domain: 'wayfair.com' }),
+  entry({ id: 'lowes-us', shipping: P['lowes-us'], name: "Lowe's", domain: 'lowes.com' }),
+  entry({ id: 'macys-us', shipping: P['macys-us'], name: "Macy's", domain: 'macys.com' }),
+  entry({ id: 'nordstrom-us', shipping: P['nordstrom-us'], name: 'Nordstrom', domain: 'nordstrom.com' }),
+  entry({ id: 'wayfair-us', shipping: P['wayfair-us'], name: 'Wayfair', domain: 'wayfair.com' }),
   entry({ id: 'kroger-us', name: 'Kroger', domain: 'kroger.com' }),
-  entry({ id: 'kohls-us', name: "Kohl's", domain: 'kohls.com' }),
+  entry({ id: 'kohls-us', shipping: P['kohls-us'], name: "Kohl's", domain: 'kohls.com' }),
   entry({ id: 'samsclub-us', name: "Sam's Club", domain: 'samsclub.com' }),
   entry({
-    id: 'bhphoto-us', name: 'B&H Photo Video',
+    id: 'bhphoto-us', shipping: P['bhphoto-us'], name: 'B&H Photo Video',
     aliases: ['bhphoto', 'bhphotovideo', 'bhphotovideoaudio'],
     domain: 'bhphotovideo.com', logo: '/logos/bhphoto.svg',
   }),
   entry({ id: 'adorama-us', name: 'Adorama', domain: 'adorama.com' }),
   entry({ id: 'newegg-us', name: 'Newegg', domain: 'newegg.com' }),
-  entry({ id: 'staples-us', name: 'Staples', domain: 'staples.com' }),
+  entry({ id: 'staples-us', shipping: P['staples-us'], name: 'Staples', domain: 'staples.com' }),
   entry({
-    id: 'officedepot-us', name: 'Office Depot',
+    id: 'officedepot-us', shipping: P['officedepot-us'], name: 'Office Depot',
     aliases: ['officedepot', 'officedepotofficemax'],
     domain: 'officedepot.com', logo: '/logos/officedepot.svg',
   }),
-  entry({ id: 'rei-us', name: 'REI', domain: 'rei.com' }),
+  entry({ id: 'rei-us', shipping: P['rei-us'], name: 'REI', domain: 'rei.com' }),
   entry({ id: 'chewy-us', name: 'Chewy', domain: 'chewy.com' }),
   entry({ id: 'gamestop-us', name: 'GameStop', domain: 'gamestop.com' }),
   entry({ id: 'microcenter-us', name: 'Micro Center', domain: 'microcenter.com' }),
-  entry({ id: 'dickssportinggoods-us', name: "Dick's Sporting Goods", domain: 'dickssportinggoods.com' }),
-  entry({ id: 'apple-us', name: 'Apple', domain: 'apple.com', tier: 'brand-direct' }),
-  entry({ id: 'nike-us', name: 'Nike', domain: 'nike.com', tier: 'brand-direct' }),
+  entry({ id: 'dickssportinggoods-us', shipping: P['dickssportinggoods-us'], name: "Dick's Sporting Goods", domain: 'dickssportinggoods.com' }),
+  entry({ id: 'apple-us', shipping: P['apple-us'], name: 'Apple', domain: 'apple.com', tier: 'brand-direct' }),
+  entry({ id: 'nike-us', shipping: P['nike-us'], name: 'Nike', domain: 'nike.com', tier: 'brand-direct' }),
   entry({
-    id: 'academysports-us', name: 'Academy Sports + Outdoors',
+    id: 'academysports-us', shipping: P['academysports-us'], name: 'Academy Sports + Outdoors',
     aliases: ['academysportsoutdoors'], domain: 'academy.com',
     logo: '/logos/academysportsoutdoors.svg',
   }),
@@ -209,10 +418,10 @@ export const REGISTRY: readonly MerchantEntry[] = [
   entry({ id: 'petco-us', name: 'Petco', domain: 'petco.com' }),
   entry({ id: 'petsmart-us', name: 'PetSmart', domain: 'petsmart.com' }),
   entry({
-    id: 'ulta-us', name: 'Ulta Beauty', aliases: ['ulta', 'ultabeauty'],
+    id: 'ulta-us', shipping: P['ulta-us'], name: 'Ulta Beauty', aliases: ['ulta', 'ultabeauty'],
     domain: 'ulta.com', logo: '/logos/ulta.svg',
   }),
-  entry({ id: 'sephora-us', name: 'Sephora', domain: 'sephora.com' }),
+  entry({ id: 'sephora-us', shipping: P['sephora-us'], name: 'Sephora', domain: 'sephora.com' }),
   entry({
     id: 'bathbodyworks-us', name: 'Bath & Body Works',
     aliases: ['bathbodyworks', 'bathandbodyworks'],
@@ -247,7 +456,7 @@ export const REGISTRY: readonly MerchantEntry[] = [
     added: REVIEW_2026_08_31('Owner-approved 2026-08-31: official first-party retail site was showing "Unverified seller".'),
   }),
   entry({
-    id: 'dyson-us', name: 'Dyson', domain: 'dyson.com',
+    id: 'dyson-us', shipping: P['dyson-us'], name: 'Dyson', domain: 'dyson.com',
     regional: ['dyson.co.uk', 'dyson.de', 'dyson.fr', 'dyson.ca', 'dyson.com.au', 'dyson.co.jp'],
     tier: 'brand-direct',
     added: REVIEW_2026_08_31('Owner-approved 2026-08-31 brand-direct list.'),
@@ -611,6 +820,32 @@ export function validateRegistry(): string[] {
     }
     if (e.incoterm !== 'unknown' && !e.notes) {
       errors.push(`${e.id}: a non-unknown incoterm requires a sourced note`);
+    }
+    if (e.shippingPolicy) {
+      const p = e.shippingPolicy;
+      if (!e.markets.includes(p.market)) {
+        errors.push(`${e.id}: shipping policy market ${p.market} is not one of the entry's markets`);
+      }
+      if (!/^[A-Z]{3}$/.test(p.currency)) {
+        errors.push(`${e.id}: shipping policy currency is not an ISO code`);
+      }
+      if (!/^https:\/\//.test(p.policyUrl)) {
+        errors.push(`${e.id}: shipping policyUrl must be the merchant's https policy page`);
+      }
+      for (const [field, sv] of Object.entries({
+        freeOverMinor: p.freeOverMinor,
+        flatBelowMinor: p.flatBelowMinor,
+      })) {
+        if (sv && sv.value !== null && (!Number.isSafeInteger(sv.value) || sv.value < 0)) {
+          errors.push(`${e.id}: shipping policy ${field} must be a non-negative integer`);
+        }
+        if (sv && sv.verification === 'verified' && !sv.lastVerified) {
+          errors.push(`${e.id}: verified shipping policy ${field} needs lastVerified`);
+        }
+      }
+      if (!p.freeOverMinor && !p.flatBelowMinor && !p.alwaysFree) {
+        errors.push(`${e.id}: shipping policy carries no usable rule`);
+      }
     }
   }
   return errors;

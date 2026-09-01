@@ -74,6 +74,8 @@ export interface LandedCostInput {
     basis?: string;
     /** Pushed into the breakdown's assumptions when present. */
     assumption?: string;
+    /** Data-quality note (e.g. a stale published policy); pushed into warnings. */
+    warning?: string;
   };
   destination: {
     country: string;
@@ -263,6 +265,27 @@ export interface DestinationRules {
     threshold: SourcedValue<TaxThresholdPolicy>;
   };
   carrierFees: CarrierFeeRule[];
+  /**
+   * Domestic checkout sales tax, for destinations where consumer prices are
+   * listed TAX-EXCLUSIVE and tax is added at checkout (the US). Absent for
+   * tax-inclusive destinations (EU/GB/AU/JP consumer prices include
+   * VAT/GST). Rates are the SUBDIVISION-LEVEL BASE RATE only: combined
+   * state+local averages are invented numbers and have no place here; the
+   * local-surtax gap is stated as an assumption instead. Applied on the
+   * domestic lane against the item price when the shopper's subdivision is
+   * known; without a subdivision the tax line is honestly unknown.
+   */
+  domesticSalesTax?: {
+    /** User-facing name: 'Sales tax'. */
+    label: string;
+    /**
+     * Subdivision code (e.g. 'NJ') -> state-level base rate in
+     * DECI-BASIS-POINTS (6.875% = 6875): several states levy fractional-bps
+     * rates that integer bps cannot represent without rounding.
+     */
+    ratesDeciBps: Record<string, SourcedValue<number>>;
+    meta: { sourceUrl: string; notes?: string };
+  };
   /** See money.ts for what this means; per-country cash rounding would extend it. */
   displayRounding: 'standard-minor-units';
   meta: { sourceUrl: string; notes?: string };
