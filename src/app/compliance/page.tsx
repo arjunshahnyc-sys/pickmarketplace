@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function CompliancePage() {
-  const lastUpdated = 'August 24, 2026';
+  const lastUpdated = 'September 1, 2026';
 
   return (
     <>
@@ -81,9 +81,9 @@ export default function CompliancePage() {
                 </div>
 
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h3 className="font-semibold text-black mb-2">User Preferences</h3>
+                  <h3 className="font-semibold text-black mb-2">Account Information</h3>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    If you create an account, we store your preferences (preferred retailers, search filters, notification settings) to personalize your experience. This data is stored securely and never sold to third parties.
+                    If you create an account, we store your name, your email address, and a hashed version of your password so you can sign in. That is everything an account holds today. Your saved list and delivery country live in your browser's local storage and are never sent to our servers. Account data is stored securely and never sold to third parties.
                   </p>
                 </div>
 

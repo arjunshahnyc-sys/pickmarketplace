@@ -65,7 +65,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-heading font-bold mb-6">
             Welcome back!
             <br />
-            Your deals await.
+            Let's find a better price.
           </h1>
           <p className="text-lg text-white/80 mb-10">
             Continue saving money on every purchase with Pick's multi-store search.
@@ -121,7 +121,7 @@ export default function LoginPage() {
               Welcome back.
             </h2>
             <p className="text-sm text-black/60 mt-1">
-              Pick up where you left off.
+              Sign in to your Pick account.
             </p>
           </div>
 

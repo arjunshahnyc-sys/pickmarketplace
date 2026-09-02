@@ -2,7 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// Server-backed user (accounts sync across devices via /api/auth/*)
+// Server-backed sign-in identity via /api/auth/*. Only name and email live on
+// the server; the saved list and delivery destination stay in localStorage on
+// each device and are not tied to the account.
 export interface AuthUser {
   id: string;
   name: string;

@@ -29,7 +29,7 @@ export default function HowItWorksPage() {
     {
       icon: CheckCircle,
       title: "Click Through and Save Money",
-      description: "Choose the best deal for you and click through to complete your purchase on the retailer's site. No sign-up required for basic searches.",
+      description: "Choose the best deal for you and click through to complete your purchase on the retailer's site. No account needed to search.",
     },
   ];
 

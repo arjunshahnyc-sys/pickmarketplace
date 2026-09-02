@@ -22,7 +22,7 @@ export default function Privacy() {
       {/* Content */}
       <main id="main-content" className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-5xl font-bold mb-8">Privacy Policy</h1>
-        <p className="text-sm text-black/60 mb-12">Last updated: July 14, 2026</p>
+        <p className="text-sm text-black/60 mb-12">Last updated: September 1, 2026</p>
 
         <div className="prose prose-lg max-w-none space-y-8">
           <section>
@@ -51,7 +51,7 @@ export default function Privacy() {
             </p>
             <ul className="list-disc pl-6 space-y-2 text-black/80">
               <li>Provide and improve our price comparison services</li>
-              <li>Personalize your experience and provide relevant product recommendations</li>
+              <li>Keep you signed in if you create an account</li>
               <li>Analyze usage patterns to enhance our platform</li>
               <li>Prevent fraud and ensure security</li>
               <li>Comply with legal obligations</li>
@@ -73,7 +73,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Cookies and Tracking</h2>
             <p className="text-black/80 leading-relaxed">
-              We use cookies and similar technologies to maintain session state, remember your preferences, and analyze usage patterns. You can control cookies through your browser settings.
+              We use a session cookie to keep you signed in if you create an account, and similar technologies to analyze usage patterns. Your delivery country and saved list are kept in your browser's local storage rather than in cookies, and they never leave your device. You can control cookies and site data through your browser settings.
             </p>
           </section>
 
@@ -90,12 +90,14 @@ export default function Privacy() {
               You have the right to:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-black/80">
-              <li>Access the personal information we hold about you</li>
-              <li>Request correction of inaccurate information</li>
-              <li>Request deletion of your information</li>
-              <li>Opt out of marketing communications</li>
+              <li>Ask for a copy of the personal information we hold about you (for an account, that is your name and email address)</li>
+              <li>Ask us to correct information that is inaccurate</li>
+              <li>Ask us to delete your account and its information</li>
               <li>Lodge a complaint with a supervisory authority</li>
             </ul>
+            <p className="text-black/80 leading-relaxed mt-4">
+              There is no settings page for these requests yet. Email support@pickmarketplace.app from the address on your account and we will take care of it. We do not send marketing email, so there is nothing to unsubscribe from.
+            </p>
           </section>
 
           <section>
