@@ -3,11 +3,18 @@
 import Marquee from 'react-fast-marquee';
 import { extendedRetailerLogos } from './RetailerLogos';
 
+// The landing page's ONE retailer list and ONE sourcing sentence. Every other
+// copy of both was merged into this strip on 2026-09-01; don't add another
+// list elsewhere on the page, and keep the Target-direct / Google Shopping
+// distinction here (it's what makes the retailer names an honest claim).
 export function TrustedBy() {
   return (
     <section className="py-8 border-y border-black/10 bg-white/50">
-      <p className="text-center text-xs text-black/40 uppercase tracking-[0.2em] mb-6 font-medium">
-        Prices from Target and Google Shopping, across retailers including
+      {/* Sentence case, not the old all-caps eyebrow: this is the page's one
+          sourcing disclaimer and it has to be readable. */}
+      <p className="text-center text-sm text-neutral-600 mb-6 px-6 max-w-2xl mx-auto">
+        Pick checks Target&apos;s catalog directly and gets everything else from Google Shopping
+        listings across retailers including
       </p>
       <Marquee
         speed={35}

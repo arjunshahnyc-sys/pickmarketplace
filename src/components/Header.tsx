@@ -133,12 +133,26 @@ export default function Header() {
             <span className="text-xl font-medium text-black">pick</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation.
+
+              Login / Sign Up were removed from the header on 2026-09-01.
+              As of that date an account gives a shopper nothing an anonymous
+              visitor lacks: /account shows name, email, and member-since
+              and offers logout; the saved list is device-local
+              (localStorage, see SavedListContext); there are no saved
+              searches, watchlists, alerts, history, or preferences, and the
+              Search/Product/Price Prisma models are unused. Putting a
+              Sign Up button in the header with no stated benefit made the
+              product look unfinished. The /login and /signup routes still
+              work, and the logged-in branch below stays so existing accounts
+              can reach /account and log out. Restore the two links here (and
+              in the mobile menu) once there is a real reason to create an
+              account, and say that reason next to the button. */}
           <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
             {landedCostEnabled() && <DestinationPicker />}
             <SavedListButton />
 
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
                 <span className="text-sm text-neutral-600">{user?.name}</span>
                 <Link
@@ -154,27 +168,15 @@ export default function Header() {
                   Logout
                 </button>
               </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-full h-10 px-5 bg-[#2A9D8F] hover:bg-[#21867A] text-white text-sm font-semibold inline-flex items-center transition-colors"
-                >
-                  Sign Up
-                </Link>
-              </>
             )}
           </nav>
 
-          {/* Mobile: saved list + menu button */}
+          {/* Mobile: saved list + menu button. The menu only exists when it
+              has something to hold (the destination picker behind the
+              landed-cost flag, or the logged-in links). */}
           <div className="md:hidden flex items-center gap-1">
           <SavedListButton />
+          {(landedCostEnabled() || isAuthenticated) && (
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="text-pick-muted hover:text-pick-teal transition-colors p-2"
@@ -191,15 +193,17 @@ export default function Header() {
               </svg>
             )}
           </button>
+          )}
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu. Login / Sign Up removed here too; see the note on
+            the desktop nav above. */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-pick-border">
             <nav aria-label="Mobile navigation" className="flex flex-col space-y-3">
               {landedCostEnabled() && <DestinationPicker compact />}
-              {isAuthenticated ? (
+              {isAuthenticated && (
                 <>
                   <div className="py-2">
                     <span className="text-sm text-pick-muted">{user?.name}</span>
@@ -220,23 +224,6 @@ export default function Header() {
                   >
                     Logout
                   </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="text-pick-muted hover:text-pick-teal transition-colors py-2 font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="bg-pick-teal text-white px-5 py-2.5 rounded-lg hover:opacity-90 transition-all font-medium text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
                 </>
               )}
             </nav>

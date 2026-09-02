@@ -23,25 +23,30 @@ const ibmPlex = IBM_Plex_Sans({
 });
 
 const SITE_URL = "https://pickmarketplace.app";
+// One source for the page title and description: the <title>, OpenGraph,
+// Twitter card, and both JSON-LD blocks all read these, so they cannot drift.
+const SITE_TITLE = "Pick - Find a cheaper product with the same key specs.";
+const SITE_DESCRIPTION =
+  "Type in what you want. Pick looks for a different product with the same key specs, reviews about as good, and a lower price, and shows why they compare. Free.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   verification: {
     google: "0RU8rMwul--pZJv97ilC5UBOsETNmJByI5sV-pOoziA",
   },
-  title: "Pick - Don't waste your money. Buy the same product for less.",
-  description: "Compare prices from Target and Google Shopping listings across major retailers like Amazon, Walmart, and Best Buy. Find deals on electronics, clothing, home goods, and more.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   openGraph: {
-    title: "Pick - Don't waste your money. Buy the same product for less.",
-    description: "One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     type: "website",
     siteName: "Pick",
     images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pick - Don't waste your money. Buy the same product for less.",
-    description: "One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: ["/og-image.png"],
   },
 };
@@ -55,12 +60,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           name="Pick"
           url={SITE_URL}
           logo={`${SITE_URL}/logo.svg`}
-          description="One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less."
+          description={SITE_DESCRIPTION}
         />
         <WebsiteSchema
           name="Pick"
           url={SITE_URL}
-          description="One search compares prices from Target and Google Shopping listings across major retailers. Same item, or a similar one for less."
+          description={SITE_DESCRIPTION}
         />
         <AuthProvider>
           <SavedListProvider>

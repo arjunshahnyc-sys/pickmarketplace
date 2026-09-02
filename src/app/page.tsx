@@ -15,7 +15,7 @@ import Header from '@/components/Header';
 import { formatPrice } from '@/lib/formatters';
 import { TrustedBy } from '@/components/TrustedBy';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
-import { StatsSection } from '@/components/StatsSection';
+import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
 import { useSavedList } from '@/contexts/SavedListContext';
 import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
@@ -27,6 +27,62 @@ import { useDestination } from '@/contexts/DestinationContext';
 import { getRetailerTrust, isRecognizedSeller } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+// ============================================================================
+// HERO COMPARISON DATA: AN ILLUSTRATIVE EXAMPLE, NOT A CAPTURED LIVE RESULT.
+//
+// This object feeds the comparison card in the first fold, the single most
+// important element on the page. Arjun's call on 2026-09-02: show a
+// consistent real-world pair at list prices rather than an empty
+// placeholder, because the similar-pick engine did not surface a genuine
+// "Similar pick" on any of the live queries tried (see the engine task).
+//
+// What is real here: both are real Apple products; the prices are the
+// list prices (AirPods Pro 3 $249, AirPods 4 with Active Noise
+// Cancellation $179); the ratings and review counts are the Google
+// Shopping aggregate ratings from a live search on 2026-09-02; the
+// thumbnails are that search's product images. What is NOT claimed: that
+// Pick's engine produced this pairing, or that these prices were checked
+// live. With isExample true the card is captioned "Example result", the
+// footnote says "at list prices, not a live check", and each panel links
+// to a Pick search for that product instead of a retailer page.
+//
+// To swap in a captured live result: search on the site, find a card
+// wearing the "Similar pick" chip (that card is `pick`; the top result of
+// the same search is `input`), copy both entries out of the
+// /api/search-live response (name, price, currency, retailer, url, image,
+// rating, reviewCount, sourceMarket), set `sharedSpecs` from the chips
+// under "Alternative to", set `checkedAt` from the response, and drop
+// isExample. Both offers must share a currency or the card shows no saving.
+// ============================================================================
+const HERO_COMPARISON: ComparisonResultData = {
+  isExample: true,
+  query: 'airpods pro 3',
+  input: {
+    name: 'Apple AirPods Pro 3',
+    price: 249,
+    currency: 'USD',
+    retailer: 'Apple',
+    url: '/?q=airpods%20pro%203',
+    image:
+      'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQWGDNZZRlbSPs5rtE-OClkjm95GhGL0kmYrOMdzbGyoqEYyYOcUSqw0w8b1T6NiIQJBZmG9njYM0y_4z1ezPUpF7Z09x413K4UkpEMMbRh',
+    rating: 4.7,
+    reviewCount: 21000,
+  },
+  pick: {
+    name: 'Apple AirPods 4 with Active Noise Cancellation',
+    price: 179,
+    currency: 'USD',
+    retailer: 'Best Buy',
+    url: '/?q=airpods%204%20active%20noise%20cancellation',
+    image:
+      'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTzWgbCYJAuocW5ITS5UHmM21p93km5vi1vHBNZX52LwGtomvYx1b0vGIox1s68o_MHZFJ7EHjPDByp377-v2x7ZuQBdE3Ob5iv6dWJEiFF028fUUfNJO6zxQ',
+    rating: 4.6,
+    reviewCount: 71000,
+  },
+  sharedSpecs: ['apple', 'airpods', 'noise cancellation'],
+  checkedAt: '2026-09-02T14:25:03.274Z',
+};
 
 // Animation variants for staggered product grid
 const gridVariants = {
@@ -82,7 +138,7 @@ export default function Home() {
       'Searching Target...',
       'Checking Google Shopping...',
       'Finding best prices...',
-      'Comparing deals...',
+      'Finding cheaper equivalents...',
       'Analyzing products...',
       'Loading results...',
     ];
@@ -307,21 +363,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const retailers = [
-    'Amazon',
-    'Walmart',
-    'Target',
-    'Best Buy',
-    'Costco',
-    'eBay',
-    'Home Depot',
-    "Lowe's",
-    "Macy's",
-    'Nordstrom',
-    'Wayfair',
-    'Kroger',
-  ];
-
   // Extract unique retailers from results
   const resultRetailers = results.length > 0
     ? Array.from(new Set(results.map((p: any) => p.retailer)))
@@ -479,49 +520,68 @@ export default function Home() {
       <Header />
 
       <main id="main-content">
-        {/* Hero Section with animation */}
-        <section className="max-w-5xl mx-auto px-6 pt-20 md:pt-28 pb-16">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="max-w-2xl mb-8"
-          >
-            {/* Hero Text First on Mobile, Search Second */}
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
-              Don't waste your money.
-            </h1>
-            <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6">
-              The thing you want usually has a cheaper twin. Pick finds{' '}
-              <strong className="font-semibold text-neutral-800">
-                similar products with comparable reviews at lower prices
-              </strong>
-              , and shows where the exact item costs least.
-            </p>
+        {/* Hero: the pitch on the left, the proof on the right. The whole
+            first fold is about cheaper equivalents; exact-item matching gets
+            one supporting line under How it works and nowhere else. */}
+        <section className="max-w-5xl mx-auto px-6 pt-12 md:pt-16 pb-10">
+          <div className={hasSearched ? '' : 'grid gap-10 lg:grid-cols-12 lg:items-center'}>
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+              className={hasSearched ? 'max-w-2xl' : 'lg:col-span-6'}
+            >
+              {/* Hero Text First on Mobile, Search Second */}
+              <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
+                Find a cheaper product.
+              </h1>
+              <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6">
+                Type in what you were about to buy. Pick looks for its cheaper twin:{' '}
+                <strong className="font-semibold text-neutral-800">
+                  a different product with the same key specs, reviews about as good, and a
+                  lower price
+                </strong>
+                , and shows you why they compare. Buy that one instead.
+              </p>
 
-            {/* Search Bar */}
-            <div className="mt-8">
-              <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-            </div>
-          </motion.div>
+              {/* Search Bar */}
+              <div className="mt-8">
+                <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+              </div>
 
-          {/* Quick search hints */}
-          {!hasSearched && (
-            <div className="mt-8 flex items-center gap-2.5 flex-wrap">
-              <span className="text-sm text-neutral-500">Try:</span>
-              {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Oversized Hoodie', 'Laptops', 'Mini Dresses'].map(
-                (term) => (
-                  <button
-                    key={term}
-                    onClick={() => handleSearch(term)}
-                    className="rounded-full bg-gray-100 px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 transition-colors"
-                  >
-                    {term}
-                  </button>
-                )
+              {/* Quick search hints */}
+              {!hasSearched && (
+                <div className="mt-6 flex items-center gap-2.5 flex-wrap">
+                  <span className="text-sm text-neutral-500">Try:</span>
+                  {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Oversized Hoodie', 'Laptops', 'Mini Dresses'].map(
+                    (term) => (
+                      <button
+                        key={term}
+                        onClick={() => handleSearch(term)}
+                        className="rounded-full bg-gray-100 px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 transition-colors"
+                      >
+                        {term}
+                      </button>
+                    )
+                  )}
+                </div>
               )}
-            </div>
-          )}
+            </motion.div>
+
+            {/* The proof: one real comparison, above the fold. Data lives in
+                HERO_COMPARISON at the top of this file. Hidden once a search
+                runs so results take the space. */}
+            {!hasSearched && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                className="lg:col-span-6"
+              >
+                <ComparisonResult data={HERO_COMPARISON} />
+              </motion.div>
+            )}
+          </div>
         </section>
 
         {/* How Pick makes money: one prominent line, wording tied to
@@ -538,74 +598,22 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Primary value prop: the two kinds of deal Pick finds, led by
-            similar picks. The sample chips match the badges on result cards,
-            so this section doubles as the legend for them. */}
+        {/* How it works: the page's ONE how-it-works section (two near
+            duplicates were merged here on 2026-09-01). Step 2 describes the
+            equivalents engine and deliberately does not name the price
+            sources; that sentence lives once, on the retailer strip below.
+            The footnote is the page's single mention of exact-item matching. */}
         {!hasSearched && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-5xl mx-auto px-6 pt-14 pb-4"
-          >
-            <h2 className="text-2xl font-semibold tracking-tight text-black mb-6">
-              Two ways to stop overpaying
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div
-                className="bg-white border-2 border-[#14524B]/25 p-6"
-                style={{ borderRadius: '8px' }}
-              >
-                <span className="inline-block bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm mb-3">
-                  Similar pick · 32% less
-                </span>
-                <h3 className="font-semibold text-black mb-1.5">
-                  A different product you&apos;ll like just as much
-                </h3>
-                <p className="text-sm text-black/60 leading-relaxed">
-                  Often the real deal isn&apos;t the product you searched. It&apos;s a
-                  near-identical alternative for a fraction of the price. Every similar
-                  pick shows why it&apos;s comparable: its rating, review count, and the
-                  specs it shares with the product you searched.
-                </p>
-              </div>
-              <div
-                className="bg-white border border-black/10 p-6"
-                style={{ borderRadius: '8px' }}
-              >
-                <span className="inline-block bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm border border-black/5 mb-3">
-                  Same item · Save $21.99
-                </span>
-                <h3 className="font-semibold text-black mb-1.5">
-                  The exact item, cheaper at another store
-                </h3>
-                <p className="text-sm text-black/60 leading-relaxed">
-                  When the same product is listed at several stores, Pick lines the
-                  prices up and flags the cheapest listing.
-                </p>
-              </div>
-            </div>
-          </motion.section>
-        )}
-
-        {/* One World, One Marketplace: the landed-cost value prop. Gated on
-            the flag because it CLAIMS the capability; it appears the day
-            landed costs do, and never on a deployment that lacks them. */}
-        {!hasSearched && landedCostEnabled() && <GlobalMarketplaceSection />}
-
-        {/* Trusted By Section */}
-        {!hasSearched && <TrustedBy />}
-
-        {/* How It Works Section - Simple 3-card version */}
-        {!hasSearched && (
-          <section className="max-w-5xl mx-auto px-6 py-16 md:py-20">
+          <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-16 md:py-20">
             <p className="text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-[#2A9D8F] mb-3">
               How it works
             </p>
-            <h2 className="text-center text-3xl font-bold tracking-tight text-neutral-900 mb-10">
-              Three steps to the best price
+            <h2 className="text-center text-3xl font-bold tracking-tight text-neutral-900 mb-3">
+              Three steps to the cheaper twin
             </h2>
+            <p className="text-center text-black/60 max-w-md mx-auto mb-10">
+              We do the comparison shopping so you don&apos;t have to open a dozen browser tabs.
+            </p>
             <div className="bg-gray-50 rounded-2xl p-8 md:p-12">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
@@ -613,30 +621,49 @@ export default function Home() {
                     1
                   </div>
                   <h3 className="font-semibold text-neutral-900 mb-2">Paste or search</h3>
-                  <p className="text-sm text-neutral-600">Drop in what you want. We'll take it from there.</p>
+                  <p className="text-sm text-neutral-600">
+                    Drop in what you want: a product name, a brand, or a whole category. Be as
+                    specific or general as you like.
+                  </p>
                 </div>
                 <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
                     2
                   </div>
-                  <h3 className="font-semibold text-neutral-900 mb-2">See stores side by side</h3>
-                  <p className="text-sm text-neutral-600">Compare prices from multiple online stores.</p>
+                  <h3 className="font-semibold text-neutral-900 mb-2">We find the cheaper twin</h3>
+                  <p className="text-sm text-neutral-600">
+                    Pick goes through current listings for a different product that shares the
+                    key specs of what you searched, costs well under it, and is reviewed about
+                    as well, by enough people to count.
+                  </p>
                 </div>
                 <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
                     3
                   </div>
-                  <h3 className="font-semibold text-neutral-900 mb-2">Go where it's cheapest</h3>
-                  <p className="text-sm text-neutral-600">Click. Buy. Move on with your day.</p>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Compare and decide</h3>
+                  <p className="text-sm text-neutral-600">
+                    Each pick shows what it shares with the original. Click through to
+                    whichever store has it. Move on with your day.
+                  </p>
                 </div>
               </div>
             </div>
+            <p className="mt-6 text-center text-sm text-neutral-500">
+              If the exact item shows up at more than one store, Pick flags the cheapest
+              listing while it&apos;s at it.
+            </p>
           </section>
         )}
 
+        {/* Retailer strip: the page's one retailer list and one sourcing
+            sentence (see the note in TrustedBy.tsx). */}
+        {!hasSearched && <TrustedBy />}
 
-        {/* Stats Section */}
-        {!hasSearched && <StatsSection />}
+        {/* One World, One Marketplace: the landed-cost value prop. Gated on
+            the flag because it CLAIMS the capability; it appears the day
+            landed costs do, and never on a deployment that lacks them. */}
+        {!hasSearched && landedCostEnabled() && <GlobalMarketplaceSection />}
 
         {/* Trending Now Section */}
         {!hasSearched && trendingProducts.length > 0 && (
@@ -900,92 +927,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* Divider */}
-        {!hasSearched && (
-          <>
-            <div className="max-w-5xl mx-auto px-6 py-8">
-              <div className="h-px bg-black/10" />
-            </div>
-
-            {/* Retailers - Compact badges */}
-            <section className="max-w-5xl mx-auto px-6 py-12">
-              <h3 className="text-sm font-medium text-black mb-4 text-center">
-                Prices sourced from Target and Google Shopping, across stores including
-              </h3>
-              <div className="flex flex-wrap justify-center gap-2">
-                {retailers.map((retailer) => (
-                  <span
-                    key={retailer}
-                    className="px-3 py-1.5 bg-white border border-black/10 rounded-full text-xs text-black/70"
-                  >
-                    {retailer}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <div className="max-w-5xl mx-auto px-6 py-4">
-              <div className="h-px bg-black/10" />
-            </div>
-
-            {/* How it works */}
-            <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20">
-              <div className="max-w-2xl">
-                <motion.div
-                  initial={{ opacity: 0, x: -60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.7, ease: 'easeOut' }}
-                >
-                  <h2 className="text-3xl font-semibold mb-4 tracking-tight text-black">How it works</h2>
-                  <p className="text-black/60 mb-12 max-w-sm">
-                    We do the comparison shopping so you don&apos;t have to open a dozen browser
-                    tabs.
-                  </p>
-
-                  <div className="space-y-10">
-                    <div className="flex gap-4">
-                      <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">01</span>
-                      <div>
-                        <h3 className="font-medium mb-1.5 text-black">Enter what you&apos;re looking for</h3>
-                        <p className="text-sm text-black/60 leading-relaxed">
-                          Type a product name, brand, or category. Be as specific or general as you
-                          like.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">02</span>
-                      <div>
-                        <h3 className="font-medium mb-1.5 text-black">
-                          We check Target directly and aggregate Google Shopping results from various merchants
-                        </h3>
-                        <p className="text-sm text-black/60 leading-relaxed">
-                          Pick queries Target API directly and aggregates results from Google Shopping for
-                          current prices and similar products.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <span className="text-sm font-medium text-[#2A9D8F] mt-0.5">03</span>
-                      <div>
-                        <h3 className="font-medium mb-1.5 text-black">Compare and decide</h3>
-                        <p className="text-sm text-black/60 leading-relaxed">
-                          See prices side by side, including alternatives you might not have found.
-                          Click through to buy from whichever retailer has the best deal.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </section>
-
-          </>
-        )}
-
         {/* Founder Story */}
         <section className="py-20 px-6 border-t border-black/5">
           <div className="max-w-2xl mx-auto text-center">
@@ -1004,9 +945,9 @@ export default function Home() {
                 at a price I could actually afford.
               </p>
               <p>
-                That's what Pick does. It searches across retailers to find you the best price on the exact product
-                you want, and helps you discover alternatives you might not have found on your own.
-                Save money without settling.
+                That&apos;s what Pick does. Type in the thing you had your eye on, and it goes looking
+                for one you&apos;d be just as happy with, for a lot less, and shows you why the two
+                compare. Save money without settling.
               </p>
             </div>
             <p className="mt-8 text-sm text-black/60">Arjun Shah, Founder</p>
