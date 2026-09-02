@@ -410,10 +410,12 @@ export default function Home() {
       filtered = sortProducts(filtered, sortBy);
     }
 
-    // Enhance with product grouping and savings info. The similar-pick
-    // reference is the top relevance-ordered result, so re-sorting by price
-    // doesn't change which product the alternatives are compared against.
-    return enhanceProductsWithGroupInfo(filtered, results[0]);
+    // Enhance with product grouping and savings info. The raw results, in
+    // source relevance order, seed the same-item clusters and choose the
+    // similar-pick reference (the searched item's cluster and its median
+    // price), so re-sorting or filtering never changes which listings count
+    // as the same item or what the alternatives are compared against.
+    return enhanceProductsWithGroupInfo(filtered, results);
   }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, destination, fxProvider]);
 
   // Each toggle's count is computed against the OTHER active filter, so the

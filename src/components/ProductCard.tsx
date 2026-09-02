@@ -185,8 +185,11 @@ function ProductCard({
             EXAMPLE
           </span>
         )}
-        {/* Same-item chip: this exact product, cheapest of its listings */}
-        {showLowestPrice && !product.isFallback && savingsAmount && savingsAmount > 0 && (
+        {/* Same-item chip: this exact product, cheapest of its listings.
+            A listing that is also a similar pick shows that chip instead:
+            the two share a corner, and the alternative is the bigger news
+            ("from $X" below still marks it as its item's cheapest). */}
+        {showLowestPrice && !product.isFallback && savingsAmount && savingsAmount > 0 && product.matchType !== 'similar' && (
           <span className="absolute bottom-2 left-2 bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
             Same item · Save {currencySymbol(product.currency)}{formatPrice(savingsAmount, product.currency)}
           </span>
