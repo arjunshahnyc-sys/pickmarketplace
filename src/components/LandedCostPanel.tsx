@@ -28,7 +28,9 @@
 //   - The summary wording comes from summarizeTotal(); this component adds
 //     no arithmetic of its own.
 
-import { ChevronDown } from 'lucide-react';
+import { useId, useState } from 'react';
+import { ChevronDown, Info } from 'lucide-react';
+import InfoTip from './InfoTip';
 import { summarizeTotal, type TotalSummary, type UnavailableCode } from '@/lib/landedCost/enrich';
 import { formatMinorUnits } from '@/lib/landedCost/money';
 import { totalResolution, type TotalResolution } from '@/lib/landedCost/rank';
@@ -242,6 +244,65 @@ export function disclaimerFor(lane: Lane): string {
   return 'Estimates are for comparison only, not a quote. Final duties, taxes, and fees are set by customs authorities and carriers at import time.';
 }
 
+/**
+ * What the headline figure is made of, built from the panel's OWN lines so
+ * the tooltip can never overclaim: it lists every line that has a number,
+ * marks the estimated ones, turns the collapsed "no import charges" row
+ * into a clause, names a partial's gaps, and explains a DDP-to-DAP range.
+ * Exported for tests.
+ */
+export function includedSummary(breakdown: LandedCostBreakdown): string {
+  const summary = summarizeTotal(breakdown);
+  if (summary.kind === 'unavailable') return '';
+  const lines = panelLines(breakdown);
+  const noImport = lines.find((l) => l.label.startsWith('No import charges'));
+  const included = lines
+    .filter((l) => l !== noImport && l.amountMinor !== null)
+    .map((l) => {
+      const label = /^[A-Z][a-z]/.test(l.label)
+        ? l.label.charAt(0).toLowerCase() + l.label.slice(1)
+        : l.label;
+      return l.confidence === 'exact' ? label : `${label} (est.)`;
+    });
+  const list =
+    included.length <= 1
+      ? included[0] ?? 'nothing yet'
+      : `${included.slice(0, -1).join(', ')} and ${included[included.length - 1]}`;
+  const clause = noImport
+    ? breakdown.lane === 'intra-eu'
+      ? ', with no import charges on an intra-EU delivery'
+      : ', with no import charges on a domestic purchase'
+    : '';
+
+  const parts: string[] = [];
+  const resolution = totalResolution(breakdown);
+  if (resolution === 'partial') {
+    parts.push(`Known costs only: ${list}${clause}.`);
+    const missing = summary.kind === 'total' ? [] : summary.missing;
+    const names = missingList(missing);
+    if (names) {
+      const cap = names.charAt(0).toUpperCase() + names.slice(1);
+      parts.push(`${cap} ${missing.length > 1 ? 'are' : 'is'} not included.`);
+    }
+  } else if (breakdown.confidence === 'exact') {
+    parts.push(`This total includes ${list}${clause}, all from sourced figures.`);
+  } else {
+    parts.push(`This total is an estimate. It includes ${list}${clause}.`);
+  }
+  if (summary.kind === 'range') {
+    parts.push(
+      'The range runs from import charges prepaid by the seller (low) to charged on delivery (high).'
+    );
+  }
+  if (included.some((l) => l.endsWith('(est.)'))) {
+    parts.push(
+      'Amounts marked est. come from published rates and policies, not a quote from the seller.'
+    );
+  }
+  parts.push('Expand the row for the full breakdown.');
+  return parts.join(' ');
+}
+
 export default function LandedCostPanel({
   breakdown,
   fxPending = false,
@@ -256,6 +317,10 @@ export default function LandedCostPanel({
   /** Destination country the estimate is for. */
   country?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const headlineId = useId();
+  const badgeId = useId();
+  const bodyId = useId();
   const summary = summarizeTotal(breakdown);
   const currency = breakdown.currency;
   const resolution = totalResolution(breakdown);
@@ -280,22 +345,52 @@ export default function LandedCostPanel({
   }
 
   const notes = gapNotes(summary, breakdown.lane);
+  const tip = includedSummary(breakdown);
 
   return (
-    <details className="mt-1 rounded-lg border border-black/10 bg-gray-50/80 text-left">
-      <summary className="flex cursor-pointer items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-700 [&::-webkit-details-marker]:hidden">
-        <span className="font-semibold">{headline}</span>
+    // Controlled disclosure instead of <details>: the bar needs a real
+    // Info trigger in flow right after the badge, and a button nested in
+    // <summary> would be a button inside a button. The full-width overlay
+    // button keeps "click anywhere on the bar to expand"; the trigger and
+    // chevron sit above it. Both buttons opt out of the global hover scale.
+    <div className="relative mt-1 rounded-lg border border-black/10 bg-gray-50/80 text-left">
+      <div className="relative flex flex-wrap items-center gap-x-1.5 gap-y-1 px-2.5 py-1.5 text-xs text-neutral-700">
+        <button
+          type="button"
+          data-no-lift=""
+          aria-expanded={open}
+          aria-controls={bodyId}
+          aria-labelledby={badge ? `${headlineId} ${badgeId}` : headlineId}
+          onClick={() => setOpen((o) => !o)}
+          className="absolute inset-0 h-full w-full cursor-pointer rounded-lg"
+        />
+        <span id={headlineId} className="relative font-semibold">
+          {headline}
+        </span>
         {badge && (
           <span
-            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}
+            id={badgeId}
+            className={`relative rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}
           >
             {badge.text}
           </span>
         )}
-        <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-neutral-400" aria-hidden="true" />
-      </summary>
+        {badge && tip && (
+          <InfoTip
+            label="What this total includes"
+            content={tip}
+            triggerClassName="relative z-[1] -my-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 hover:text-pick-teal"
+          >
+            <Info className="h-3.5 w-3.5" aria-hidden="true" />
+          </InfoTip>
+        )}
+        <ChevronDown
+          className={`relative ml-auto h-3.5 w-3.5 shrink-0 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
+      </div>
 
-      <div className="border-t border-black/5 px-2.5 py-2">
+      <div id={bodyId} hidden={!open} className="border-t border-black/5 px-2.5 py-2">
         {notes.length > 0 && (
           <div className="mb-2 space-y-1">
             {notes.map((note) => (
@@ -340,6 +435,6 @@ export default function LandedCostPanel({
           {disclaimerFor(breakdown.lane)}
         </p>
       </div>
-    </details>
+    </div>
   );
 }

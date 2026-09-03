@@ -102,8 +102,11 @@ function ProductCard({
     // Wrapper div exists so the save button is a sibling of the link, not a
     // descendant: interactive-inside-interactive is invalid HTML and trips
     // screen readers. The hover lift lives here so link and button move
-    // together.
-    <div className="relative group transition hover:-translate-y-0.5">
+    // together. `isolate` scopes the card's own z-indexed controls (Save,
+    // tooltips) to the card, and the z-10 bumps lift the whole card while a
+    // tooltip is open so it paints over the neighbouring cards' controls
+    // rather than under them, while staying under the sticky bar (z-20).
+    <div className="relative isolate group transition hover:-translate-y-0.5 hover:z-10 focus-within:z-10 has-[[data-tip-open]]:z-10">
     <a
       href={product.url}
       target="_blank"

@@ -141,16 +141,18 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   border-color: #C5C5C3;
 }
 
-/* Button base with micro-interactions */
+/* Button base with micro-interactions. Small in-card controls (tooltip
+   triggers, the compare toggle, the cost-row disclosure) opt out with a
+   data-no-lift attribute: a scaling trigger jitters the tooltip it anchors. */
 .btn, button {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.btn:hover:not(:disabled), button:hover:not(:disabled):not([type="submit"]) {
+.btn:hover:not(:disabled), button:hover:not(:disabled):not([type="submit"]):not([data-no-lift]) {
   transform: scale(1.02);
 }
 
-.btn:active:not(:disabled), button:active:not(:disabled):not([type="submit"]) {
+.btn:active:not(:disabled), button:active:not(:disabled):not([type="submit"]):not([data-no-lift]) {
   transform: scale(0.98);
 }
 

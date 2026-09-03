@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   disclaimerFor,
   gapNotes,
+  includedSummary,
   panelLines,
   panelMode,
   unavailableCopy,
@@ -163,5 +164,85 @@ describe('panelLines: the zero import rows collapse even beside an unknown tax r
     expect(lines.some((l) => l.label === 'Sales tax (NJ)' && l.amountMinor !== null)).toBe(true);
     expect(lines.some((l) => l.label.includes('No import charges'))).toBe(true);
     expect(lines).toHaveLength(4);
+  });
+});
+
+describe('includedSummary: the tooltip lists what the panel actually shows', () => {
+  function usInput(subdivision?: string): LandedCostInput {
+    return {
+      item: { priceMinor: 10_000, currency: 'USD' },
+      merchant: { id: 'target', country: 'US', incoterm: 'unknown', configConfidence: 'estimated' },
+      shipping: { costMinor: 599, currency: 'USD', confidence: 'estimated' },
+      destination: { country: 'US', currency: 'USD', subdivision },
+    };
+  }
+  function usCtx() {
+    const { rules, rulesWarnings } = loadRulesFor('US', NOW);
+    return { rules, eu: EU_MEMBERSHIP, fx: new NullFxProvider(), rulesWarnings };
+  }
+
+  it('a resolved domestic estimate names item, shipping and state sales tax', () => {
+    const text = includedSummary(calculateLandedCost(usInput('NJ'), usCtx()));
+    expect(text).toContain('This total is an estimate.');
+    expect(text).toContain('item price');
+    expect(text).toContain('shipping (est.)');
+    expect(text).toContain('sales tax (NJ) (est.)');
+    expect(text).toContain('no import charges on a domestic purchase');
+    expect(text).toContain('not a quote from the seller');
+    expect(text).not.toContain('not included');
+    expect(text).not.toContain(EM_DASH);
+  });
+
+  it('a partial says known costs only and names the gap', () => {
+    const text = includedSummary(calculateLandedCost(usInput(), usCtx()));
+    expect(text).toContain('Known costs only:');
+    expect(text).toContain('Tax is not included.');
+    expect(text).not.toContain('This total');
+  });
+
+  it('an unavailable breakdown has nothing to summarize', () => {
+    const input = usInput('NJ');
+    input.merchant = { id: 'mystery', country: undefined, incoterm: 'unknown', configConfidence: 'unknown' };
+    expect(includedSummary(calculateLandedCost(input, usCtx()))).toBe('');
+  });
+
+  it('a hand-built exact total says so and skips the estimate caveat', () => {
+    const text = includedSummary({
+      lines: [
+        { kind: 'item', label: 'Item price', amountMinor: 1000, basis: '', confidence: 'exact', sourceId: 'input' },
+        { kind: 'shipping', label: 'Shipping', amountMinor: 500, basis: '', confidence: 'exact', sourceId: 'input' },
+      ],
+      totalMinor: 1500,
+      confidence: 'exact',
+      assumptions: [],
+      warnings: [],
+      unknownComponents: [],
+      lane: 'cross-border',
+      currency: 'USD',
+    });
+    expect(text).toBe(
+      'This total includes item price and shipping, all from sourced figures. Expand the row for the full breakdown.'
+    );
+  });
+
+  it('a range explains the DDP-to-DAP spread', () => {
+    const text = includedSummary({
+      lines: [
+        { kind: 'item', label: 'Item price', amountMinor: 1000, basis: '', confidence: 'exact', sourceId: 'input' },
+        { kind: 'duty', label: 'Import duty', amountMinor: 100, basis: '', confidence: 'estimated', sourceId: 'GB.duty' },
+        { kind: 'tax', label: 'Import VAT (20%)', amountMinor: 220, basis: '', confidence: 'estimated', sourceId: 'GB.vat' },
+      ],
+      totalMinor: 1320,
+      totalRange: { lowMinor: 1000, highMinor: 1320 },
+      confidence: 'estimated',
+      assumptions: [],
+      warnings: [],
+      unknownComponents: [],
+      lane: 'cross-border',
+      currency: 'GBP',
+    });
+    expect(text).toContain('import duty (est.)');
+    expect(text).toContain('import VAT (20%) (est.)');
+    expect(text).toContain('prepaid by the seller (low)');
   });
 });
