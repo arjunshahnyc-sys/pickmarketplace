@@ -5,6 +5,7 @@
 
 import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
 import { toAffiliateUrl } from './affiliate';
+import { deriveFacets, type FacetGroup } from './facets/deriveFacets';
 import type { Product, RetailerSearchLink } from './types';
 
 export interface LiveSearchData {
@@ -12,6 +13,8 @@ export interface LiveSearchData {
   retailerSearchLinks: RetailerSearchLink[];
   message: string;
   retailersFound: string[];
+  /** Filter chips derived from the result set (lib/facets); [] when none can narrow it. */
+  facets: FacetGroup[];
   checkedAt: string;
   /** Set when every price source failed — an outage, not a genuine zero-match. */
   allSourcesFailed?: boolean;
@@ -105,15 +108,27 @@ export async function performLiveSearch(
       }),
     }));
 
+  // Filter chips come from the result set itself, computed once here so
+  // the API response, the cache entry, and the ISR category page share
+  // them. Attaches per-product attributes; order, ids and urls unchanged.
+  // Never allowed to fail the paid search path.
+  let facets: FacetGroup[] = [];
+  let results: Product[] = uniqueResults;
+  try {
+    ({ products: results, facets } = deriveFacets(uniqueResults, q));
+  } catch (error) {
+    console.error('Facet derivation failed:', error);
+  }
+
   // Always generate retailer search links
   const retailerLinks = buildRetailerDeepLinks(q);
 
   // Get unique retailers from results
-  const retailersFound = Array.from(new Set(uniqueResults.map(p => p.retailer)));
+  const retailersFound = Array.from(new Set(results.map(p => p.retailer)));
 
   // Determine message based on results
   let message = "";
-  if (uniqueResults.length > 0) {
+  if (results.length > 0) {
     if (retailersFound.length > 1) {
       message = `Showing results from ${retailersFound.slice(0, -1).join(', ')} and ${retailersFound[retailersFound.length - 1]}. Search more retailers below.`;
     } else {
@@ -124,10 +139,11 @@ export async function performLiveSearch(
   }
 
   const data: LiveSearchData = {
-    results: uniqueResults,
+    results,
     retailerSearchLinks: retailerLinks,
     message,
     retailersFound, // For frontend to display dynamic header
+    facets,
     checkedAt: new Date().toISOString(), // preserved in cache so the UI can show real freshness
     allSourcesFailed,
   };

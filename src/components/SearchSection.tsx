@@ -3,6 +3,8 @@
 import { useId } from 'react';
 import { Tag, ArrowUpDown, BadgeCheck, GitCompareArrows } from 'lucide-react';
 import { compareButtonState } from '@/lib/compare/selection';
+import FacetChips from './FacetChips';
+import type { FacetGroup, FacetKey, SelectedFacets } from '@/lib/facets/deriveFacets';
 import SellerTrustKey from './SellerTrustKey';
 import { Product } from '@/lib/types';
 import { landedCostEnabled } from '@/lib/flags';
@@ -22,9 +24,13 @@ interface SearchSectionProps {
   /** Opens the side-by-side comparison; only called when two are ticked. */
   onCompareClick: () => void;
   products?: Product[];
-  query?: string;
-  onSearch?: (query: string) => void;
   saleCount?: number;
+  /** Result-derived filter chips (lib/facets) and their state. */
+  facets?: FacetGroup[];
+  facetCounts?: Record<string, number>;
+  selectedFacets?: SelectedFacets;
+  onFacetToggle?: (key: FacetKey, value: string) => void;
+  onFacetsClear?: () => void;
 }
 
 export default function SearchSection({
@@ -39,9 +45,12 @@ export default function SearchSection({
   compareCount,
   onCompareClick,
   products = [],
-  query = '',
-  onSearch,
   saleCount = 0,
+  facets = [],
+  facetCounts = {},
+  selectedFacets = {},
+  onFacetToggle,
+  onFacetsClear,
 }: SearchSectionProps) {
   // PINCHPOINT 3 FIX - Calculate price range. Only meaningful when every
   // offer shares one currency: mixed-market results (international pilot)
@@ -51,46 +60,6 @@ export default function SearchSection({
   const rangeSymbol = currencySymbol(products[0]?.currency);
   const minPrice = products.length > 0 ? Math.min(...products.map(p => p.price)) : 0;
   const maxPrice = products.length > 0 ? Math.max(...products.map(p => p.price)) : 0;
-
-  // PINCHPOINT 8 FIX - Generate search refinements
-  const getSearchRefinements = (q: string): string[] => {
-    if (!q) return [];
-    const lower = q.toLowerCase();
-    const refinements: string[] = [];
-
-    // Price modifiers
-    if (!lower.includes('under') && !lower.includes('cheap')) {
-      refinements.push(`cheap ${q}`);
-      refinements.push(`${q} under $50`);
-      refinements.push(`${q} under $100`);
-    }
-
-    // Quality modifiers
-    if (!lower.includes('best') && !lower.includes('rated')) {
-      refinements.push(`best rated ${q}`);
-    }
-
-    if (!lower.includes('sale') && !lower.includes('discount')) {
-      refinements.push(`${q} on sale`);
-    }
-
-    // Category-specific modifiers
-    if (lower.includes('shoe') || lower.includes('sneaker')) {
-      if (!lower.includes('boys')) refinements.push(`boys ${q}`);
-      if (!lower.includes('girls')) refinements.push(`girls ${q}`);
-      if (!lower.includes('toddler')) refinements.push(`toddler ${q}`);
-      if (!lower.includes('running')) refinements.push(`running ${q}`);
-    }
-
-    if (lower.includes('laptop') || lower.includes('computer')) {
-      if (!lower.includes('gaming')) refinements.push(`gaming ${q}`);
-      if (!lower.includes('student')) refinements.push(`${q} for students`);
-    }
-
-    return refinements.slice(0, 6);
-  };
-
-  const refinements = getSearchRefinements(query);
 
   // Compare: the count is always in the label so the sticky bar never
   // reflows; below two picks the button is inert but still focusable, and
@@ -107,7 +76,9 @@ export default function SearchSection({
       {/* PINCHPOINT 2 FIX - Sticky Filter Bar. top matches the sticky site
           header's h-[72px] so the bar lands below it instead of under it. */}
       <div className="sticky top-[72px] z-20 bg-white py-3 border-b border-pick-border mb-4">
-        <div className="flex flex-wrap items-center gap-3">
+        {/* One scrollable row on phones (three wrapped rows used to pin
+            ~200px of a 812px screen); wraps normally from sm up. */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0">
           {/* On Sale Only Toggle — disabled when no result carries sale-price data */}
           <button
             onClick={onOnSaleToggle}
@@ -118,7 +89,7 @@ export default function SearchSection({
                 ? 'None of these results include sale-price data'
                 : undefined
             }
-            className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
+            className={`flex shrink-0 items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
               showOnSaleOnly
                 ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
                 : saleCount === 0
@@ -143,7 +114,7 @@ export default function SearchSection({
                   ? 'No results from sellers Pick recognizes'
                   : 'Only show results from retailers and marketplaces Pick recognizes'
               }
-              className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
+              className={`flex shrink-0 items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
                 showVerifiedOnly
                   ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
                   : verifiedCount === 0
@@ -159,7 +130,7 @@ export default function SearchSection({
           )}
 
           {/* Sort Dropdown with Label */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <span id="sort-label" className="text-sm font-medium text-black">Sort:</span>
             <div className="relative">
               <select
@@ -192,7 +163,7 @@ export default function SearchSection({
             aria-disabled={!compare.ready}
             aria-describedby={compareHintId}
             title={compare.hint}
-            className={`ml-auto flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
+            className={`flex shrink-0 items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all sm:ml-auto ${
               compare.ready
                 ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F] hover:bg-teal-100'
                 : 'bg-gray-100 text-neutral-400 cursor-not-allowed'
@@ -207,7 +178,7 @@ export default function SearchSection({
         </div>
 
         {/* Results Count with Price Range - PINCHPOINT 3 */}
-        <div className="text-sm text-black/60 mt-2">
+        <div className="text-sm text-black/60 mt-2" aria-live="polite">
           {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
           {products.length > 0 && singleCurrency && (
             <span className="ml-2 text-pick-teal font-semibold">
@@ -220,19 +191,18 @@ export default function SearchSection({
       {/* Seller-trust key — explains the badges on result cards */}
       <SellerTrustKey />
 
-      {/* PINCHPOINT 8 - Search Refinement Suggestions */}
-      {refinements.length > 0 && onSearch && (
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          {refinements.map((term) => (
-            <button
-              key={term}
-              onClick={() => onSearch(term)}
-              className="px-3 py-1.5 bg-white border border-pick-border rounded-full text-xs whitespace-nowrap hover:border-pick-teal hover:text-pick-teal transition"
-            >
-              {term}
-            </button>
-          ))}
-        </div>
+      {/* Filter chips derived from the result set: type, series, brand,
+          store. Each filters the current results in place (never a new
+          paid search); the old query-string suggestions are gone. */}
+      {onFacetToggle && onFacetsClear && (
+        <FacetChips
+          facets={facets}
+          counts={facetCounts}
+          selected={selectedFacets}
+          onToggle={onFacetToggle}
+          onClear={onFacetsClear}
+          className="mb-4"
+        />
       )}
     </>
   );

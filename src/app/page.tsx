@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TrendingUp, Pause, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 import Footer from '@/components/Footer';
@@ -12,6 +12,15 @@ import SearchSection from '@/components/SearchSection';
 import CompareDrawer from '@/components/CompareDrawer';
 import CompareModal from '@/components/CompareModal';
 import { useCompareSelection } from '@/lib/compare/useCompareSelection';
+import {
+  applyFacets,
+  facetCounts as countFacets,
+  hasFacetSelection,
+  toggleFacet,
+  type FacetGroup,
+  type FacetKey,
+  type SelectedFacets,
+} from '@/lib/facets/deriveFacets';
 import type { SearchResponse, Product } from '@/lib/types';
 // Removed getTrendingProducts - using static trending searches instead
 import Header from '@/components/Header';
@@ -131,6 +140,20 @@ export default function Home() {
   const [sortBy, setSortBy] = useState(landedCostEnabled() ? 'total-cost' : 'relevance');
   const [showOnSaleOnly, setShowOnSaleOnly] = useState(false);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+  // Result-derived filter chips (type, series, brand, store), OR within a
+  // group and AND across groups; the chip list itself comes with the
+  // search response.
+  const [selectedFacets, setSelectedFacets] = useState<SelectedFacets>({});
+  const facets: FacetGroup[] = useMemo(
+    () => (Array.isArray(searchResponse?.facets) ? searchResponse.facets : []),
+    [searchResponse]
+  );
+  const facetsActive = hasFacetSelection(selectedFacets);
+  const handleFacetToggle = useCallback(
+    (key: FacetKey, value: string) => setSelectedFacets((s) => toggleFacet(s, key, value)),
+    []
+  );
+  const handleFacetsClear = useCallback(() => setSelectedFacets({}), []);
 
   // Cycling loading text
   useEffect(() => {
@@ -156,8 +179,9 @@ export default function Home() {
   const handleSearch = async (searchQuery: string) => {
     setIsLoading(true);
     // A new result set: picks from the previous one must not linger in
-    // the drawer.
+    // the drawer, and its chips do not apply to the new results.
     compare.clear();
+    setSelectedFacets({});
     setQuery(searchQuery);
     setHasSearched(true);
     setResults([]);
@@ -336,6 +360,10 @@ export default function Home() {
       );
     }
 
+    // Facet chips filter here too, before enrichment and sorting, so a
+    // narrowed set still ranks and groups exactly like a full one.
+    filtered = applyFacets(filtered, selectedFacets);
+
     if (landedCostEnabled()) {
       // Attach a landed-cost breakdown for the shopper's destination to
       // every offer (per-line provenance and confidence; unknowns stay
@@ -362,26 +390,44 @@ export default function Home() {
     // price), so re-sorting or filtering never changes which listings count
     // as the same item or what the alternatives are compared against.
     return enhanceProductsWithGroupInfo(filtered, results);
-  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, destination, fxProvider]);
+  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, selectedFacets, destination, fxProvider]);
 
-  // Each toggle's count is computed against the OTHER active filter, so the
-  // number on the button always matches what clicking it would show.
+  // Each toggle's count is computed against the OTHER active filters, so
+  // the number on the button always matches what clicking it would show.
   const saleCount = useMemo(() => {
-    const pool = showVerifiedOnly
-      ? results.filter((p: Product) =>
-          isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
-        )
-      : results;
+    const pool = applyFacets(
+      showVerifiedOnly
+        ? results.filter((p: Product) =>
+            isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
+          )
+        : results,
+      selectedFacets
+    );
     return pool.filter((p: Product) => p.originalPrice && p.originalPrice > p.price).length;
-  }, [results, showVerifiedOnly]);
+  }, [results, showVerifiedOnly, selectedFacets]);
   const verifiedCount = useMemo(() => {
-    const pool = showOnSaleOnly
-      ? results.filter((p: Product) => p.originalPrice && p.originalPrice > p.price)
-      : results;
+    const pool = applyFacets(
+      showOnSaleOnly
+        ? results.filter((p: Product) => p.originalPrice && p.originalPrice > p.price)
+        : results,
+      selectedFacets
+    );
     return pool.filter((p: Product) =>
       isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
     ).length;
-  }, [results, showOnSaleOnly]);
+  }, [results, showOnSaleOnly, selectedFacets]);
+  // Chip counts follow the same rule: the pool is the results with the
+  // sale and verified toggles applied; each group ignores its own picks.
+  const facetCounts = useMemo(() => {
+    let pool: Product[] = results;
+    if (showOnSaleOnly) pool = pool.filter((p) => p.originalPrice && p.originalPrice > p.price);
+    if (showVerifiedOnly) {
+      pool = pool.filter((p) =>
+        isRecognizedSeller(getRetailerTrust(p.retailer, { market: p.sourceMarket }).level)
+      );
+    }
+    return countFacets(pool, facets, selectedFacets);
+  }, [results, facets, showOnSaleOnly, showVerifiedOnly, selectedFacets]);
 
   // Trending card, rendered twice (real + loop clone). Clones are untabbable;
   // their wrapper is aria-hidden.
@@ -714,18 +760,21 @@ export default function Home() {
                   compareCount={compare.selected.length}
                   onCompareClick={compare.openModal}
                   products={filteredResults}
-                  query={query}
-                  onSearch={handleSearch}
                   saleCount={saleCount}
+                  facets={facets}
+                  facetCounts={facetCounts}
+                  selectedFacets={selectedFacets}
+                  onFacetToggle={handleFacetToggle}
+                  onFacetsClear={handleFacetsClear}
                 />
 
                 {/* A filter is active but nothing qualifies */}
-                {(showOnSaleOnly || showVerifiedOnly) && filteredResults.length === 0 && (
+                {(showOnSaleOnly || showVerifiedOnly || facetsActive) && filteredResults.length === 0 && (
                   <div className="text-center py-12 border border-dashed border-black/10 rounded-xl mb-6">
                     <p className="text-sm text-black/60 mb-4">
-                      {showVerifiedOnly && !showOnSaleOnly
+                      {showVerifiedOnly && !showOnSaleOnly && !facetsActive
                         ? 'None of these results come from a verified major retailer.'
-                        : showOnSaleOnly && !showVerifiedOnly
+                        : showOnSaleOnly && !showVerifiedOnly && !facetsActive
                           ? "None of these results include sale-price data, so there's nothing to show with this filter on."
                           : 'No results match the active filters.'}
                     </p>
@@ -733,6 +782,7 @@ export default function Home() {
                       onClick={() => {
                         setShowOnSaleOnly(false);
                         setShowVerifiedOnly(false);
+                        setSelectedFacets({});
                       }}
                       className="px-5 py-2.5 rounded-xl bg-[#2A9D8F] text-white text-sm font-medium hover:bg-[#238B7E] transition"
                     >

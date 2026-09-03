@@ -2,12 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import ProductCard from '@/components/ProductCard';
+import CategoryResults from '@/components/CategoryResults';
 import SellerTrustKey from '@/components/SellerTrustKey';
 import { performLiveSearch } from '@/lib/searchService';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { SEARCH_CATEGORIES, getSearchCategory } from '@/lib/searchCategories';
-import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
 
 // Server-rendered landing pages for popular categories so Google indexes
 // real comparison content (the homepage search is client-fetched and
@@ -87,11 +86,9 @@ export default async function CategorySearchPage({
           <>
             <h2 className="sr-only">Results</h2>
             <SellerTrustKey />
-            <div className={RESULTS_GRID_CLASS}>
-              {products.map((product, i) => (
-                <ProductCard key={product.id || i} product={product} />
-              ))}
-            </div>
+            {/* Chips, compare and the grid live in a client island; the
+                cards are still prerendered here for crawlers. */}
+            <CategoryResults products={products} facets={data.facets ?? []} />
           </>
         ) : (
           // Build-time or revalidation hiccup — still give crawlers and

@@ -53,6 +53,23 @@ export interface Product {
    * otherwise and on server-rendered category pages.
    */
   landedCost?: LandedCostBreakdown;
+  /**
+   * Filter-chip attributes derived from the result set by
+   * lib/facets/deriveFacets.ts (product type, recurring series, real brand).
+   * Attached by performLiveSearch; absent on older cached responses.
+   */
+  attributes?: ProductAttributes;
+}
+
+export interface ProductAttributes {
+  /** Shopper-facing product type, e.g. "Golf Balls". */
+  type?: string;
+  /** Recurring model or series codes in this listing, e.g. ["Pro V1"]. */
+  lines?: string[];
+  /** Recurring descriptive phrases, e.g. ["Noise Cancelling"]. */
+  features?: string[];
+  /** The brand, only when it is a real brand word and not the store. */
+  brand?: string;
 }
 
 export interface RetailerSearchLink {
