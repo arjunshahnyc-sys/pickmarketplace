@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, Pause, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 import Footer from '@/components/Footer';
@@ -11,6 +11,7 @@ import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
 import SearchSection from '@/components/SearchSection';
 import CompareDrawer from '@/components/CompareDrawer';
 import CompareModal from '@/components/CompareModal';
+import { useCompareSelection } from '@/lib/compare/useCompareSelection';
 import type { SearchResponse, Product } from '@/lib/types';
 // Removed getTrendingProducts - using static trending searches instead
 import Header from '@/components/Header';
@@ -121,10 +122,9 @@ export default function Home() {
   const [searchError, setSearchError] = useState(false);
   const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(null);
 
-  // Compare mode state
-  const [isCompareMode, setIsCompareMode] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [showCompareModal, setShowCompareModal] = useState(false);
+  // Compare selection: no mode, every card carries a checkbox; the hook
+  // owns the picks, the drawer's announcement, the modal, and Escape.
+  const compare = useCompareSelection();
 
   // Filter and sort state. Landed cost is the default sort when the flag is
   // on; 'relevance' stays the flag-off default (characterized behavior).
@@ -153,67 +153,11 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // ESC closes the compare modal first, then exits compare mode. Clearing
-  // only the selection used to leave showCompareModal stuck true, so the
-  // modal auto-reopened as soon as two products were selected again.
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (showCompareModal) {
-        setShowCompareModal(false);
-        return;
-      }
-      if (isCompareMode) {
-        setIsCompareMode(false);
-        setSelectedProducts([]);
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isCompareMode, showCompareModal]);
-
-  // Compare mode handlers
-  const handleCompareClick = () => {
-    setIsCompareMode(!isCompareMode);
-    if (isCompareMode) {
-      setSelectedProducts([]);
-    }
-  };
-
-  // Stable identity so memoized ProductCards don't re-render on every
-  // parent render just because the callback prop changed
-  const handleProductSelect = useCallback((product: Product) => {
-    setSelectedProducts((prev) => {
-      const isAlreadySelected = prev.some((p) => p.url === product.url);
-      if (isAlreadySelected) {
-        return prev.filter((p) => p.url !== product.url);
-      }
-      if (prev.length >= 2) {
-        return [prev[1], product];
-      }
-      return [...prev, product];
-    });
-  }, []);
-
-  const handleRemoveProduct = (productUrl: string) => {
-    setSelectedProducts((prev) => prev.filter((p) => p.url !== productUrl));
-  };
-
-  const handleCompareNow = () => {
-    if (selectedProducts.length === 2) {
-      setShowCompareModal(true);
-    }
-  };
-
-  const handleCloseCompareMode = () => {
-    setIsCompareMode(false);
-    setSelectedProducts([]);
-    setShowCompareModal(false);
-  };
-
   const handleSearch = async (searchQuery: string) => {
     setIsLoading(true);
+    // A new result set: picks from the previous one must not linger in
+    // the drawer.
+    compare.clear();
     setQuery(searchQuery);
     setHasSearched(true);
     setResults([]);
@@ -767,8 +711,8 @@ export default function Home() {
                   showVerifiedOnly={showVerifiedOnly}
                   onVerifiedToggle={() => setShowVerifiedOnly(!showVerifiedOnly)}
                   verifiedCount={verifiedCount}
-                  onCompareClick={handleCompareClick}
-                  isCompareMode={isCompareMode}
+                  compareCount={compare.selected.length}
+                  onCompareClick={compare.openModal}
                   products={filteredResults}
                   query={query}
                   onSearch={handleSearch}
@@ -814,9 +758,8 @@ export default function Home() {
                       <motion.div key={product.id || i} variants={cardVariants} className="flex">
                         <ProductCard
                           product={product}
-                          isCompareMode={isCompareMode}
-                          isSelected={selectedProducts.some((p) => p.url === product.url)}
-                          onSelect={handleProductSelect}
+                          isSelected={compare.isSelected(product)}
+                          onSelect={compare.toggle}
                           fxPending={fxStatus === 'loading'}
                           destinationCountry={destination.country}
                         />
@@ -954,21 +897,22 @@ export default function Home() {
       {/* Footer */}
       <Footer />
 
-      {/* Compare Drawer */}
-      {isCompareMode && selectedProducts.length > 0 && (
+      {/* Compare tray: appears with the first pick, stays until cleared */}
+      {compare.selected.length > 0 && (
         <CompareDrawer
-          selectedProducts={selectedProducts}
-          onRemove={handleRemoveProduct}
-          onCompare={handleCompareNow}
-          onClose={handleCloseCompareMode}
+          selectedProducts={compare.selected}
+          onRemove={compare.remove}
+          onCompare={compare.openModal}
+          onClose={compare.clear}
+          announcement={compare.announcement}
         />
       )}
 
       {/* Compare Modal */}
-      {showCompareModal && selectedProducts.length === 2 && (
+      {compare.showModal && compare.selected.length === 2 && (
         <CompareModal
-          products={[selectedProducts[0], selectedProducts[1]]}
-          onClose={() => setShowCompareModal(false)}
+          products={[compare.selected[0], compare.selected[1]]}
+          onClose={compare.closeModal}
         />
       )}
     </div>

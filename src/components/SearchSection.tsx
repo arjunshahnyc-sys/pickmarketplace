@@ -1,6 +1,8 @@
 'use client';
 
-import { Tag, ArrowUpDown, BadgeCheck } from 'lucide-react';
+import { useId } from 'react';
+import { Tag, ArrowUpDown, BadgeCheck, GitCompareArrows } from 'lucide-react';
+import { compareButtonState } from '@/lib/compare/selection';
 import SellerTrustKey from './SellerTrustKey';
 import { Product } from '@/lib/types';
 import { landedCostEnabled } from '@/lib/flags';
@@ -15,8 +17,10 @@ interface SearchSectionProps {
   showVerifiedOnly?: boolean;
   onVerifiedToggle?: () => void;
   verifiedCount?: number;
+  /** Number of products currently ticked for comparison. */
+  compareCount: number;
+  /** Opens the side-by-side comparison; only called when two are ticked. */
   onCompareClick: () => void;
-  isCompareMode: boolean;
   products?: Product[];
   query?: string;
   onSearch?: (query: string) => void;
@@ -32,8 +36,8 @@ export default function SearchSection({
   showVerifiedOnly = false,
   onVerifiedToggle,
   verifiedCount = 0,
+  compareCount,
   onCompareClick,
-  isCompareMode,
   products = [],
   query = '',
   onSearch,
@@ -87,6 +91,12 @@ export default function SearchSection({
   };
 
   const refinements = getSearchRefinements(query);
+
+  // Compare: the count is always in the label so the sticky bar never
+  // reflows; below two picks the button is inert but still focusable, and
+  // its hint tells keyboard and screen-reader users what to do.
+  const compare = compareButtonState(compareCount);
+  const compareHintId = useId();
 
   return (
     // Fragment, not a wrapper div: position:sticky only sticks within its
@@ -177,31 +187,23 @@ export default function SearchSection({
 
           {/* Compare Button */}
           <button
-            onClick={onCompareClick}
-            aria-pressed={isCompareMode}
+            type="button"
+            onClick={compare.ready ? onCompareClick : undefined}
+            aria-disabled={!compare.ready}
+            aria-describedby={compareHintId}
+            title={compare.hint}
             className={`ml-auto flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium transition-all ${
-              isCompareMode
-                ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F]'
-                : 'bg-gray-100 text-neutral-700 hover:bg-gray-200'
+              compare.ready
+                ? 'bg-teal-50 text-[#1F7A6F] ring-1 ring-[#2A9D8F] hover:bg-teal-100'
+                : 'bg-gray-100 text-neutral-400 cursor-not-allowed'
             }`}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <span className="text-sm font-medium">
-              {isCompareMode ? 'Exit Compare' : 'Compare'}
-            </span>
+            <GitCompareArrows size={16} aria-hidden="true" />
+            <span className="text-sm font-medium tabular-nums">{compare.label}</span>
           </button>
+          <span id={compareHintId} className="sr-only">
+            {compare.hint}
+          </span>
         </div>
 
         {/* Results Count with Price Range - PINCHPOINT 3 */}

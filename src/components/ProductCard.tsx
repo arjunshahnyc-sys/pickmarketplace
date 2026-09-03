@@ -16,17 +16,19 @@ import type { EnhancedProduct } from "@/lib/productGrouping";
 // Deterministic across server and client (explicit locale + UTC): cards are
 // prerendered on /search/[slug] pages, and locale/timezone-dependent output
 // like bare toLocaleDateString() causes React hydration mismatches there.
+// Month and day only: a live price check is always recent, and the year
+// pushed the line into a wrap beside the Compare pill.
 const verifiedDateFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
-  year: "numeric",
   timeZone: "UTC",
 });
 
 interface ProductCardProps {
   product: EnhancedProduct;
-  isCompareMode?: boolean;
+  /** Ticked in the compare selection; draws the ring. */
   isSelected?: boolean;
+  /** Present on surfaces that offer compare; absent = no checkbox rendered. */
   onSelect?: (product: Product) => void;
   isBestDeal?: boolean;
   isLowestInGroup?: boolean;
@@ -41,7 +43,6 @@ interface ProductCardProps {
 
 function ProductCard({
   product,
-  isCompareMode = false,
   isSelected = false,
   onSelect,
   isBestDeal = false,
@@ -74,19 +75,15 @@ function ProductCard({
   });
   const flagged = trust.level === 'flagged';
   const retailerLogo = getRetailerLogo(product.retailer, product.sourceMarket);
+  const showVerified = !product.isFallback && !!product.lastVerified;
+  // Example cards are deep links, not offers: nothing to compare.
+  const showCompare = !!onSelect && !product.isFallback;
 
   // Track the failed URL, not a boolean: memoized cards get recycled under
   // index keys, and a bare flag would keep showing the fallback after the
   // card is reused for a product whose image loads fine.
   const [failedImage, setFailedImage] = useState<string | null>(null);
   const imageFailed = !product.image || failedImage === product.image;
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (isCompareMode && onSelect) {
-      e.preventDefault();
-      onSelect(product);
-    }
-  };
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,7 +119,7 @@ function ProductCard({
     // the footer (verified date, cost row) sits at the bottom via mt-auto.
     // The only link is the title text; its ::after pseudo-element stretches
     // over the whole card so the card stays one click target, while every
-    // interactive control (Save, compare, cost row, tooltips) is a SIBLING
+    // interactive control (Save, Compare, cost row, tooltips) is a SIBLING
     // positioned above that overlay: interactive-inside-interactive is
     // invalid HTML and trips screen readers. `isolate` scopes z-indexes to
     // the card; the z-10 bumps lift a card while a tooltip is open so it
@@ -200,38 +197,21 @@ function ProductCard({
             )}
           </div>
         )}
-        {/* Top-right of the image box: the Save button, or the selection
-            mark while compare mode is on. Siblings of the link, above the
-            overlay. */}
-        {isCompareMode ? (
-          <div className="absolute top-2 right-2 z-[1]">
-            <div
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                isSelected ? 'bg-[#2A9D8F] border-[#2A9D8F]' : 'bg-white border-black/20'
-              }`}
-            >
-              {isSelected && (
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleSave}
-            aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
-            title={saved ? 'Remove from saved items' : 'Save to your list'}
-            className={`absolute top-2 right-2 z-[1] w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
-              saved
-                ? 'bg-pick-teal text-white'
-                : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
-            }`}
-          >
-            {saved ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-          </button>
-        )}
+        {/* Top-right of the image box: the Save button, a sibling of the
+            link positioned above its overlay. */}
+        <button
+          type="button"
+          onClick={handleSave}
+          aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
+          title={saved ? 'Remove from saved items' : 'Save to your list'}
+          className={`absolute top-2 right-2 z-[1] w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
+            saved
+              ? 'bg-pick-teal text-white'
+              : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
+          }`}
+        >
+          {saved ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* Seller row: logo or text pill plus the trust badge. min-h reserves
@@ -329,7 +309,6 @@ function ProductCard({
           // even when affiliate links are live everywhere else.
           rel={isAffiliateUrl(product.url) ? "noopener noreferrer sponsored" : "noopener noreferrer"}
           aria-label={linkLabel}
-          onClick={handleClick}
           // The global a:focus-visible outline would ring only the title
           // text; the wrapper rings the whole card instead (has-[a:focus-visible]).
           className="focus-visible:outline-none! focus-visible:shadow-none! after:absolute after:inset-0 after:rounded-xl after:content-['']"
@@ -400,9 +379,30 @@ function ProductCard({
           up. The cost row is interactive: a positioned sibling above the
           link overlay (see the shell comment). */}
       <div className="mt-auto pt-1">
-        {!product.isFallback && product.lastVerified && (
-          <div className="text-[10px] text-pick-muted">
-            Price verified {verifiedDateFormat.format(new Date(product.lastVerified))}
+        {(showVerified || showCompare) && (
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+            {showVerified ? (
+              <div className="whitespace-nowrap text-[10px] text-pick-muted">
+                Price verified {verifiedDateFormat.format(new Date(product.lastVerified!))}
+              </div>
+            ) : (
+              <span />
+            )}
+            {/* Compare: a native checkbox in a labelled pill, so Space
+                toggles it, its state is announced, and the whole pill is
+                the tap target. A sibling of the link, above its overlay. */}
+            {showCompare && (
+              <label className="relative z-[1] ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-200/70 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-700 transition-colors hover:border-pick-teal has-[:checked]:border-pick-teal has-[:checked]:bg-teal-50 has-[:checked]:text-[#1F7A6F]">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 cursor-pointer accent-pick-teal"
+                  checked={isSelected}
+                  onChange={() => onSelect?.(product)}
+                  aria-label={`Compare ${product.name}`}
+                />
+                Compare
+              </label>
+            )}
           </div>
         )}
         {product.landedCost && !product.isFallback && (

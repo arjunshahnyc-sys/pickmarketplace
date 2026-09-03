@@ -52,7 +52,11 @@ export default function InfoTip({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dispatch('escape');
+      if (e.key !== 'Escape') return;
+      // Escape closes the innermost thing: this tip, not the page's compare
+      // selection or dialog behind it.
+      e.stopPropagation();
+      dispatch('escape');
     };
     const onPointerDown = (e: PointerEvent) => {
       const t = e.target as Node | null;
