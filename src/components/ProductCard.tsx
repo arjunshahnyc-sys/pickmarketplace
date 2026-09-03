@@ -2,8 +2,10 @@
 
 import { memo, useState } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
-import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle, Store, Users } from "lucide-react";
+import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle, Store, Users, Info } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
+import { TRUST_LEVEL_META, type TrustLevelMeta } from "@/lib/trust/explain";
+import InfoTip from "./InfoTip";
 import { getRetailerLogo } from "./RetailerLogos";
 import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
@@ -18,6 +20,15 @@ import type { EnhancedProduct } from "@/lib/productGrouping";
 // like bare toLocaleDateString() causes React hydration mismatches there.
 // Month and day only: a live price check is always recent, and the year
 // pushed the line into a wrap beside the Compare pill.
+// Badge icons by the level meta's icon name (lib/trust/explain.ts).
+const TRUST_ICONS: Record<TrustLevelMeta['icon'], typeof BadgeCheck> = {
+  'badge-check': BadgeCheck,
+  store: Store,
+  users: Users,
+  'help-circle': HelpCircle,
+  'alert-triangle': AlertTriangle,
+};
+
 const verifiedDateFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
@@ -74,6 +85,8 @@ function ProductCard({
     url: product.url,
   });
   const flagged = trust.level === 'flagged';
+  const trustMeta = TRUST_LEVEL_META[trust.level];
+  const TrustIcon = TRUST_ICONS[trustMeta.icon];
   const retailerLogo = getRetailerLogo(product.retailer, product.sourceMarket);
   const showVerified = !product.isFallback && !!product.lastVerified;
   // Example cards are deep links, not offers: nothing to compare.
@@ -214,10 +227,14 @@ function ProductCard({
         </button>
       </div>
 
-      {/* Seller row: logo or text pill plus the trust badge. min-h reserves
-          one line so a wrapped badge row on a narrow card does not push the
-          title out of line with its neighbours. */}
-      <div className="mt-3 flex items-center gap-1.5 flex-wrap min-h-5">
+      {/* Seller row: logo or text pill plus the trust badge. The badge is
+          a real button (a sibling of the link, above its overlay) whose
+          tooltip says WHY this seller carries the label; its explanation
+          is always in the accessibility tree via aria-describedby. The
+          row is position:relative so the panel spans the card width.
+          min-h reserves one line so a wrapped row on a narrow card does
+          not push the title out of line with its neighbours. */}
+      <div className="relative mt-3 flex items-center gap-1.5 flex-wrap min-h-5">
         {retailerLogo ? (
           // Fixed-size box so every card's logo badge is identical;
           // object-contain centers wordmarks of any aspect ratio inside it.
@@ -239,51 +256,21 @@ function ProductCard({
             {product.retailer}
           </span>
         )}
-        {trust.level === 'verified' && (
-          <span
-            title={trust.description}
-            className="inline-flex items-center gap-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-teal-50 text-[#1F7A6F]"
-          >
-            <BadgeCheck className="w-3 h-3" aria-hidden="true" />
-            Verified
-          </span>
-        )}
-        {trust.level === 'marketplace' && (
-          <span
-            title={trust.description}
-            className="inline-flex items-center gap-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-50 text-sky-700"
-          >
-            <Store className="w-3 h-3" aria-hidden="true" />
-            Marketplace
-          </span>
-        )}
-        {trust.level === 'marketplace-seller' && (
-          <span
-            title={trust.description}
-            className="inline-flex items-center gap-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"
-          >
-            <Users className="w-3 h-3" aria-hidden="true" />
-            Marketplace seller
-          </span>
-        )}
-        {trust.level === 'unknown' && (
-          <span
-            title={trust.description}
-            className="inline-flex items-center gap-0.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"
-          >
-            <HelpCircle className="w-3 h-3" aria-hidden="true" />
-            Unverified seller
-          </span>
-        )}
-        {flagged && (
-          <span
-            title={trust.description}
-            className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700"
-          >
-            <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-            Possible scam
-          </span>
-        )}
+        <InfoTip
+          content={
+            <>
+              <p className="font-semibold text-neutral-900">{trust.explanation.headline}</p>
+              <p className="mt-0.5">{trust.explanation.reason}</p>
+              <p className="mt-1 text-neutral-500">{trust.explanation.advice}</p>
+            </>
+          }
+          triggerClassName={`relative z-[1] inline-flex cursor-help items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${trustMeta.className}`}
+        >
+          <TrustIcon className="w-3 h-3" aria-hidden="true" />
+          <span className="underline decoration-dotted underline-offset-2">{trustMeta.label}</span>
+          <Info className="w-2.5 h-2.5 opacity-70" aria-hidden="true" />
+          <span className="sr-only">, about this seller</span>
+        </InfoTip>
       </div>
       {flagged && (
         <p className="mt-1 text-[11px] leading-tight text-red-600">

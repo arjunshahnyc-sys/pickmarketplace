@@ -779,6 +779,23 @@ export function domainSignal(
   return 'mismatch';
 }
 
+/**
+ * The registrable host a listing actually links to, for copy that names
+ * it ("links to ikea-outlet.com"). Null when there is no URL, it does not
+ * parse, or it is an intermediary (Google) that says nothing about the
+ * seller. Same unwrapping and neutral-host rules as domainSignal.
+ */
+export function listingHost(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const rd = registrableDomain(new URL(unwrapAffiliate(url)).hostname.toLowerCase());
+    if (!rd || NEUTRAL_DOMAINS.has(rd)) return null;
+    return rd;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Validation (exercised by the registry test suite) ─────────────────────
 
 export function validateRegistry(): string[] {

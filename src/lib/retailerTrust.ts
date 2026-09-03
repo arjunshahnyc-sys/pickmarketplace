@@ -1,11 +1,12 @@
 // Seller-trust classification for search results.
 //
 // Google Shopping results carry whatever merchant name Serper reports
-// (scrapers.ts uses item.source verbatim), so results can come from anyone —
+// (scrapers.ts uses item.source verbatim), so results can come from anyone:
 // major retailers, marketplace platforms, independent marketplace sellers,
 // or scam-prone storefronts. Classification is driven by the merchant trust
-// registry (src/lib/trust/registry.ts); this module adds the flagged list
-// and shapes the result for the UI:
+// registry (src/lib/trust/registry.ts) plus the flagged table
+// (src/lib/trust/flagged.ts); the explanation copy lives in
+// src/lib/trust/explain.ts. Levels:
 //
 //   verified            registered brand-direct or national-retailer entry
 //   marketplace         registered platform mixing first- and third-party
@@ -13,12 +14,10 @@
 //   marketplace-seller  "Platform - Seller" names: an independent seller on
 //                       a registered marketplace, NOT the platform itself
 //   flagged             marketplaces with documented scam/counterfeit
-//                       records (e.g. Temu's 2025 FTC INFORM Act penalty,
-//                       Wish's counterfeit history, DHgate/AliExpress
-//                       replica trade, Shein's 2026 Texas AG suit)
-//   unknown             everything else; default deny — shown unverified
+//                       records (see flagged.ts for the per-merchant data)
+//   unknown             everything else; default deny, shown unverified
 //
-// Registry names must match EXACTLY (after normalization) — substring
+// Registry names must match EXACTLY (after normalization): substring
 // matching would let "Pineapple Boutique" match "apple" or a marketplace
 // seller like "Walmart - SaveMore Deals" inherit Walmart's badge.
 // Flagged names match per-token so "AliExpress US Store" still flags,
@@ -27,9 +26,22 @@
 // When a listing URL carries a real merchant domain, it must match the
 // entry's registered domains or the badge is withheld (lookalike guard);
 // Google intermediary links carry no signal. See registry.domainSignal.
+//
+// classifySeller returns a structured verdict (which entry, which seller,
+// which host, which flagged key) so the card can say WHY; getRetailerTrust
+// is the historical adapter over it and keeps every level outcome.
 
-import { collapse, tokens, splitSellerSuffix } from './trust/identity';
-import { domainSignal, resolveMerchant, REGISTRY } from './trust/registry';
+import { collapse, splitSellerSuffix } from './trust/identity';
+import { explainTrust, type TrustExplanation } from './trust/explain';
+import { findFlagged, type FlaggedMerchant } from './trust/flagged';
+import {
+  domainSignal,
+  listingHost,
+  resolveMerchant,
+  REGISTRY,
+  type DomainSignal,
+  type MerchantEntry,
+} from './trust/registry';
 
 // Re-exported so the historical import sites (RetailerLogos, landedCost
 // merchants config) keep one shared identity function.
@@ -45,7 +57,9 @@ export type TrustLevel =
 export interface RetailerTrust {
   level: TrustLevel;
   label: string;
+  /** One-paragraph reason plus advice (legacy shape, derived from explanation). */
   description: string;
+  explanation: TrustExplanation;
 }
 
 export interface TrustContext {
@@ -55,6 +69,27 @@ export interface TrustContext {
   url?: string;
 }
 
+export type UnknownCause =
+  | 'domain-mismatch'
+  | 'config-only'
+  | 'seller-on-unregistered-platform'
+  | 'no-seller-named'
+  | 'no-entry';
+
+/** Everything the classification learned, for copy that names specifics. */
+export type TrustVerdict =
+  | { level: 'flagged'; retailer: string; flag: FlaggedMerchant }
+  | { level: 'verified'; entry: MerchantEntry; domain: DomainSignal; host: string | null }
+  | { level: 'marketplace'; entry: MerchantEntry }
+  | { level: 'marketplace-seller'; platform: MerchantEntry; seller: string }
+  | {
+      level: 'unknown';
+      retailer: string;
+      cause: UnknownCause;
+      entry: MerchantEntry | null;
+      host: string | null;
+    };
+
 // Every collapsed alias of a trust-reviewed registry entry. Kept as an
 // export because the badge-logo sync test walks it: every recognized seller
 // must resolve to a logo asset.
@@ -62,89 +97,29 @@ export const VERIFIED_RETAILERS: ReadonlySet<string> = new Set(
   REGISTRY.filter((e) => e.tier !== 'config-only').flatMap((e) => e.aliases)
 );
 
-// Marketplaces with widespread, well-documented scam/counterfeit/quality
-// complaints. Distinctive multi-part names also match collapsed substrings
-// ("DHgate Official Store"); every key matches as an exact token.
-const FLAGGED = [
-  'temu',
-  'dhgate',
-  'aliexpress',
-  'alibaba',
-  'shein',
-  'banggood',
-  'joom',
-  'lightinthebox',
-  'fruugo',
-  'desertcart',
-];
-
-// Keys distinctive enough to match anywhere in the collapsed name.
-const FLAGGED_SUBSTRING = new Set([
-  'dhgate',
-  'aliexpress',
-  'lightinthebox',
-  'banggood',
-  'fruugo',
-  'desertcart',
-]);
-
-// Common English words that are also marketplace brands only match when they
-// ARE the merchant name — "Wish" / "Wish.com" flags, "Wishlist Gifts" or
-// "Best Wish Store" must not.
-const FLAGGED_EXACT = new Set(['wish']);
-
-const UNKNOWN_TRUST: RetailerTrust = {
-  level: 'unknown',
-  label: 'Unverified seller',
-  description:
-    "Pick doesn't recognize this seller. Check the store's reviews before buying.",
+const LABELS: Record<TrustLevel, string> = {
+  verified: 'Verified retailer',
+  marketplace: 'Marketplace',
+  'marketplace-seller': 'Marketplace seller',
+  unknown: 'Unverified seller',
+  flagged: 'Possible scam',
 };
 
-export function getRetailerTrust(
-  retailer: string,
-  context?: TrustContext
-): RetailerTrust {
-  const collapsed = collapse(retailer);
-  const parts = tokens(retailer);
+export function classifySeller(retailer: string, context?: TrustContext): TrustVerdict {
+  const flag = findFlagged(retailer);
+  if (flag) return { level: 'flagged', retailer, flag };
 
-  const isFlagged =
-    FLAGGED_EXACT.has(collapsed) ||
-    FLAGGED.some(
-      (key) =>
-        parts.includes(key) || (FLAGGED_SUBSTRING.has(key) && collapsed.includes(key))
-    );
-  if (isFlagged) {
-    return {
-      level: 'flagged',
-      label: 'Possible scam',
-      description:
-        'This marketplace has widespread reports of scams, counterfeits, or undelivered orders. Buy with caution.',
-    };
-  }
-
+  const host = listingHost(context?.url);
   const entry = resolveMerchant(retailer, context?.market);
   if (entry && entry.tier !== 'config-only') {
+    const domain = domainSignal(context?.url, entry);
     // Lookalike guard: a real, non-intermediary URL that isn't on the
     // merchant's registered domains withholds the badge.
-    if (domainSignal(context?.url, entry) === 'mismatch') {
-      return {
-        level: 'unknown',
-        label: 'Unverified seller',
-        description: `This listing links to a site that isn't ${entry.displayName}'s official domain. Verify the seller before buying.`,
-      };
+    if (domain === 'mismatch') {
+      return { level: 'unknown', retailer, cause: 'domain-mismatch', entry, host };
     }
-    if (entry.tier === 'marketplace') {
-      return {
-        level: 'marketplace',
-        label: 'Marketplace',
-        description: `${entry.displayName} hosts listings from ${entry.displayName} itself and from independent third-party sellers. Check the specific seller at checkout.`,
-      };
-    }
-    return {
-      level: 'verified',
-      label: 'Verified retailer',
-      description: `${entry.displayName}'s official store, recognized by Pick. Verified describes the seller, not the product.`,
-    };
+    if (entry.tier === 'marketplace') return { level: 'marketplace', entry };
+    return { level: 'verified', entry, domain, host };
   }
 
   // "Platform - Seller": an independent seller on a registered marketplace.
@@ -154,15 +129,32 @@ export function getRetailerTrust(
   if (split) {
     const platform = resolveMerchant(split.platform, context?.market);
     if (platform?.allowsThirdPartySellers) {
-      return {
-        level: 'marketplace-seller',
-        label: 'Marketplace seller',
-        description: `Sold by "${split.seller}", an independent seller on ${platform.displayName} — not by ${platform.displayName} itself. Check the seller's ratings before buying.`,
-      };
+      return { level: 'marketplace-seller', platform, seller: split.seller };
+    }
+    if (!entry) {
+      return { level: 'unknown', retailer, cause: 'seller-on-unregistered-platform', entry: null, host };
     }
   }
 
-  return UNKNOWN_TRUST;
+  if (entry) return { level: 'unknown', retailer, cause: 'config-only', entry, host };
+  if (collapse(retailer) === 'googleshopping') {
+    return { level: 'unknown', retailer, cause: 'no-seller-named', entry: null, host };
+  }
+  return { level: 'unknown', retailer, cause: 'no-entry', entry: null, host };
+}
+
+export function getRetailerTrust(
+  retailer: string,
+  context?: TrustContext
+): RetailerTrust {
+  const verdict = classifySeller(retailer, context);
+  const explanation = explainTrust(verdict);
+  return {
+    level: verdict.level,
+    label: LABELS[verdict.level],
+    description: `${explanation.reason} ${explanation.advice}`,
+    explanation,
+  };
 }
 
 /**

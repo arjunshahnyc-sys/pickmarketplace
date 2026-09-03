@@ -3,7 +3,6 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CategoryResults from '@/components/CategoryResults';
-import SellerTrustKey from '@/components/SellerTrustKey';
 import { performLiveSearch } from '@/lib/searchService';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { SEARCH_CATEGORIES, getSearchCategory } from '@/lib/searchCategories';
@@ -85,7 +84,6 @@ export default async function CategorySearchPage({
         {products.length > 0 ? (
           <>
             <h2 className="sr-only">Results</h2>
-            <SellerTrustKey />
             {/* Chips, compare and the grid live in a client island; the
                 cards are still prerendered here for crawlers. */}
             <CategoryResults products={products} facets={data.facets ?? []} />

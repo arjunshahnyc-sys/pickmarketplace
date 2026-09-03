@@ -5,7 +5,6 @@ import { Tag, ArrowUpDown, BadgeCheck, GitCompareArrows } from 'lucide-react';
 import { compareButtonState } from '@/lib/compare/selection';
 import FacetChips from './FacetChips';
 import type { FacetGroup, FacetKey, SelectedFacets } from '@/lib/facets/deriveFacets';
-import SellerTrustKey from './SellerTrustKey';
 import { Product } from '@/lib/types';
 import { landedCostEnabled } from '@/lib/flags';
 import { currencySymbol, formatPrice } from '@/lib/formatters';
@@ -187,9 +186,6 @@ export default function SearchSection({
           )}
         </div>
       </div>
-
-      {/* Seller-trust key — explains the badges on result cards */}
-      <SellerTrustKey />
 
       {/* Filter chips derived from the result set: type, series, brand,
           store. Each filters the current results in place (never a new
