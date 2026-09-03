@@ -31,6 +31,7 @@
 // which host, which flagged key) so the card can say WHY; getRetailerTrust
 // is the historical adapter over it and keeps every level outcome.
 
+import type { Product } from './types';
 import { collapse, splitSellerSuffix } from './trust/identity';
 import { explainTrust, type TrustExplanation } from './trust/explain';
 import { findFlagged, type FlaggedMerchant } from './trust/flagged';
@@ -152,7 +153,7 @@ export function getRetailerTrust(
   return {
     level: verdict.level,
     label: LABELS[verdict.level],
-    description: `${explanation.reason} ${explanation.advice}`,
+    description: [explanation.reason, explanation.note, explanation.advice].filter(Boolean).join(' '),
     explanation,
   };
 }
@@ -164,4 +165,19 @@ export function getRetailerTrust(
  */
 export function isRecognizedSeller(level: TrustLevel): boolean {
   return level === 'verified' || level === 'marketplace';
+}
+
+/**
+ * Whether any listing in a result set carries the Unverified badge, so a
+ * results page shows the standing disclosure (UNVERIFIED_DISCLOSURE) only
+ * when a shopper will actually see that label. Classifies with the same
+ * context the card uses (market and listing URL), so the lookalike guard
+ * counts too.
+ */
+export function hasUnverifiedSeller(
+  products: ReadonlyArray<Pick<Product, 'retailer' | 'sourceMarket' | 'url'>>
+): boolean {
+  return products.some(
+    (p) => classifySeller(p.retailer, { market: p.sourceMarket, url: p.url }).level === 'unknown'
+  );
 }

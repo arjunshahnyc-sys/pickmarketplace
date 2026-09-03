@@ -261,6 +261,8 @@ function ProductCard({
             <>
               <p className="font-semibold text-neutral-900">{trust.explanation.headline}</p>
               <p className="mt-0.5">{trust.explanation.reason}</p>
+              {/* Unverified only: the standing not-a-scam disclosure. */}
+              {trust.explanation.note && <p className="mt-1">{trust.explanation.note}</p>}
               <p className="mt-1 text-neutral-500">{trust.explanation.advice}</p>
             </>
           }

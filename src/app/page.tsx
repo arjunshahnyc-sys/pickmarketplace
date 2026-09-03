@@ -9,6 +9,7 @@ import ProductCard from '@/components/ProductCard';
 import { ProductGridSkeleton } from '@/components/ProductCardSkeleton';
 import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
 import SearchSection from '@/components/SearchSection';
+import UnverifiedSellerNote from '@/components/UnverifiedSellerNote';
 import CompareDrawer from '@/components/CompareDrawer';
 import CompareModal from '@/components/CompareModal';
 import { useCompareSelection } from '@/lib/compare/useCompareSelection';
@@ -36,7 +37,7 @@ import { landedCostEnabled } from '@/lib/flags';
 import { orderByLandedCost, withLandedCosts } from '@/lib/landedCost/enrich';
 import { useFxProvider } from '@/lib/landedCost/useFxProvider';
 import { useDestination } from '@/contexts/DestinationContext';
-import { getRetailerTrust, isRecognizedSeller } from '@/lib/retailerTrust';
+import { getRetailerTrust, hasUnverifiedSeller, isRecognizedSeller } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -428,6 +429,9 @@ export default function Home() {
     }
     return countFacets(pool, facets, selectedFacets);
   }, [results, facets, showOnSaleOnly, showVerifiedOnly, selectedFacets]);
+  // The Unverified badge's standing disclosure appears under the grid only
+  // while a card in view carries the badge (never with Verified Only on).
+  const showUnverifiedNote = useMemo(() => hasUnverifiedSeller(filteredResults), [filteredResults]);
 
   // Trending card, rendered twice (real + loop clone). Clones are untabbable;
   // their wrapper is aria-hidden.
@@ -817,6 +821,8 @@ export default function Home() {
                     ))}
                   </motion.div>
                 </ErrorBoundary>
+
+                {showUnverifiedNote && <UnverifiedSellerNote className="mt-4" />}
 
                 {/* Affiliate Disclosure */}
                 {!isLoading && results.length > 0 && (

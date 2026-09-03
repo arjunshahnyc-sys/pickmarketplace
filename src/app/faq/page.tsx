@@ -49,6 +49,11 @@ export default function FAQPage() {
       answer: "We show you prices from multiple retailers to help you compare options, but we can't guarantee that we always show the absolute lowest price available online. Prices change frequently, some retailers aren't included in our system, and flash sales or promotional codes may not be reflected. We do our best to help you find a great deal.",
     },
     {
+      id: "unverified-seller",
+      question: "What does the \"Unverified seller\" badge mean? Is it a scam warning?",
+      answer: "No. Unverified seller does not mean scam. It only means Pick has not directly verified that store: it is not on our reviewed retailer list, the listing links to a domain we do not recognize, or the price feed did not name the seller. Plenty of legitimate small and regional stores show as Unverified. Sellers with documented scam or counterfeit reports carry a separate red \"Possible scam\" label. Hover or tap the badge on any result to see why that seller carries its label, and check the store's reviews and return policy before buying from a store you do not know.",
+    },
+    {
       question: "Why do some products say \"EXAMPLE\" or show placeholder images?",
       answer: "When our price-checking system can't retrieve current data from retailers (due to anti-bot protections or technical issues), we sometimes show example products to demonstrate how the platform works. These are clearly labeled with an \"EXAMPLE\" badge and disclaimer. The links go to retailer search pages rather than specific product pages.",
     },
@@ -70,9 +75,12 @@ export default function FAQPage() {
 
           <div className="space-y-8">
             {faqs.map((faq, index) => (
+              // id makes an entry linkable (/faq#unverified-seller from the
+              // results footnote); scroll-mt clears the sticky header.
               <div
                 key={index}
-                className="p-6 bg-white border border-gray-200 rounded-lg hover:border-teal-600 transition"
+                id={faq.id}
+                className="p-6 bg-white border border-gray-200 rounded-lg hover:border-teal-600 transition scroll-mt-24"
               >
                 <h2 className="text-xl font-semibold text-black mb-3">
                   {faq.question}

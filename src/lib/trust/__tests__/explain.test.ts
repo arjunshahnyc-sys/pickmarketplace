@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { classifySeller, getRetailerTrust, type TrustLevel } from '../../retailerTrust';
-import { explainTrust, TRUST_LEVEL_META } from '../explain';
+import { classifySeller, getRetailerTrust, hasUnverifiedSeller, type TrustLevel } from '../../retailerTrust';
+import { explainTrust, TRUST_LEVEL_META, UNVERIFIED_DISCLOSURE } from '../explain';
 import { findFlagged, FLAGGED_MERCHANTS } from '../flagged';
 import { listingHost } from '../registry';
 
@@ -92,8 +92,30 @@ describe('explainTrust: the reason names the specific basis', () => {
   it('config-only versus no record versus unnamed seller read differently', () => {
     expect(reason('Kmart', { market: 'AU' }).reason).toContain('shipping estimates but has not reviewed it as a seller');
     expect(reason('Random Storefront 123').reason).toContain('Pick has no record of Random Storefront 123');
-    expect(reason('Random Storefront 123').reason).toContain('not a judgment on the store or the product');
     expect(reason('Google Shopping').reason).toContain('did not name the seller');
+  });
+
+  it('every kind of unverified carries the not-a-scam disclosure; no other level does', () => {
+    const unknowns: Array<[string, Parameters<typeof classifySeller>[1]]> = [
+      ['IKEA', { url: 'https://ikea-outlet.com/x' }],
+      ['Kmart', { market: 'AU' }],
+      ['Random Storefront 123', undefined],
+      ['Google Shopping', undefined],
+      ['Bob - Discount Furniture', undefined],
+    ];
+    for (const [name, ctx] of unknowns) {
+      const v = classifySeller(name, ctx);
+      expect(v.level, name).toBe('unknown');
+      expect(explainTrust(v).note, name).toBe(UNVERIFIED_DISCLOSURE);
+    }
+    for (const name of ['Apple', 'Amazon', 'Walmart - ABOUTYES', 'Temu']) {
+      expect(explainTrust(classifySeller(name)).note, name).toBeUndefined();
+    }
+    // The disclosure itself: not a scam, only not directly verified by Pick,
+    // and it points at the label that IS the warning.
+    expect(UNVERIFIED_DISCLOSURE).toContain('does not mean scam');
+    expect(UNVERIFIED_DISCLOSURE).toContain('not directly verified');
+    expect(UNVERIFIED_DISCLOSURE).toContain('Possible scam');
   });
 
   it('flagged: names the marketplace and the reports', () => {
@@ -113,6 +135,9 @@ describe('legacy description and pinned substrings', () => {
   it('keeps the seller name and the official-domain phrase other tests rely on', () => {
     expect(getRetailerTrust('Walmart - ABOUTYES').description).toContain('ABOUTYES');
     expect(getRetailerTrust('IKEA', { url: 'https://ikea-outlet.com/x' }).description).toContain('official domain');
+    // The unverified disclosure rides along in the legacy string too.
+    expect(getRetailerTrust('Random Storefront 123').description).toContain('does not mean scam');
+    expect(getRetailerTrust('Apple').description).not.toContain('does not mean scam');
   });
 
   it('every level produces copy about the seller with no em dash', () => {
@@ -132,7 +157,8 @@ describe('legacy description and pinned substrings', () => {
     for (const [name, ctx] of samples) {
       const t = getRetailerTrust(name, ctx);
       seen.add(t.level);
-      for (const s of [t.description, t.explanation.headline, t.explanation.reason, t.explanation.advice, t.label]) {
+      const note = t.explanation.note ? [t.explanation.note] : [];
+      for (const s of [t.description, t.explanation.headline, t.explanation.reason, t.explanation.advice, t.label, ...note]) {
         expect(s, name).not.toContain(EM_DASH);
         expect(s.length, name).toBeGreaterThan(0);
       }
@@ -147,6 +173,22 @@ describe('legacy description and pinned substrings', () => {
       expect(TRUST_LEVEL_META[level].icon.length).toBeGreaterThan(0);
       expect(TRUST_LEVEL_META[level].className).toContain('bg-');
     }
+  });
+});
+
+describe('hasUnverifiedSeller: the results footnote fires only when a card shows the badge', () => {
+  const offer = (retailer: string, url = 'https://www.google.com/shopping/product/1') => ({ retailer, url });
+
+  it('true with one unverified listing, false for a fully recognized set', () => {
+    expect(hasUnverifiedSeller([offer('Apple'), offer('Amazon'), offer('Walmart - ABOUTYES')])).toBe(false);
+    expect(hasUnverifiedSeller([offer('Apple'), offer('Random Storefront 123')])).toBe(true);
+    expect(hasUnverifiedSeller([offer('Temu')])).toBe(false);
+    expect(hasUnverifiedSeller([])).toBe(false);
+  });
+
+  it('uses the listing URL like the card does, so a lookalike counts', () => {
+    expect(hasUnverifiedSeller([offer('IKEA', 'https://www.ikea.com/us/en/p/x')])).toBe(false);
+    expect(hasUnverifiedSeller([offer('IKEA', 'https://ikea-outlet.com/x')])).toBe(true);
   });
 });
 

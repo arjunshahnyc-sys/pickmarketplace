@@ -9,11 +9,13 @@ import { useMemo, useState } from 'react';
 import { GitCompareArrows } from 'lucide-react';
 import ProductCard from './ProductCard';
 import FacetChips from './FacetChips';
+import UnverifiedSellerNote from './UnverifiedSellerNote';
 import CompareDrawer from './CompareDrawer';
 import CompareModal from './CompareModal';
 import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
 import { compareButtonState } from '@/lib/compare/selection';
 import { useCompareSelection } from '@/lib/compare/useCompareSelection';
+import { hasUnverifiedSeller } from '@/lib/retailerTrust';
 import {
   applyFacets,
   facetCounts,
@@ -38,6 +40,9 @@ export default function CategoryResults({
   const visible = useMemo(() => applyFacets(products, selectedFacets), [products, selectedFacets]);
   const counts = useMemo(() => facetCounts(products, facets, selectedFacets), [products, facets, selectedFacets]);
   const filtering = hasFacetSelection(selectedFacets);
+  // The Unverified badge's standing disclosure, only while a visible card
+  // carries the badge (an empty filtered set shows nothing).
+  const showUnverifiedNote = useMemo(() => hasUnverifiedSeller(visible), [visible]);
   const compareState = compareButtonState(compare.selected.length);
 
   return (
@@ -99,6 +104,8 @@ export default function CategoryResults({
           ))}
         </div>
       )}
+
+      {showUnverifiedNote && <UnverifiedSellerNote className="mt-4" />}
 
       {compare.selected.length > 0 && (
         <CompareDrawer

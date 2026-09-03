@@ -171,6 +171,12 @@ export default function SupportedRetailersPage() {
                   <strong>Affiliate relationships:</strong> Pick doesn't currently participate in any retailer affiliate program, and we earn nothing when you click through. If we join affiliate programs in the future, we'll disclose it here first.
                 </li>
                 <li>
+                  <strong>Seller badges:</strong> Stores on our reviewed list show a Verified badge on their results. Any other store shows Unverified seller, which means we have not directly verified it, not that it is a scam. Sellers with documented scam reports carry a separate Possible scam label.{' '}
+                  <a href="/faq#unverified-seller" className="text-teal-700 hover:text-teal-800 underline">
+                    More on seller badges
+                  </a>.
+                </li>
+                <li>
                   <strong>Price accuracy:</strong> While we check prices regularly, retailers can change prices at any time. Always verify the final price on the retailer's website before purchasing.
                 </li>
                 <li>

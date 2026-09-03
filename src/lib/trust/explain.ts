@@ -2,11 +2,11 @@
 //
 // Every trust level maps to ONE presentation (label, icon, tone) and every
 // classification verdict maps to ONE explanation (headline, reason,
-// advice). The card's badge tooltip reads the explanation; the legacy
-// description string is derived from it, so copy can never drift between
-// surfaces. Pure and DOM-free: tested in node, and deterministic so the
-// prerendered category page hydrates cleanly (dates format with a fixed
-// locale and UTC).
+// advice, and for the unverified level a standing note). The card's badge
+// tooltip reads the explanation; the legacy description string is derived
+// from it, so copy can never drift between surfaces. Pure and DOM-free:
+// tested in node, and deterministic so the prerendered category page
+// hydrates cleanly (dates format with a fixed locale and UTC).
 //
 // Copy rules: describe the SELLER, never the product; name the specific
 // merchant, seller, host or record involved; no em dashes.
@@ -17,6 +17,12 @@ export interface TrustExplanation {
   headline: string;
   reason: string;
   advice: string;
+  /**
+   * Standing disclosure that travels with the label regardless of the
+   * specific reason. Set for every Unverified verdict (UNVERIFIED_DISCLOSURE);
+   * absent on the other levels.
+   */
+  note?: string;
 }
 
 export interface TrustLevelMeta {
@@ -32,6 +38,14 @@ export const TRUST_LEVEL_META: Record<TrustLevel, TrustLevelMeta> = {
   unknown: { label: 'Unverified seller', icon: 'help-circle', className: 'bg-amber-50 text-amber-700' },
   flagged: { label: 'Possible scam', icon: 'alert-triangle', className: 'bg-red-50 text-red-700 font-semibold' },
 };
+
+// The one sentence of disclosure the amber badge must never be read
+// without: unverified is "not reviewed by Pick", never a scam warning
+// (that is the red label). Shown in every Unverified tooltip, under a
+// results grid that contains the badge, and on the FAQ and Supported
+// Retailers pages, all from this constant so the wording cannot drift.
+export const UNVERIFIED_DISCLOSURE =
+  'Unverified seller does not mean scam. It only means Pick has not directly verified the store. Sellers with scam reports are labeled Possible scam instead.';
 
 const VERIFIED_ADVICE = 'Verified describes the seller, not the product.';
 const REVIEWS_ADVICE = "Check the store's reviews before buying.";
@@ -54,6 +68,38 @@ const NAME_MAX = 40;
 function shortName(name: string): string {
   const trimmed = name.trim();
   return trimmed.length > NAME_MAX ? `${trimmed.slice(0, NAME_MAX).trimEnd()}…` : trimmed;
+}
+
+// The specific reason for each kind of unverified; the shared headline and
+// disclosure note are attached by explainTrust so no cause can omit them.
+function explainUnknown(v: Extract<TrustVerdict, { level: 'unknown' }>): Omit<TrustExplanation, 'headline' | 'note'> {
+  switch (v.cause) {
+    case 'domain-mismatch': {
+      const name = v.entry?.displayName ?? 'a recognized retailer';
+      const canonical = v.entry ? ` (${v.entry.domains.canonical})` : '';
+      return {
+        reason: v.host
+          ? `The name matches ${name}, but this listing links to ${v.host}, which is not ${name}'s official domain${canonical}.`
+          : `The name matches ${name}, but this listing links to a site that is not ${name}'s official domain${canonical}.`,
+        advice: 'Verify the seller before buying.',
+      };
+    }
+    case 'config-only':
+      return {
+        reason: `Pick knows ${v.entry?.displayName ?? shortName(v.retailer)}'s storefront for shipping estimates but has not reviewed it as a seller.`,
+        advice: REVIEWS_ADVICE,
+      };
+    case 'no-seller-named':
+      return {
+        reason: 'The price feed did not name the seller for this listing; it came through Google Shopping.',
+        advice: 'Check who the seller is on the store page before buying.',
+      };
+    default:
+      return {
+        reason: `Pick has no record of ${shortName(v.retailer)}.`,
+        advice: REVIEWS_ADVICE,
+      };
+  }
 }
 
 export function explainTrust(v: TrustVerdict): TrustExplanation {
@@ -99,38 +145,7 @@ export function explainTrust(v: TrustVerdict): TrustExplanation {
         advice: 'Buy with caution.',
       };
     }
-    case 'unknown': {
-      switch (v.cause) {
-        case 'domain-mismatch': {
-          const name = v.entry?.displayName ?? 'a recognized retailer';
-          const canonical = v.entry ? ` (${v.entry.domains.canonical})` : '';
-          return {
-            headline: 'Unverified seller',
-            reason: v.host
-              ? `The name matches ${name}, but this listing links to ${v.host}, which is not ${name}'s official domain${canonical}.`
-              : `The name matches ${name}, but this listing links to a site that is not ${name}'s official domain${canonical}.`,
-            advice: 'Verify the seller before buying.',
-          };
-        }
-        case 'config-only':
-          return {
-            headline: 'Unverified seller',
-            reason: `Pick knows ${v.entry?.displayName ?? shortName(v.retailer)}'s storefront for shipping estimates but has not reviewed it as a seller.`,
-            advice: REVIEWS_ADVICE,
-          };
-        case 'no-seller-named':
-          return {
-            headline: 'Unverified seller',
-            reason: 'The price feed did not name the seller for this listing; it came through Google Shopping.',
-            advice: 'Check who the seller is on the store page before buying.',
-          };
-        default:
-          return {
-            headline: 'Unverified seller',
-            reason: `Pick has no record of ${shortName(v.retailer)}. Unverified means not reviewed, not a judgment on the store or the product.`,
-            advice: REVIEWS_ADVICE,
-          };
-      }
-    }
+    case 'unknown':
+      return { headline: 'Unverified seller', ...explainUnknown(v), note: UNVERIFIED_DISCLOSURE };
   }
 }
