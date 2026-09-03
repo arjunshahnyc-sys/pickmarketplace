@@ -1,34 +1,24 @@
+import { IMAGE_BOX_CLASS } from '@/lib/cardLayout';
+
+/**
+ * Loading placeholder shaped exactly like ProductCard (same shell, image
+ * box, badge row, two-line title, price), so the grid does not reflow when
+ * results land. Decorative: the results section announces loading itself.
+ */
 export function ProductCardSkeleton() {
   return (
     <div
-      className="bg-white border border-black/10 overflow-hidden animate-pulse"
-      style={{ borderRadius: '6px' }}
-      role="status"
-      aria-label="Loading product"
+      className="h-full bg-white rounded-xl border border-gray-200/70 p-3 animate-pulse"
+      aria-hidden="true"
     >
-      {/* Image skeleton */}
-      <div className="aspect-[4/3] bg-black/10" />
-
-      {/* Content skeleton */}
-      <div className="p-4">
-        {/* Title skeleton */}
-        <div className="space-y-2 mb-3">
-          <div className="h-4 bg-black/10 rounded w-full" />
-          <div className="h-4 bg-black/10 rounded w-3/4" />
-        </div>
-
-        {/* Price skeleton */}
-        <div className="mb-4">
-          <div className="h-8 bg-black/10 rounded w-1/3 mb-3" />
-          <div className="h-10 bg-black/10 rounded w-full" />
-        </div>
-
-        {/* Tags skeleton */}
-        <div className="flex gap-2 pt-3 border-t border-black/10">
-          <div className="h-6 bg-black/10 rounded w-16" />
-          <div className="h-6 bg-black/10 rounded w-20" />
-        </div>
+      <div className={IMAGE_BOX_CLASS} />
+      <div className="mt-3 h-5 w-20 rounded-full bg-black/5" />
+      <div className="mt-2 space-y-1.5">
+        <div className="h-3.5 w-full rounded bg-black/5" />
+        <div className="h-3.5 w-3/4 rounded bg-black/5" />
       </div>
+      <div className="mt-3 h-6 w-1/3 rounded bg-black/5" />
+      <div className="mt-2 h-3 w-1/2 rounded bg-black/5" />
     </div>
   );
 }

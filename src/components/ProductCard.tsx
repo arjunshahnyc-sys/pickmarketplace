@@ -9,10 +9,11 @@ import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
 import LandedCostPanel from "./LandedCostPanel";
 import { overlaysFor } from "@/lib/cardOverlays";
+import { IMAGE_BOX_CLASS } from "@/lib/cardLayout";
 import type { Product } from "@/lib/types";
 import type { EnhancedProduct } from "@/lib/productGrouping";
 
-// Deterministic across server and client (explicit locale + UTC) — cards are
+// Deterministic across server and client (explicit locale + UTC): cards are
 // prerendered on /search/[slug] pages, and locale/timezone-dependent output
 // like bare toLocaleDateString() causes React hydration mismatches there.
 const verifiedDateFormat = new Intl.DateTimeFormat("en-US", {
@@ -71,6 +72,7 @@ function ProductCard({
     market: product.sourceMarket,
     url: product.url,
   });
+  const flagged = trust.level === 'flagged';
   const retailerLogo = getRetailerLogo(product.retailer, product.sourceMarket);
 
   // Track the failed URL, not a boolean: memoized cards get recycled under
@@ -98,76 +100,40 @@ function ProductCard({
     });
   };
 
+  // The link's accessible name carries everything a screen reader needs in
+  // one announcement: name, seller, price, and the seller warning if any.
+  const linkLabel = `${
+    product.isFallback
+      ? `Search for ${product.name} on ${product.retailer}`
+      : `View ${product.name} on ${product.retailer}, ${currencySymbol(product.currency)}${formatPrice(product.price, product.currency)}`
+  }${
+    flagged
+      ? '. Warning: possible scam, not from a verified reseller'
+      : trust.level === 'unknown'
+        ? '. Unverified seller'
+        : trust.level === 'marketplace-seller'
+          ? '. Independent marketplace seller'
+          : ''
+  }`;
+
   return (
-    // Wrapper div exists so the save button is a sibling of the link, not a
-    // descendant: interactive-inside-interactive is invalid HTML and trips
-    // screen readers. The hover lift lives here so link and button move
-    // together. `isolate` scopes the card's own z-indexed controls (Save,
-    // tooltips) to the card, and the z-10 bumps lift the whole card while a
-    // tooltip is open so it paints over the neighbouring cards' controls
-    // rather than under them, while staying under the sticky bar (z-20).
-    <div className="relative isolate group transition hover:-translate-y-0.5 hover:z-10 focus-within:z-10 has-[[data-tip-open]]:z-10">
-    <a
-      href={product.url}
-      target="_blank"
-      // rel=sponsored is a machine-readable paid-link claim; only make it
-      // when THIS link actually carries commission tracking. Per-link, not
-      // site-wide: commission-excluded merchants (Amazon) keep a plain rel
-      // even when affiliate links are live everywhere else.
-      rel={isAffiliateUrl(product.url) ? "noopener noreferrer sponsored" : "noopener noreferrer"}
-      className={`bg-white rounded-xl border p-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition slide-in block relative ${
-        trust.level === 'flagged' ? 'border-red-300' : 'border-gray-200/70'
-      } ${isCompareMode ? 'cursor-pointer' : ''} ${
-        isSelected
-          ? 'ring-2 ring-[#2A9D8F]'
-          : trust.level === 'flagged'
-            ? 'ring-2 ring-red-400/70'
-            : ''
-      }`}
-      aria-label={`${
-        product.isFallback
-          ? `Search for ${product.name} on ${product.retailer}`
-          : `View ${product.name} on ${product.retailer}, ${currencySymbol(product.currency)}${formatPrice(product.price, product.currency)}`
-      }${
-        trust.level === 'flagged'
-          ? '. Warning: possible scam, not from a verified reseller'
-          : trust.level === 'unknown'
-            ? '. Unverified seller'
-            : trust.level === 'marketplace-seller'
-              ? '. Independent marketplace seller'
-              : ''
-      }`}
-      onClick={handleClick}
+    // CARD SHELL. The wrapper is the visible card and fills its grid cell
+    // (h-full flex-col), so every card in a row ends at the same height and
+    // the footer (verified date, cost row) sits at the bottom via mt-auto.
+    // The only link is the title text; its ::after pseudo-element stretches
+    // over the whole card so the card stays one click target, while every
+    // interactive control (Save, compare, cost row, tooltips) is a SIBLING
+    // positioned above that overlay: interactive-inside-interactive is
+    // invalid HTML and trips screen readers. `isolate` scopes z-indexes to
+    // the card; the z-10 bumps lift a card while a tooltip is open so it
+    // paints over its neighbours and stays under the sticky bar (z-20).
+    // The whole card rings when the link has keyboard focus.
+    <div
+      className={`relative isolate group h-full w-full flex flex-col bg-white rounded-xl border p-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:z-10 focus-within:z-10 has-[[data-tip-open]]:z-10 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-pick-teal ${
+        flagged ? 'border-red-300' : 'border-gray-200/70'
+      } ${isSelected ? 'ring-2 ring-pick-teal' : flagged ? 'ring-2 ring-red-400/70' : ''}`}
     >
-      {/* Compare Mode Checkbox */}
-      {isCompareMode && (
-        <div className="absolute top-2 right-2 z-10">
-          <div
-            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-              isSelected
-                ? 'bg-[#2A9D8F] border-[#2A9D8F]'
-                : 'bg-white border-black/20'
-            }`}
-          >
-            {isSelected && (
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-gray-100 p-4">
+      <div className={IMAGE_BOX_CLASS}>
         {imageFailed ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
             <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
@@ -180,35 +146,46 @@ function ProductCard({
             </span>
           </div>
         ) : (
+          // Decorative: the title link already names the product, so an alt
+          // would make screen readers hear the name twice per card.
           <img
             src={product.image}
-            alt={product.name}
+            alt=""
             className="w-full h-full object-contain group-hover:scale-105 transition-transform"
             onError={() => setFailedImage(product.image)}
           />
         )}
         {/* Overlay chips, pinned to the image box's top-left corner as one
             stack so nothing floats over the product photo and two chips can
-            never collide. Order: the savings chip (same item or similar
-            pick) first, then the discount or EXAMPLE tag. Top-right belongs
-            to the Save button. On phones the image box is about 130px wide,
-            so each chip drops its qualifier below sm and keeps one line. */}
+            never collide. Order: the savings tag (same item or similar
+            pick) first, then the discount or EXAMPLE pill. The stack's
+            max-width leaves the Save button's column (top-right) alone at
+            every breakpoint, down to a 130px phone image box; the savings
+            tag is two short lines (label over amount) for the same reason. */}
         {(overlays.savings || overlays.tag) && (
-          <div className="absolute top-2 left-2 z-[1] flex flex-col items-start gap-1 max-w-[calc(100%-1rem)]">
+          <div className="absolute top-2 left-2 z-[1] flex max-w-[calc(100%-2.75rem)] flex-col items-start gap-1">
             {overlays.savings?.kind === 'same-item' && (
-              // Same-item chip: this exact product, cheapest of its listings.
-              <span className="whitespace-nowrap bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-                <span className="hidden sm:inline">Same item · </span>
-                Save {currencySymbol(overlays.savings.currency)}
-                {formatPrice(overlays.savings.amount, overlays.savings.currency)}
+              // Same-item tag: this exact product, cheapest of its listings.
+              <span className="flex max-w-full flex-col items-start rounded-lg bg-white/95 px-2 py-1 shadow-sm max-sm:px-1.5">
+                <span className="text-[9px] font-medium uppercase leading-none tracking-wide text-neutral-500">
+                  Same item
+                </span>
+                <span className="max-w-full truncate text-xs font-semibold leading-tight text-[#1F7A6F] max-sm:text-[11px]">
+                  Save {currencySymbol(overlays.savings.currency)}
+                  {formatPrice(overlays.savings.amount, overlays.savings.currency)}
+                </span>
               </span>
             )}
             {overlays.savings?.kind === 'similar' && (
-              // Similar-alternative chip: a different product, much cheaper.
+              // Similar-alternative tag: a different product, much cheaper.
               // Solid dark fill so the two decisions never look alike.
-              <span className="whitespace-nowrap bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-                <span className="hidden sm:inline">Similar pick · </span>
-                {overlays.savings.percent}% less
+              <span className="flex max-w-full flex-col items-start rounded-lg bg-[#14524B] px-2 py-1 text-white shadow-sm max-sm:px-1.5">
+                <span className="text-[9px] font-medium uppercase leading-none tracking-wide text-white/75">
+                  Similar pick
+                </span>
+                <span className="text-xs font-semibold leading-tight max-sm:text-[11px]">
+                  {overlays.savings.percent}% less
+                </span>
               </span>
             )}
             {overlays.tag?.kind === 'discount' && (
@@ -223,9 +200,44 @@ function ProductCard({
             )}
           </div>
         )}
+        {/* Top-right of the image box: the Save button, or the selection
+            mark while compare mode is on. Siblings of the link, above the
+            overlay. */}
+        {isCompareMode ? (
+          <div className="absolute top-2 right-2 z-[1]">
+            <div
+              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                isSelected ? 'bg-[#2A9D8F] border-[#2A9D8F]' : 'bg-white border-black/20'
+              }`}
+            >
+              {isSelected && (
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSave}
+            aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
+            title={saved ? 'Remove from saved items' : 'Save to your list'}
+            className={`absolute top-2 right-2 z-[1] w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
+              saved
+                ? 'bg-pick-teal text-white'
+                : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
+            }`}
+          >
+            {saved ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Seller row: logo or text pill plus the trust badge. min-h reserves
+          one line so a wrapped badge row on a narrow card does not push the
+          title out of line with its neighbours. */}
+      <div className="mt-3 flex items-center gap-1.5 flex-wrap min-h-5">
         {retailerLogo ? (
           // Fixed-size box so every card's logo badge is identical;
           // object-contain centers wordmarks of any aspect ratio inside it.
@@ -283,7 +295,7 @@ function ProductCard({
             Unverified seller
           </span>
         )}
-        {trust.level === 'flagged' && (
+        {flagged && (
           <span
             title={trust.description}
             className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700"
@@ -293,14 +305,37 @@ function ProductCard({
           </span>
         )}
       </div>
-      {trust.level === 'flagged' && (
+      {flagged && (
         <p className="mt-1 text-[11px] leading-tight text-red-600">
           Not from a verified reseller. Buy with caution.
         </p>
       )}
 
-      <h3 className="text-sm font-semibold text-neutral-900 mt-2 line-clamp-2 leading-tight group-hover:text-pick-teal transition">
-        {product.name}
+      {/* The title is the card's one link. min-h reserves exactly two lines
+          (2 x leading-tight) so a one-line name does not shorten the card
+          and a three-line name cannot leak a sliver; leading-tight is
+          marked important because the unlayered h1-h6 rule in globals.css
+          would otherwise win and leave the reservation 3px too tall. The
+          link's ::after
+          overlay is what makes the whole card clickable; the <a> and <h3>
+          must stay non-positioned so the overlay measures the wrapper. */}
+      <h3 className="text-sm font-semibold text-neutral-900 mt-2 line-clamp-2 leading-tight! min-h-[2.5em] group-hover:text-pick-teal transition">
+        <a
+          href={product.url}
+          target="_blank"
+          // rel=sponsored is a machine-readable paid-link claim; only make it
+          // when THIS link actually carries commission tracking. Per-link, not
+          // site-wide: commission-excluded merchants (Amazon) keep a plain rel
+          // even when affiliate links are live everywhere else.
+          rel={isAffiliateUrl(product.url) ? "noopener noreferrer sponsored" : "noopener noreferrer"}
+          aria-label={linkLabel}
+          onClick={handleClick}
+          // The global a:focus-visible outline would ring only the title
+          // text; the wrapper rings the whole card instead (has-[a:focus-visible]).
+          className="focus-visible:outline-none! focus-visible:shadow-none! after:absolute after:inset-0 after:rounded-xl after:content-['']"
+        >
+          {product.name}
+        </a>
       </h3>
 
       <div className="mt-2 flex items-baseline gap-2 flex-wrap">
@@ -361,41 +396,24 @@ function ProductCard({
         </div>
       )}
 
-      {!product.isFallback && product.lastVerified && (
-        <div className="mt-1 text-[10px] text-pick-muted">
-          Price verified {verifiedDateFormat.format(new Date(product.lastVerified))}
-        </div>
-      )}
-    </a>
-      {/* Landed-cost breakdown, only present when the flag-on enrichment
-          attached one. A sibling of the link, not a child: <details> is
-          interactive and interactive-inside-interactive is invalid HTML
-          (same reason the save button lives out here). */}
-      {product.landedCost && !product.isFallback && (
-        <LandedCostPanel
-          breakdown={product.landedCost}
-          fxPending={fxPending}
-          itemCurrency={product.currency}
-          country={destinationCountry}
-        />
-      )}
-      {/* Sibling of the link (see wrapper comment). top/right = card padding
-          (12px) + the old inset (8px). */}
-      {!isCompareMode && (
-        <button
-          type="button"
-          onClick={handleSave}
-          aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
-          title={saved ? 'Remove from saved items' : 'Save to your list'}
-          className={`absolute top-5 right-5 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
-            saved
-              ? 'bg-pick-teal text-white'
-              : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
-          }`}
-        >
-          {saved ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-        </button>
-      )}
+      {/* Footer, pushed to the card's bottom edge so a row of cards lines
+          up. The cost row is interactive: a positioned sibling above the
+          link overlay (see the shell comment). */}
+      <div className="mt-auto pt-1">
+        {!product.isFallback && product.lastVerified && (
+          <div className="text-[10px] text-pick-muted">
+            Price verified {verifiedDateFormat.format(new Date(product.lastVerified))}
+          </div>
+        )}
+        {product.landedCost && !product.isFallback && (
+          <LandedCostPanel
+            breakdown={product.landedCost}
+            fxPending={fxPending}
+            itemCurrency={product.currency}
+            country={destinationCountry}
+          />
+        )}
+      </div>
     </div>
   );
 }

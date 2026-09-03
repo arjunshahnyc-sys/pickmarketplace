@@ -50,6 +50,17 @@ describe('card overlay chips: one anchored stack, fixed order', () => {
     expect(out.savings).toEqual({ kind: 'similar', percent: 28 });
   });
 
+  it('a saving under 1% of the typical price is noise, not a chip', () => {
+    expect(
+      overlaysFor({ ...base, isLowestInGroup: true, groupSavingsAmount: 0.02, groupSavingsPercent: 0.04 })
+        .savings
+    ).toBeNull();
+    expect(
+      overlaysFor({ ...base, isLowestInGroup: true, groupSavingsAmount: 1.5, groupSavingsPercent: 1 })
+        .savings
+    ).toEqual({ kind: 'same-item', amount: 1.5, currency: undefined });
+  });
+
   it('no same-item chip without a positive group saving', () => {
     expect(overlaysFor({ ...base, isLowestInGroup: true, groupSavingsAmount: 0 }).savings).toBeNull();
     expect(overlaysFor({ ...base, isLowestInGroup: true }).savings).toBeNull();

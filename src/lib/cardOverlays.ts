@@ -33,6 +33,7 @@ export type OverlayInput = Pick<
   | 'isFallback'
   | 'isLowestInGroup'
   | 'groupSavingsAmount'
+  | 'groupSavingsPercent'
   | 'matchType'
   | 'similarTo'
 >;
@@ -55,11 +56,18 @@ export function overlaysFor(p: OverlayInput): CardOverlays {
   // A listing that is also a similar pick shows that chip instead of the
   // same-item chip: the alternative is the bigger news, and "from $X" on
   // the price row still marks it as its item's cheapest.
+  // A same-item saving below 1% of the group's typical price ("Save $0.02")
+  // is rounding noise, not a deal; the card keeps its "from" prefix, the
+  // chip stays off.
+  const meaningfulSaving =
+    !!p.groupSavingsAmount &&
+    p.groupSavingsAmount > 0 &&
+    (p.groupSavingsPercent === undefined || p.groupSavingsPercent >= 1);
   let savings: SavingsChip | null = null;
   if (p.matchType === 'similar') {
     savings = p.similarTo ? { kind: 'similar', percent: p.similarTo.savingsPercent } : null;
-  } else if (p.isLowestInGroup && p.groupSavingsAmount && p.groupSavingsAmount > 0) {
-    savings = { kind: 'same-item', amount: p.groupSavingsAmount, currency: p.currency };
+  } else if (p.isLowestInGroup && meaningfulSaving) {
+    savings = { kind: 'same-item', amount: p.groupSavingsAmount!, currency: p.currency };
   }
 
   return { savings, tag };

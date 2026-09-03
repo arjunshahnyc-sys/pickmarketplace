@@ -6,6 +6,8 @@ import { motion } from 'motion/react';
 import Footer from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
 import ProductCard from '@/components/ProductCard';
+import { ProductGridSkeleton } from '@/components/ProductCardSkeleton';
+import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
 import SearchSection from '@/components/SearchSection';
 import CompareDrawer from '@/components/CompareDrawer';
 import CompareModal from '@/components/CompareModal';
@@ -722,21 +724,10 @@ export default function Home() {
                   <div className="w-5 h-5 border-2 border-black/10 border-t-[#2A9D8F] rounded-full spinner" />
                   <span className="text-sm animate-pulse">{loadingText}</span>
                 </div>
-                {/* Loading skeleton */}
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-white border border-black/10 rounded-lg overflow-hidden animate-pulse"
-                    >
-                      <div className="aspect-[4/3] bg-black/5" />
-                      <div className="p-4 space-y-3">
-                        <div className="h-4 bg-black/5 rounded w-3/4" />
-                        <div className="h-4 bg-black/5 rounded w-1/2" />
-                        <div className="h-8 bg-black/5 rounded" />
-                      </div>
-                    </div>
-                  ))}
+                {/* Loading skeleton: the same grid and card shell as the
+                    results, so nothing reflows when they land. */}
+                <div className={`w-full mt-8 ${RESULTS_GRID_CLASS}`}>
+                  <ProductGridSkeleton count={8} />
                 </div>
               </div>
             ) : results.length > 0 ? (
@@ -815,10 +806,12 @@ export default function Home() {
                     initial="hidden"
                     whileInView="show"
                     viewport={{ once: true, amount: 0.05 }}
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                    className={RESULTS_GRID_CLASS}
                   >
                     {filteredResults.map((product, i) => (
-                      <motion.div key={product.id || i} variants={cardVariants}>
+                      // flex so the card stretches to the row height (equal
+                      // card heights across a row; the card is h-full).
+                      <motion.div key={product.id || i} variants={cardVariants} className="flex">
                         <ProductCard
                           product={product}
                           isCompareMode={isCompareMode}

@@ -7,6 +7,7 @@ import SellerTrustKey from '@/components/SellerTrustKey';
 import { performLiveSearch } from '@/lib/searchService';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { SEARCH_CATEGORIES, getSearchCategory } from '@/lib/searchCategories';
+import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
 
 // Server-rendered landing pages for popular categories so Google indexes
 // real comparison content (the homepage search is client-fetched and
@@ -86,7 +87,7 @@ export default async function CategorySearchPage({
           <>
             <h2 className="sr-only">Results</h2>
             <SellerTrustKey />
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className={RESULTS_GRID_CLASS}>
               {products.map((product, i) => (
                 <ProductCard key={product.id || i} product={product} />
               ))}
