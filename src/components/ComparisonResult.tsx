@@ -127,7 +127,8 @@ function OfferPanel({
       {/* Phones: a thumbnail-left row, since the two panels stack there.
           sm and up: image on top, kept squat so the whole card sits above
           the fold on a laptop viewport. The savings chip overlays the image
-          on wide screens; on phones it sits on its own line above the row,
+          on wide screens, pinned to the top-left corner like every card
+          chip on the site; on phones it sits on its own line above the row,
           where it has the full panel width and never wraps (never both). */}
       {chip && (
         <span className="sm:hidden inline-flex mb-2 whitespace-nowrap bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
@@ -150,7 +151,7 @@ function OfferPanel({
             </div>
           )}
           {chip && (
-            <span className="hidden sm:inline-flex absolute bottom-2 left-2 bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+            <span className="hidden sm:inline-flex absolute top-2 left-2 bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
               {chip}
             </span>
           )}

@@ -8,6 +8,7 @@ import { getRetailerLogo } from "./RetailerLogos";
 import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
 import LandedCostPanel from "./LandedCostPanel";
+import { overlaysFor } from "@/lib/cardOverlays";
 import type { Product } from "@/lib/types";
 import type { EnhancedProduct } from "@/lib/productGrouping";
 
@@ -51,8 +52,13 @@ function ProductCard({
   const showLowestPrice = isLowestInGroup ?? product.isLowestInGroup;
   const savingsAmount = groupSavingsAmount ?? product.groupSavingsAmount;
   const productGroupSize = groupSize ?? product.groupSize;
-  const savings = product.originalPrice ? product.originalPrice - product.price : 0;
-  const pct = product.originalPrice ? Math.round((savings / product.originalPrice) * 100) : 0;
+  // Image overlay chips: one anchored stack, savings first, then the
+  // discount or EXAMPLE tag (rules and ordering in lib/cardOverlays.ts).
+  const overlays = overlaysFor({
+    ...product,
+    isLowestInGroup: showLowestPrice,
+    groupSavingsAmount: savingsAmount,
+  });
 
   const { isSaved, toggleItem } = useSavedList();
   const saved = isSaved(product.url);
@@ -175,31 +181,41 @@ function ProductCard({
             onError={() => setFailedImage(product.image)}
           />
         )}
-        {savings > 0 && !product.isFallback && (
-          <span className="absolute top-2 left-2 bg-neutral-900/80 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-            -{pct}%
-          </span>
-        )}
-        {product.isFallback && (
-          <span className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 text-[10px] font-medium px-2 py-0.5 rounded-full border border-yellow-300">
-            EXAMPLE
-          </span>
-        )}
-        {/* Same-item chip: this exact product, cheapest of its listings.
-            A listing that is also a similar pick shows that chip instead:
-            the two share a corner, and the alternative is the bigger news
-            ("from $X" below still marks it as its item's cheapest). */}
-        {showLowestPrice && !product.isFallback && savingsAmount && savingsAmount > 0 && product.matchType !== 'similar' && (
-          <span className="absolute bottom-2 left-2 bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-            Same item · Save {currencySymbol(product.currency)}{formatPrice(savingsAmount, product.currency)}
-          </span>
-        )}
-        {/* Similar-alternative chip: a different product, much cheaper.
-            Solid dark fill so the two decisions never look alike. */}
-        {product.matchType === 'similar' && product.similarTo && !product.isFallback && (
-          <span className="absolute bottom-2 left-2 bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-            Similar pick · {product.similarTo.savingsPercent}% less
-          </span>
+        {/* Overlay chips, pinned to the image box's top-left corner as one
+            stack so nothing floats over the product photo and two chips can
+            never collide. Order: the savings chip (same item or similar
+            pick) first, then the discount or EXAMPLE tag. Top-right belongs
+            to the Save button. On phones the image box is about 130px wide,
+            so each chip drops its qualifier below sm and keeps one line. */}
+        {(overlays.savings || overlays.tag) && (
+          <div className="absolute top-2 left-2 z-[1] flex flex-col items-start gap-1 max-w-[calc(100%-1rem)]">
+            {overlays.savings?.kind === 'same-item' && (
+              // Same-item chip: this exact product, cheapest of its listings.
+              <span className="whitespace-nowrap bg-white text-[#1F7A6F] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                <span className="hidden sm:inline">Same item · </span>
+                Save {currencySymbol(overlays.savings.currency)}
+                {formatPrice(overlays.savings.amount, overlays.savings.currency)}
+              </span>
+            )}
+            {overlays.savings?.kind === 'similar' && (
+              // Similar-alternative chip: a different product, much cheaper.
+              // Solid dark fill so the two decisions never look alike.
+              <span className="whitespace-nowrap bg-[#14524B] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                <span className="hidden sm:inline">Similar pick · </span>
+                {overlays.savings.percent}% less
+              </span>
+            )}
+            {overlays.tag?.kind === 'discount' && (
+              <span className="whitespace-nowrap bg-neutral-900/80 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                -{overlays.tag.percent}%
+              </span>
+            )}
+            {overlays.tag?.kind === 'example' && (
+              <span className="whitespace-nowrap bg-yellow-100 text-yellow-800 text-[10px] font-medium px-2 py-0.5 rounded-full border border-yellow-300">
+                EXAMPLE
+              </span>
+            )}
+          </div>
         )}
       </div>
 
