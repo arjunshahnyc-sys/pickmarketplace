@@ -825,6 +825,7 @@ export default function Home() {
                           isSelected={selectedProducts.some((p) => p.url === product.url)}
                           onSelect={handleProductSelect}
                           fxPending={fxStatus === 'loading'}
+                          destinationCountry={destination.country}
                         />
                       </motion.div>
                     ))}

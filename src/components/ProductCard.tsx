@@ -34,6 +34,8 @@ interface ProductCardProps {
   groupSize?: number;
   /** True while FX rates are loading; the cost panel shows a loading state. */
   fxPending?: boolean;
+  /** Destination country the landed-cost estimate is for, e.g. 'GB'. */
+  destinationCountry?: string;
 }
 
 function ProductCard({
@@ -46,7 +48,8 @@ function ProductCard({
   groupSavingsAmount,
   groupSavingsPercent,
   groupSize,
-  fxPending = false
+  fxPending = false,
+  destinationCountry,
 }: ProductCardProps) {
   // Use props first, fallback to product properties
   const showLowestPrice = isLowestInGroup ?? product.isLowestInGroup;
@@ -366,7 +369,12 @@ function ProductCard({
           interactive and interactive-inside-interactive is invalid HTML
           (same reason the save button lives out here). */}
       {product.landedCost && !product.isFallback && (
-        <LandedCostPanel breakdown={product.landedCost} fxPending={fxPending} />
+        <LandedCostPanel
+          breakdown={product.landedCost}
+          fxPending={fxPending}
+          itemCurrency={product.currency}
+          country={destinationCountry}
+        />
       )}
       {/* Sibling of the link (see wrapper comment). top/right = card padding
           (12px) + the old inset (8px). */}
