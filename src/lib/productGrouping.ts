@@ -1,5 +1,24 @@
 import { Product } from './types';
 import { classifySeller } from './retailerTrust';
+import { sharedSpecLabels, specsOfNames, type SpecClaims } from './sharedSpecs';
+
+// One word per meaning, so that two listings of one item written by two
+// sellers still read as the same name: British spellings become American,
+// and "Bluetooth" becomes "wireless" (for whether two names describe one
+// product, the two words make the same claim; the spec chips read the raw
+// name and keep the distinction). Live XM6 listings on 2026-09-10 showed
+// why: Best Buy's "Noise Cancelling" and Target's "Noise Canceling" were
+// two words, so half the cluster never joined.
+const NAME_SPELLINGS = new Map<string, string>([
+  ['cancelling', 'canceling'], ['cancellation', 'canceling'], ['cancelation', 'canceling'],
+  ['colour', 'color'], ['grey', 'gray'], ['moisturising', 'moisturizing'],
+  ['moisturiser', 'moisturizer'], ['organiser', 'organizer'], ['fibre', 'fiber'],
+  ['litre', 'liter'], ['litres', 'liters'], ['metre', 'meter'], ['metres', 'meters'],
+  ['aluminium', 'aluminum'], ['jewellery', 'jewelry'], ['tyre', 'tire'], ['tyres', 'tires'],
+  ['flavour', 'flavor'], ['flavours', 'flavors'], ['favourite', 'favorite'], ['centre', 'center'],
+  ['pyjamas', 'pajamas'], ['cosy', 'cozy'],
+  ['bluetooth', 'wireless'],
+]);
 
 /**
  * Normalize product name for comparison
@@ -10,16 +29,21 @@ import { classifySeller } from './retailerTrust';
 function normalizeProductName(name: string): string[] {
   return name
     .toLowerCase()
-    // "50 ml", "1.89 oz", "2-pack" become one size token ("50ml", "189oz",
-    // "2pack") so a size survives the short-word filter below and reads as
-    // a size everywhere (see UNIT_TOKEN).
+    // "Noise Cancelling", "noise-canceling", "Noise Cancellation" and "ANC"
+    // are one feature, so they are one token.
+    .replace(/noise[\s-]*cancel+(?:ing|ation|ed|ers?)?\b/g, ' anc ')
+    // "50 ml", "1.89 oz", "2-pack", "30-hour" become one token ("50ml",
+    // "189oz", "2pack", "30hour") so a size or a figure survives the
+    // short-word filter below and reads as one everywhere (see UNIT_TOKEN
+    // and HOUR_TOKEN).
     .replace(
-      /(\d+)(?:[.,](\d+))?\s*-?\s*(oz|ml|fl|lb|lbs|kg|mg|g|l|mm|cm|m|in|inch|inches|ft|gb|tb|mb|w|kw|v|mah|hz|khz|ghz|ct|pk|pcs|pc|pack|count|piece|pieces)\b/g,
+      /(\d+)(?:[.,](\d+))?\s*-?\s*(oz|ml|fl|lb|lbs|kg|mg|g|l|mm|cm|m|in|inch|inches|ft|gb|tb|mb|w|kw|v|mah|hz|khz|ghz|ct|pk|pcs|pc|pack|count|piece|pieces|hours|hour|hrs|hr|h)\b/g,
       (_m, whole: string, frac: string | undefined, unit: string) => `${whole}${frac ?? ''}${unit}`
     )
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter(word => word.length > 2); // Remove short words like "oz", "ml"
+    .filter(word => word.length > 2) // Remove short words like "oz", "ml"
+    .map(word => NAME_SPELLINGS.get(word) ?? word);
 }
 
 /**
@@ -135,6 +159,8 @@ const ACCESSORY_WORDS = new Set([
 
 /** Size and spec tokens like "40oz", "16gb", "1080p": never a model number. */
 const UNIT_TOKEN = /^\d+(oz|ml|fl|lb|lbs|kg|mg|g|l|mm|cm|m|in|inch|inches|ft|gb|tb|mb|w|kw|v|mah|hz|khz|ghz|ct|pk|pcs|pc|pack|count|piece|pieces|k|p|x|mp|hr|hrs|min|s|st|nd|rd|th)$/;
+/** Battery-life tokens ("40h", "30hour"): a figure, never a model number and not a size. */
+const HOUR_TOKEN = /^\d+(h|hr|hrs|hour|hours)$/;
 
 /**
  * The words that name the product itself: everything left after listing
@@ -145,7 +171,8 @@ const UNIT_TOKEN = /^\d+(oz|ml|fl|lb|lbs|kg|mg|g|l|mm|cm|m|in|inch|inches|ft|gb|
 function coreWords(name: string): Set<string> {
   return new Set(
     normalizeProductName(name).filter(
-      word => !VARIANT_WORDS.has(word) && !TIER_WORDS.has(word) && !UNIT_TOKEN.test(word)
+      word =>
+        !VARIANT_WORDS.has(word) && !TIER_WORDS.has(word) && !UNIT_TOKEN.test(word) && !HOUR_TOKEN.test(word)
     )
   );
 }
@@ -169,7 +196,7 @@ function sameTier(a: string, b: string): boolean {
 function modelTokens(name: string): Set<string> {
   return new Set(
     normalizeProductName(name).filter(
-      word => /[a-z]/.test(word) && /\d/.test(word) && !UNIT_TOKEN.test(word)
+      word => /[a-z]/.test(word) && /\d/.test(word) && !UNIT_TOKEN.test(word) && !HOUR_TOKEN.test(word)
     )
   );
 }
@@ -313,7 +340,12 @@ export interface EnhancedProduct extends Product {
   similarTo?: {
     name: string;
     savingsPercent: number;
-    /** Meaningful name words shared with the searched item ("wireless", "40oz"). */
+    /**
+     * What the two items share, as chip text: specs read from both items'
+     * listing names ("Over ear", "30+ hr battery", see sharedSpecs.ts) or,
+     * when the names state no spec in common, the meaningful name words
+     * they share ("cerave", "40oz").
+     */
     sharedSpecs: string[];
   };
   /**
@@ -349,6 +381,8 @@ export interface AnchorReference {
   reviewCount: number;
   /** How many listings the cluster holds. */
   listingCount: number;
+  /** Every spec any listing name in the cluster states (see sharedSpecs.ts). */
+  specs: SpecClaims;
 }
 
 /**
@@ -480,6 +514,7 @@ export function pickAnchor(
     rating: bestReviewed.rating as number,
     reviewCount: bestReviewed.reviewCount as number,
     listingCount: group.length,
+    specs: specsOfNames(group.map(p => p.name)),
   };
 }
 
@@ -494,7 +529,9 @@ export function pickAnchor(
 function findSimilarMatch(
   product: Product,
   anchor: AnchorReference,
-  isVerified: (product: Product) => boolean
+  isVerified: (product: Product) => boolean,
+  /** Specs stated across the listing names of the product's own cluster. */
+  productSpecs: SpecClaims
 ): EnhancedProduct['similarTo'] {
   // Cross-currency price ratios are meaningless; similar-pick claims only
   // compare offers priced in the anchor's currency.
@@ -531,9 +568,15 @@ function findSimilarMatch(
   );
   if (distinguishing.length === 0) return undefined;
 
-  const sharedSpecs = productWords
-    .filter(word => anchorWords.has(word) && !GENERIC_NAME_WORDS.has(word))
-    .slice(0, 3);
+  // The chips: specs both items state, read across each item's cluster
+  // of listing names; when the names state none in common, the name
+  // words the two share.
+  const sharedSpecs = sharedSpecLabels(anchor.specs, productSpecs);
+  if (sharedSpecs.length === 0) {
+    sharedSpecs.push(
+      ...productWords.filter(word => anchorWords.has(word) && !GENERIC_NAME_WORDS.has(word)).slice(0, 3)
+    );
+  }
 
   return {
     name: anchor.name,
@@ -574,6 +617,15 @@ export function enhanceProductsWithGroupInfo(
     .map(x => x.i);
   const groups = groupProducts(displayIndexByRelevance.map(i => products[i]));
   const indexByProduct = new Map<Product, number>(products.map((p, i) => [p, i]));
+
+  // What each listing's item claims, read across the listing names of its
+  // cluster in the full result set (relevance order, like the anchor), so
+  // a filter that hides half the cluster never changes the chips.
+  const specsByListing = new Map<string, SpecClaims>();
+  for (const cluster of groupProducts(relevanceOrder.filter(p => !p.isFallback))) {
+    const specs = specsOfNames(cluster.map(p => p.name));
+    for (const p of cluster) specsByListing.set(productKey(p), specs);
+  }
 
   const enhanced: EnhancedProduct[] = products.map(p => ({ ...p }));
 
@@ -630,7 +682,14 @@ export function enhanceProductsWithGroupInfo(
       // or not it has sibling listings of its own: a cheaper alternative
       // does not stop being one because three stores carry it.
       const similarTo =
-        anchor && !priceFlag ? findSimilarMatch(product, anchor, isVerified) : undefined;
+        anchor && !priceFlag
+          ? findSimilarMatch(
+              product,
+              anchor,
+              isVerified,
+              specsByListing.get(productKey(product)) ?? specsOfNames([product.name])
+            )
+          : undefined;
 
       if (group.length === 1) {
         enhanced[index] = {

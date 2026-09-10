@@ -60,18 +60,21 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 // thumbnails are that search's images. Product names are the canonical
 // names rather than Best Buy's "Best Wireless ..." listing title.
 //
-// What is NOT claimed: that Pick's engine produced this pairing (a live
-// XM6 search returned no Soundcore listing that day), or that these prices
-// were checked live (verified stores had the Space One at $59.99 to $79.99).
-// Run through the matcher with the Space One listings injected, the Best
-// Buy listing does pass as a similar pick (verified store, 4.7 with 3,200
-// reviews, far under the $458 reference), and the "What they share" chips
-// it produces are the three name words below: the matcher reads names, not
-// specs, so the card shows exactly those and no more. Sony spells it
-// "Canceling" and Anker "Cancelling", so that word is not shared either.
-// With isExample true the card is captioned "Example result", the footnote
-// says "at list prices, not a live check", and each panel links to a Pick
-// search for that product instead of a retailer page.
+// What is NOT claimed: that Pick's engine produced this pairing on a live
+// page (a live XM6 search returned no Soundcore listing that day), or that
+// these prices were checked live (verified stores had the Space One at
+// $59.99 to $79.99). Run through the matcher with both searches' results
+// together, the Micro Center listing IS a similar pick at 78% less
+// (verified store, 4.7 with 3,200 reviews, far under the $458 reference),
+// and the "What they share" chips below are exactly the ones it produces:
+// specs read from the two items' listing names (src/lib/sharedSpecs.ts),
+// pinned by the "landing page pair" test in productGrouping.test.ts.
+// Bluetooth multipoint is real on both but appears in no listing name, so
+// no chip says it; the battery chip is the lower of the two figures the
+// listings quote. With isExample true the card is captioned "Example
+// result", the footnote says "at list prices, not a live check", and each
+// panel links to a Pick search for that product instead of a retailer
+// page.
 //
 // To swap in a captured live result: search on the site, find a card
 // wearing the "Similar pick" chip (that card is `pick`; the top result of
@@ -109,8 +112,9 @@ const HERO_COMPARISON: ComparisonResultData = {
     rating: 4.7,
     reviewCount: 3000,
   },
-  // Exactly what the matcher produced for this pair (see the note above).
-  sharedSpecs: ['wireless', 'noise', 'headphones'],
+  // Exactly what the matcher produces for this pair (see the note above
+  // and the pinned test); keep the two in step.
+  sharedSpecs: ['Over ear', 'Active noise canceling', 'LDAC audio', 'Bluetooth', '30+ hr battery'],
   // {saving} is filled from the two prices above, so it can never drift.
   payoff: 'The features you were shopping for, {saving} less.',
   checkedAt: '2026-09-10T20:29:58.225Z',

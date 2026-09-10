@@ -15,6 +15,8 @@ import lululemonFixture from './fixtures/similarPicks/lululemon_align_leggings.j
 import nikeFixture from './fixtures/similarPicks/nike_dunk_low.json';
 import ninjaFixture from './fixtures/similarPicks/ninja_creami.json';
 import sonyFixture from './fixtures/similarPicks/sony_wh_1000xm5.json';
+import sony6Fixture from './fixtures/similarPicks/sony_wh_1000xm6.json';
+import spaceOneFixture from './fixtures/similarPicks/soundcore_space_one.json';
 import stanleyFixture from './fixtures/similarPicks/stanley_quencher_40oz.json';
 
 // Similar-pick anchoring, owner-diagnosed 2026-09-01: with the anchor as
@@ -477,6 +479,49 @@ describe('same-item groups (unchanged math)', () => {
   });
 });
 
+// Spec chips, added 2026-09-10 for the landing page pair: "What they
+// share" reads specs from both items' listing names (sharedSpecs.ts)
+// instead of echoing name words, and the tokenizer reads "Cancelling",
+// "Canceling", "Cancellation" and "ANC" as one word and "Bluetooth" as
+// "wireless", so listings that spell a feature differently still cluster.
+describe('shared spec chips', () => {
+  it('clusters listings that spell the same feature differently', () => {
+    const enhanced = enhance([
+      listing({ name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones', price: 458, retailer: 'Target' }),
+      listing({ name: 'Sony WH-1000XM6 Wireless Noise Cancelling Headphones', price: 459.99, retailer: 'Best Buy' }),
+      listing({ name: 'Sony WH-1000XM6 Bluetooth ANC Headphones', price: 449 }),
+      listing({ name: 'Sony WH-1000XM6 Headphones with Noise Cancellation', price: 455 }),
+    ]);
+    expect(enhanced.every((p) => p.groupSize === 4)).toBe(true);
+  });
+
+  it('chips are the specs both items state across their listings, in one vocabulary', () => {
+    const enhanced = enhance(
+      [
+        listing({ name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones', price: 458, retailer: 'Target' }),
+        listing({ name: 'Sony WH-1000XM6 Wireless Noise Cancelling Over-Ear Headphones Premium Bluetooth LDAC Audio, 30-Hour Battery', price: 458, retailer: 'Best Buy' }),
+        listing({ name: 'Anker Soundcore Space One Wireless Noise Cancelling Headphones', price: 99.99, retailer: 'Target' }),
+        listing({ name: 'Anker Soundcore Space One Over-Ear Bluetooth Headphones with Adaptive Noise Cancelling, LDAC Hi-Res Audio and 40H of ANC Playtime', price: 79.99, retailer: 'Target' }),
+      ],
+      undefined,
+      { query: 'sony wh-1000xm6' }
+    );
+    // LDAC and the 30-hour figure come from the second Sony listing, over-ear
+    // from the second Space One listing: an item's specs are its cluster's.
+    // Hi-Res is Anker's alone and 40 hours becomes the shared floor of 30.
+    expect(byName(enhanced, 'Anker Soundcore Space One Wireless Noise Cancelling Headphones').similarTo).toEqual({
+      name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones',
+      savingsPercent: 78,
+      sharedSpecs: ['Over ear', 'Active noise canceling', 'LDAC audio', 'Bluetooth', '30+ hr battery'],
+    });
+  });
+
+  it('falls back to shared name words when the names state no spec in common', () => {
+    const enhanced = enhance(ceraveLike());
+    expect(byName(enhanced, 'CeraVe Daily Moisturizing Lotion').similarTo?.sharedSpecs).toEqual(['cerave', 'moisturizing']);
+  });
+});
+
 // Real result sets captured from /api/search-live: four on 2026-09-02 (the
 // direct Target feed was returning 403 that day) and five on 2026-09-06,
 // the searches the 2026-09-05 live sweep showed misbehaving. Trimmed to the
@@ -584,6 +629,28 @@ describe('captured live searches', () => {
       // A $22.99 rental listing and a used-market price.
       flagged: ['Sony WH-1000XM5 Premium Wireless Noise Canceling Headphones Black', 'Sony WH-1000XM5 - Navy Blue'],
     },
+    // The two searches behind the landing page example, 2026-09-10.
+    {
+      fixture: sony6Fixture,
+      anchor: { name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones', price: 458, priceBasis: 'verified' },
+      // Google Shopping returned no other headphone for this query.
+      picks: [],
+      flagged: [
+        'Sony WH-1000XM6 The Best Wireless Noise Canceling Headphones, HD NC Processor QN3, 12 Microphones, Adaptive NC Optimizer, Mastered by Engineers,',
+      ],
+    },
+    {
+      fixture: spaceOneFixture,
+      anchor: { name: 'Anker Soundcore Space One Wireless Noise Cancelling Headphones', price: 79.99, priceBasis: 'verified' },
+      picks: [],
+      // A $33 unknown seller, and a $26 "Space One Pro" from another: the
+      // Pro joins the Space One cluster by name overlap (a known limit of
+      // the grouping, as with any "Pro" suffix), and is flagged there.
+      flagged: [
+        'Soundcore by Anker Space One Adaptive Active Noise Cancelling Headphones',
+        'Anker Soundcore Space One Pro Wireless Headphones – Adaptive ANC, 50% Ultra-Foldable, Black',
+      ],
+    },
   ];
 
   for (const { fixture, anchor, picks, flagged } of expected) {
@@ -599,4 +666,25 @@ describe('captured live searches', () => {
       expect(similarNames(enhanceProductsWithGroupInfo(cheapestFirst, results, options)).sort()).toEqual([...picks].sort());
     });
   }
+
+  it('the landing page pair: the Space One is a twin of the XM6, and the chips are specs', () => {
+    // HERO_COMPARISON in src/app/page.tsx shows this pair at list prices
+    // (Best Buy's XM6, Micro Center's Space One). Its "What they share"
+    // chips are pinned here so the card never claims more than the matcher
+    // produces from Pick's own listings. Multipoint is real on both but in
+    // no listing name, so no chip says it.
+    const results = [...load(sony6Fixture), ...load(spaceOneFixture)];
+    const options = { query: 'sony wh-1000xm6' };
+    const enhanced = enhanceProductsWithGroupInfo(results, results, options);
+    const microCenter = enhanced.find((p) => p.retailer === 'Micro Center') as EnhancedProduct;
+    expect(microCenter.similarTo).toEqual({
+      name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones',
+      savingsPercent: 78,
+      sharedSpecs: ['Over ear', 'Active noise canceling', 'LDAC audio', 'Bluetooth', '30+ hr battery'],
+    });
+    expect(similarNames(enhanced)).toEqual([
+      'Anker Soundcore Space One Wireless Noise Cancelling Headphones',
+      'Anker Soundcore Space One Active Noise Cancelling Wireless Bluetooth Headphones - Black',
+    ]);
+  });
 });
