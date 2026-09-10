@@ -47,54 +47,73 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 // This object feeds the comparison card in the first fold, the single most
 // important element on the page. Arjun's call on 2026-09-02: show a
 // consistent real-world pair at list prices rather than an empty
-// placeholder, because the similar-pick engine did not surface a genuine
-// "Similar pick" on any of the live queries tried (see the engine task).
+// placeholder. The pair was swapped on 2026-09-10: the previous one saved
+// $70 and its shared words were brand names, so it showed nothing Pick
+// does. This one tells the story: the Sony WH-1000XM6 and its cheaper
+// twin, the Soundcore Space One, 78% less.
 //
-// What is real here: both are real Apple products; the prices are the
-// list prices (AirPods Pro 3 $249, AirPods 4 with Active Noise
-// Cancellation $179); the ratings and review counts are the Google
-// Shopping aggregate ratings from a live search on 2026-09-02; the
-// thumbnails are that search's product images. What is NOT claimed: that
-// Pick's engine produced this pairing, or that these prices were checked
-// live. With isExample true the card is captioned "Example result", the
-// footnote says "at list prices, not a live check", and each panel links
-// to a Pick search for that product instead of a retailer page.
+// What is real here: both are real products; the prices are their list
+// prices, and each is the price of a real listing in Pick's own live
+// search on 2026-09-10 (Best Buy for the XM6, Micro Center for the Space
+// One); the store, rating and review count on each panel are that
+// listing's, counts over a thousand rounded down to the thousand; the
+// thumbnails are that search's images. Product names are the canonical
+// names rather than Best Buy's "Best Wireless ..." listing title.
+//
+// What is NOT claimed: that Pick's engine produced this pairing (a live
+// XM6 search returned no Soundcore listing that day), or that these prices
+// were checked live (verified stores had the Space One at $59.99 to $79.99).
+// Run through the matcher with the Space One listings injected, the Best
+// Buy listing does pass as a similar pick (verified store, 4.7 with 3,200
+// reviews, far under the $458 reference), and the "What they share" chips
+// it produces are the three name words below: the matcher reads names, not
+// specs, so the card shows exactly those and no more. Sony spells it
+// "Canceling" and Anker "Cancelling", so that word is not shared either.
+// With isExample true the card is captioned "Example result", the footnote
+// says "at list prices, not a live check", and each panel links to a Pick
+// search for that product instead of a retailer page.
 //
 // To swap in a captured live result: search on the site, find a card
 // wearing the "Similar pick" chip (that card is `pick`; the top result of
 // the same search is `input`), copy both entries out of the
 // /api/search-live response (name, price, currency, retailer, url, image,
 // rating, reviewCount, sourceMarket), set `sharedSpecs` from the chips
-// under "Alternative to", set `checkedAt` from the response, and drop
-// isExample. Both offers must share a currency or the card shows no saving.
+// under "Alternative to", set `checkedAt` from the response, drop the
+// intro and payoff lines (they describe this example), and drop isExample.
+// Both offers must share a currency or the card shows no saving.
 // ============================================================================
 const HERO_COMPARISON: ComparisonResultData = {
   isExample: true,
-  query: 'airpods pro 3',
+  query: 'sony wh-1000xm6',
+  intro:
+    "Say you want headphones that cancel noise, last a long time on a charge, and switch between your phone and laptop, and Sony's XM6 caught your eye.",
   input: {
-    name: 'Apple AirPods Pro 3',
-    price: 249,
-    currency: 'USD',
-    retailer: 'Apple',
-    url: '/?q=airpods%20pro%203',
-    image:
-      'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQWGDNZZRlbSPs5rtE-OClkjm95GhGL0kmYrOMdzbGyoqEYyYOcUSqw0w8b1T6NiIQJBZmG9njYM0y_4z1ezPUpF7Z09x413K4UkpEMMbRh',
-    rating: 4.7,
-    reviewCount: 21000,
-  },
-  pick: {
-    name: 'Apple AirPods 4 with Active Noise Cancellation',
-    price: 179,
+    name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones',
+    price: 459.99,
     currency: 'USD',
     retailer: 'Best Buy',
-    url: '/?q=airpods%204%20active%20noise%20cancellation',
+    url: '/?q=sony%20wh-1000xm6',
     image:
-      'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTzWgbCYJAuocW5ITS5UHmM21p93km5vi1vHBNZX52LwGtomvYx1b0vGIox1s68o_MHZFJ7EHjPDByp377-v2x7ZuQBdE3Ob5iv6dWJEiFF028fUUfNJO6zxQ',
-    rating: 4.6,
-    reviewCount: 71000,
+      'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQEVYaSWLPsP6VSnS2HdhRUodQWypMlUa_Y4ytkEIlqJ5XKZ31A5_buJB8KLdeZO8VVQ1gXinQwiWtReThsaDFNh13qwDuGUHPREz83K5_3',
+    rating: 4.5,
+    reviewCount: 384,
   },
-  sharedSpecs: ['apple', 'airpods', 'noise cancellation'],
-  checkedAt: '2026-09-02T14:25:03.274Z',
+  pick: {
+    name: 'Soundcore by Anker Space One Wireless Noise Canceling Headphones',
+    price: 99.99,
+    currency: 'USD',
+    retailer: 'Micro Center',
+    url: '/?q=soundcore%20space%20one',
+    image:
+      'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcSoyagE6zpRrMUr0UqCqlu8Tqz_MWcnGHCLkLvJc1LemKZ9TAmt8LX9vR05HkwO_eUZwaCQXDgJxWGtAb8Z4wW9EON-yPU0ZmNi4l2L1-msB_CBBazTWrUYbA',
+    rating: 4.7,
+    reviewCount: 3000,
+  },
+  // Exactly what the matcher produced for this pair (see the note above).
+  sharedSpecs: ['wireless', 'noise', 'headphones'],
+  // {saving} is filled from the two prices above, so it can never drift.
+  payoff: 'The features you were shopping for, {saving} less.',
+  checkedAt: '2026-09-10T20:29:58.225Z',
 };
 
 // Animation variants for staggered product grid

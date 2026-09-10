@@ -50,6 +50,14 @@ export interface ComparisonResultData {
    * retailer page.
    */
   isExample?: boolean;
+  /** One line of scene setting, shown above the two offers. */
+  intro?: string;
+  /**
+   * One line under the shared features. `{saving}` is replaced with the
+   * computed saving (whole dollars when it has no cents), so the figure can
+   * never drift from the two prices. Rendered only when there is a saving.
+   */
+  payoff?: string;
 }
 
 interface ComparisonResultProps {
@@ -247,6 +255,14 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
       : 0;
   const showSavings = sameCurrency && savingsAmount > 0;
   const symbol = currencySymbol(data.input.currency);
+  // The payoff quotes the same saving as the "Save" line: whole dollars when
+  // the amount has no cents ("$360"), otherwise with them ("$12.50").
+  const savingCents = Math.round(savingsAmount * 100);
+  const savingText =
+    savingCents % 100 === 0
+      ? `${symbol}${savingCents / 100}`
+      : `${symbol}${formatPrice(savingsAmount, data.input.currency)}`;
+  const payoff = showSavings && data.payoff ? data.payoff.replace('{saving}', savingText) : undefined;
 
   const checkedDate = Number.isNaN(Date.parse(data.checkedAt))
     ? data.checkedAt
@@ -278,6 +294,8 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
             </p>
           )}
         </div>
+
+        {data.intro && <p className="mb-4 text-sm leading-snug text-neutral-700">{data.intro}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
           <OfferPanel
@@ -315,20 +333,26 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
           ) : (
             <p className="text-sm text-neutral-500">Two prices, two currencies: compare them directly.</p>
           )}
-          {data.sharedSpecs.length > 0 && (
-            <p className="flex flex-wrap items-center gap-1 md:justify-end">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-[#14524B] mr-1">
-                {t.whyLabel}
-              </span>
-              {data.sharedSpecs.map((spec, i) => (
-                <span
-                  key={`${spec}-${i}`}
-                  className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#14524B]/5 text-[#14524B]"
-                >
-                  {spec}
-                </span>
-              ))}
-            </p>
+          {(data.sharedSpecs.length > 0 || payoff) && (
+            <div className="md:text-right">
+              {data.sharedSpecs.length > 0 && (
+                <p className="flex flex-wrap items-center gap-1 md:justify-end">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#14524B] mr-1">
+                    {t.whyLabel}
+                  </span>
+                  {data.sharedSpecs.map((spec, i) => (
+                    <span
+                      key={`${spec}-${i}`}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#14524B]/5 text-[#14524B]"
+                    >
+                      {spec}
+                    </span>
+                  ))}
+                </p>
+              )}
+              {/* The payoff sits directly under the chips in both layouts. */}
+              {payoff && <p className="mt-1.5 text-sm font-medium text-[#14524B]">{payoff}</p>}
+            </div>
           )}
         </div>
         <p className="mt-2 text-[11px] text-neutral-500">
