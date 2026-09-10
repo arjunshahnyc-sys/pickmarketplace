@@ -38,7 +38,7 @@
 import type { SourcedValue } from '../landedCost/types';
 import { collapse, registrableDomain } from './identity';
 
-export const REGISTRY_VERSION = '2026-09-01.1';
+export const REGISTRY_VERSION = '2026-09-06.1';
 
 /**
  * A merchant's PUBLISHED standard-shipping policy for its own domestic
@@ -136,6 +136,10 @@ const MIGRATED = {
   reason: 'Migrated from the VERIFIED set / merchants.ts tables (in production since 2026-08-26).',
 };
 const REVIEW_2026_08_31 = (why: string) => ({ date: '2026-08-31', reason: why });
+const REVIEW_2026_09_06 = (why: string) => ({ date: '2026-09-06', reason: why });
+const BRAND_DIRECT_REASON = 'Brand-owned storefront (2026-09-06 sweep: the brand\'s own site was showing "Unverified seller").';
+const NATIONAL_RETAILER_REASON = 'Established US retailer (2026-09-06 sweep: common in results, was showing "Unverified seller").';
+const MARKETPLACE_REASON = 'Marketplace: listings are independent sellers, so prices there describe the seller, not the item.';
 
 interface EntrySpec {
   id: string;
@@ -462,6 +466,142 @@ export const REGISTRY: readonly MerchantEntry[] = [
     added: REVIEW_2026_08_31('Owner-approved 2026-08-31 brand-direct list.'),
   }),
 
+  // US market ─ 2026-09-06 review: brand-owned stores, established
+  // retailers and marketplaces that the 2026-09-05 live sweep showed as
+  // "Unverified seller" (lululemon, Gap, H&M, Walgreens, ThriftBooks,
+  // SharkNinja...) or as unlabelled marketplaces (Whatnot, Poshmark, StockX).
+  // Badge logos are plain wordmarks under public/logos.
+  entry({ id: 'lululemon-us', name: 'lululemon', domain: 'lululemon.com', tier: 'brand-direct', aliases: ['lululemon', 'lululemonathletica'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'gap-us', name: 'Gap', domain: 'gap.com', tier: 'brand-direct', aliases: ['gap', 'gapfactory'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'oldnavy-us', name: 'Old Navy', domain: 'gap.com', tier: 'brand-direct', subdomains: ['oldnavy'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'bananarepublic-us', name: 'Banana Republic', domain: 'gap.com', tier: 'brand-direct', subdomains: ['bananarepublic'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'athleta-us', name: 'Athleta', domain: 'gap.com', tier: 'brand-direct', subdomains: ['athleta'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'hm-us', name: 'H&M', domain: 'hm.com', tier: 'national-retailer', aliases: ['hm', 'handm'], subdomains: ['www2'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'uniqlo-us', name: 'Uniqlo', domain: 'uniqlo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'hollister-us', name: 'Hollister', domain: 'hollisterco.com', tier: 'brand-direct', aliases: ['hollister', 'hollisterco'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'abercrombie-us', name: 'Abercrombie & Fitch', domain: 'abercrombie.com', tier: 'brand-direct', aliases: ['abercrombiefitch', 'abercrombie', 'abercrombieandfitch'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'americaneagle-us', name: 'American Eagle', domain: 'ae.com', tier: 'brand-direct', aliases: ['americaneagle', 'americaneagleoutfitters', 'aerie'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'loft-us', name: 'LOFT', domain: 'loft.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'anntaylor-us', name: 'Ann Taylor', domain: 'anntaylor.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'jcrew-us', name: 'J.Crew', domain: 'jcrew.com', tier: 'brand-direct', aliases: ['jcrew', 'jcrewfactory'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'levis-us', name: "Levi's", domain: 'levi.com', tier: 'brand-direct', aliases: ['levis', 'levi'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'adidas-us', name: 'adidas', domain: 'adidas.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'underarmour-us', name: 'Under Armour', domain: 'underarmour.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'newbalance-us', name: 'New Balance', domain: 'newbalance.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'puma-us', name: 'PUMA', domain: 'puma.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'reebok-us', name: 'Reebok', domain: 'reebok.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'converse-us', name: 'Converse', domain: 'converse.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'vans-us', name: 'Vans', domain: 'vans.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'skechers-us', name: 'Skechers', domain: 'skechers.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'crocs-us', name: 'Crocs', domain: 'crocs.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'zara-us', name: 'Zara', domain: 'zara.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'asos-us', name: 'ASOS', domain: 'asos.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'fashionnova-us', name: 'Fashion Nova', domain: 'fashionnova.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'revolve-us', name: 'Revolve', domain: 'revolve.com', tier: 'national-retailer', aliases: ['revolve', 'revolveclothing'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'princesspolly-us', name: 'Princess Polly', domain: 'princesspolly.com', tier: 'brand-direct', subdomains: ['us'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'gymshark-us', name: 'Gymshark', domain: 'gymshark.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'sharkninja-us', name: 'SharkNinja', domain: 'sharkninja.com', tier: 'brand-direct', aliases: ['sharkninja', 'ninja', 'ninjakitchen', 'shark', 'sharkclean'], regional: ['ninjakitchen.com', 'sharkclean.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'sony-us', name: 'Sony', domain: 'sony.com', tier: 'brand-direct', aliases: ['sony', 'sonyelectronics'], subdomains: ['electronics', 'store'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'samsung-us', name: 'Samsung', domain: 'samsung.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'bose-us', name: 'Bose', domain: 'bose.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'jbl-us', name: 'JBL', domain: 'jbl.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'soundcore-us', name: 'soundcore', domain: 'soundcore.com', tier: 'brand-direct', aliases: ['soundcore', 'anker', 'ankersoundcore'], regional: ['anker.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'jlab-us', name: 'JLab', domain: 'jlab.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'sennheiser-us', name: 'Sennheiser', domain: 'sennheiser.com', tier: 'brand-direct', aliases: ['sennheiser', 'sennheiserconsumeraudio'], regional: ['sennheiser-hearing.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'logitech-us', name: 'Logitech', domain: 'logitech.com', tier: 'brand-direct', aliases: ['logitech', 'logitechg'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'garmin-us', name: 'Garmin', domain: 'garmin.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'gopro-us', name: 'GoPro', domain: 'gopro.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'lego-us', name: 'LEGO', domain: 'lego.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'nintendo-us', name: 'Nintendo', domain: 'nintendo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'microsoft-us', name: 'Microsoft', domain: 'microsoft.com', tier: 'brand-direct', aliases: ['microsoft', 'microsoftstore'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'dell-us', name: 'Dell', domain: 'dell.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'hp-us', name: 'HP', domain: 'hp.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'lenovo-us', name: 'Lenovo', domain: 'lenovo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'yeti-us', name: 'YETI', domain: 'yeti.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'hydroflask-us', name: 'Hydro Flask', domain: 'hydroflask.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'owala-us', name: 'Owala', domain: 'owala.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'cuisinart-us', name: 'Cuisinart', domain: 'cuisinart.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'keurig-us', name: 'Keurig', domain: 'keurig.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'nespresso-us', name: 'Nespresso', domain: 'nespresso.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'vitamix-us', name: 'Vitamix', domain: 'vitamix.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'walgreens-us', name: 'Walgreens', domain: 'walgreens.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'cvs-us', name: 'CVS Pharmacy', domain: 'cvs.com', tier: 'national-retailer', aliases: ['cvs', 'cvspharmacy'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'riteaid-us', name: 'Rite Aid', domain: 'riteaid.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'thriftbooks-us', name: 'ThriftBooks', domain: 'thriftbooks.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'barnesnoble-us', name: 'Barnes & Noble', domain: 'barnesandnoble.com', tier: 'national-retailer', aliases: ['barnesnoble', 'barnesandnoble'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'booksamillion-us', name: 'Books-A-Million', domain: 'booksamillion.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'overstock-us', name: 'Overstock', domain: 'overstock.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'brandsmart-us', name: 'BrandsMart USA', domain: 'brandsmartusa.com', tier: 'national-retailer', aliases: ['brandsmartusa', 'brandsmart'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'abt-us', name: 'Abt', domain: 'abt.com', tier: 'national-retailer', aliases: ['abt', 'abtelectronics'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'crutchfield-us', name: 'Crutchfield', domain: 'crutchfield.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'sweetwater-us', name: 'Sweetwater', domain: 'sweetwater.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'guitarcenter-us', name: 'Guitar Center', domain: 'guitarcenter.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'musiciansfriend-us', name: "Musician's Friend", domain: 'musiciansfriend.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'audioadvisor-us', name: 'Audio Advisor', domain: 'audioadvisor.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'pcrichard-us', name: 'P.C. Richard & Son', domain: 'pcrichard.com', tier: 'national-retailer', aliases: ['pcrichardson', 'pcrichard', 'pcrichardandson'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'publiclands-us', name: 'Public Lands', domain: 'publiclands.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'goinggoinggone-us', name: 'Going Going Gone', domain: 'goinggoinggone.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'hibbett-us', name: 'Hibbett', domain: 'hibbett.com', tier: 'national-retailer', aliases: ['hibbett', 'hibbettsports', 'hibbettkids', 'citygear'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'jdsports-us', name: 'JD Sports', domain: 'jdsports.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'champssports-us', name: 'Champs Sports', domain: 'champssports.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'zappos-us', name: 'Zappos', domain: 'zappos.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'dsw-us', name: 'DSW', domain: 'dsw.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'famousfootwear-us', name: 'Famous Footwear', domain: 'famousfootwear.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'journeys-us', name: 'Journeys', domain: 'journeys.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'shoecarnival-us', name: 'Shoe Carnival', domain: 'shoecarnival.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'hottopic-us', name: 'Hot Topic', domain: 'hottopic.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'pacsun-us', name: 'PacSun', domain: 'pacsun.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'tillys-us', name: "Tilly's", domain: 'tillys.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'urbanoutfitters-us', name: 'Urban Outfitters', domain: 'urbanoutfitters.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'anthropologie-us', name: 'Anthropologie', domain: 'anthropologie.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'freepeople-us', name: 'Free People', domain: 'freepeople.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'nordstromrack-us', name: 'Nordstrom Rack', domain: 'nordstromrack.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'saks-us', name: 'Saks Fifth Avenue', domain: 'saksfifthavenue.com', tier: 'national-retailer', aliases: ['saksfifthavenue', 'saks'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'bloomingdales-us', name: "Bloomingdale's", domain: 'bloomingdales.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'neimanmarcus-us', name: 'Neiman Marcus', domain: 'neimanmarcus.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'cb2-us', name: 'CB2', domain: 'cb2.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'westelm-us', name: 'West Elm', domain: 'westelm.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'surlatable-us', name: 'Sur La Table', domain: 'surlatable.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'basspro-us', name: 'Bass Pro Shops', domain: 'basspro.com', tier: 'national-retailer', aliases: ['bassproshops', 'basspro'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'cabelas-us', name: "Cabela's", domain: 'cabelas.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'scheels-us', name: 'Scheels', domain: 'scheels.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'backcountry-us', name: 'Backcountry', domain: 'backcountry.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'moosejaw-us', name: 'Moosejaw', domain: 'moosejaw.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'sallybeauty-us', name: 'Sally Beauty', domain: 'sallybeauty.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'dermstore-us', name: 'Dermstore', domain: 'dermstore.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'iherb-us', name: 'iHerb', domain: 'iherb.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'vitacost-us', name: 'Vitacost', domain: 'vitacost.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'gnc-us', name: 'GNC', domain: 'gnc.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'vitaminshoppe-us', name: 'The Vitamin Shoppe', domain: 'vitaminshoppe.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'containerstore-us', name: 'The Container Store', domain: 'containerstore.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'michaels-us', name: 'Michaels', domain: 'michaels.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'hobbylobby-us', name: 'Hobby Lobby', domain: 'hobbylobby.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'ashley-us', name: 'Ashley', domain: 'ashleyfurniture.com', tier: 'national-retailer', aliases: ['ashley', 'ashleyfurniture', 'ashleyhomestore'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'bjs-us', name: "BJ's Wholesale Club", domain: 'bjs.com', tier: 'national-retailer', aliases: ['bjswholesaleclub', 'bjs', 'bjswholesale'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'harborfreight-us', name: 'Harbor Freight Tools', domain: 'harborfreight.com', tier: 'national-retailer', aliases: ['harborfreighttools', 'harborfreight'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'tractorsupply-us', name: 'Tractor Supply Co', domain: 'tractorsupply.com', tier: 'national-retailer', aliases: ['tractorsupplyco', 'tractorsupply', 'tractorsupplycompany'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'menards-us', name: 'Menards', domain: 'menards.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'dormco-us', name: 'DormCo', domain: 'dormco.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'verizon-us', name: 'Verizon', domain: 'verizon.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'whatnot-us', name: 'Whatnot', domain: 'whatnot.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'poshmark-us', name: 'Poshmark', domain: 'poshmark.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'mercari-us', name: 'Mercari', domain: 'mercari.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'stockx-us', name: 'StockX', domain: 'stockx.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'goat-us', name: 'GOAT', domain: 'goat.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'depop-us', name: 'Depop', domain: 'depop.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'grailed-us', name: 'Grailed', domain: 'grailed.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'vinted-us', name: 'Vinted', domain: 'vinted.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'offerup-us', name: 'OfferUp', domain: 'offerup.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'swappa-us', name: 'Swappa', domain: 'swappa.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'reebelo-us', name: 'Reebelo', domain: 'reebelo.com', tier: 'marketplace', aliases: ['reebelo', 'reebelousa'], thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'backmarket-us', name: 'Back Market', domain: 'backmarket.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'reverb-us', name: 'Reverb', domain: 'reverb.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'thredup-us', name: 'ThredUp', domain: 'thredup.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'therealreal-us', name: 'The RealReal', domain: 'therealreal.com', tier: 'marketplace', aliases: ['realreal', 'therealreal'], thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'abebooks-us', name: 'AbeBooks', domain: 'abebooks.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'bonanza-us', name: 'Bonanza', domain: 'bonanza.com', tier: 'marketplace', thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+  entry({ id: 'facebookmarketplace-us', name: 'Facebook Marketplace', domain: 'facebook.com', tier: 'marketplace', aliases: ['facebookmarketplace', 'facebook'], thirdParty: true, added: REVIEW_2026_09_06(MARKETPLACE_REASON) }),
+
   // GB market
   entry({
     id: 'amazon-gb', name: 'Amazon UK', aliases: ['amazoncouk'], markets: ['gb'],
@@ -702,11 +842,32 @@ export function resolveMerchant(
   rawName: string,
   market?: string
 ): MerchantEntry | null {
-  const key = collapse(rawName);
-  if (!key) return null;
   const m = normalizeMarket(market);
-  return INDEX[m]?.get(key) ?? INDEX['us']?.get(key) ?? GLOBAL_INDEX.get(key) ?? null;
+  let name = rawName;
+  // Exact collapse first; on a miss, peel one storefront suffix at a time
+  // ("Dyson Official", "soundcore US", "Hollister Co - Official") and
+  // retry. Only whole trailing words that name the store's own storefront
+  // are peeled, so "Nike Outlet Store" still resolves to nothing.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const key = collapse(name);
+    if (!key) return null;
+    const hit = INDEX[m]?.get(key) ?? INDEX['us']?.get(key) ?? GLOBAL_INDEX.get(key);
+    if (hit) return hit;
+    const peeled = name.replace(STOREFRONT_SUFFIX, '');
+    if (peeled === name) return null;
+    name = peeled;
+  }
+  return null;
 }
+
+/**
+ * Trailing words a feed appends to a merchant's own storefront name:
+ * "Official", "Official Store", "Online Store", "US". A dash before them
+ * ("Hollister Co - Official") is the feed's seller-suffix separator, which
+ * here introduces no seller, so it is peeled with the word.
+ */
+export const STOREFRONT_SUFFIX =
+  /\s*(?:[-–—]\s*)?\b(?:official(?:\s+(?:store|site|shop))?|online\s+store|store|shop|us|usa|united\s+states)\s*$/i;
 
 /** Look up an entry by canonical id (scripts, tests). */
 export function getEntryById(id: string): MerchantEntry | null {

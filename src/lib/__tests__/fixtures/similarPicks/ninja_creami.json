@@ -1,0 +1,420 @@
+{
+  "query": "ninja creami",
+  "capturedAt": "2026-09-06T20:48:05Z",
+  "results": [
+    {
+      "name": "Ninja CREAMi Ice Cream Maker for Gelato Mix-ins Milkshakes nc300",
+      "price": 219.97,
+      "retailer": "Walmart",
+      "rating": 4.1,
+      "reviewCount": 351,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.walmart.com/search?q=Ninja%20CREAMi%20Ice%20Cream%20Maker%20for%20Gelato%20Mix-ins%20Milkshakes%20nc300",
+      "id": "serper:walmart:ninja creami ice cream maker for gelato mix-ins milkshakes nc300"
+    },
+    {
+      "name": "Ninja CREAMi Ice Cream Maker",
+      "price": 199.99,
+      "retailer": "Best Buy",
+      "rating": 4.4,
+      "reviewCount": 2700,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.bestbuy.com/site/searchpage.jsp?st=Ninja%20CREAMi%20Ice%20Cream%20Maker",
+      "id": "serper:best buy:ninja creami ice cream maker"
+    },
+    {
+      "name": "Ninja Swirl CREAMi Soft-Serve Ice Cream Maker",
+      "price": 299.99,
+      "retailer": "SharkNinja",
+      "rating": 4.4,
+      "reviewCount": 1700,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:6603630419675029594,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja swirl creami soft-serve ice cream maker"
+    },
+    {
+      "name": "Ninja CREAMi Deluxe 11-in-1 Ice Cream & Frozen Treat Maker",
+      "price": 249.99,
+      "retailer": "SharkNinja",
+      "rating": 4.4,
+      "reviewCount": 2200,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:5006492726700660587,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami deluxe 11-in-1 ice cream & frozen treat maker"
+    },
+    {
+      "name": "Ninja Creami Ice Cream Maker for Mix-ins Milkshakes Sorbet nc350",
+      "price": 149,
+      "retailer": "Walmart",
+      "rating": 1,
+      "reviewCount": 1,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.walmart.com/search?q=Ninja%20Creami%20Ice%20Cream%20Maker%20for%20Mix-ins%20Milkshakes%20Sorbet%20nc350",
+      "id": "serper:walmart:ninja creami ice cream maker for mix-ins milkshakes sorbet nc350"
+    },
+    {
+      "name": "Ninja NC501 CREAMi Deluxe 11-in-1 Ice Cream & Frozen Treat Maker for Ice Cream",
+      "price": 184.31,
+      "retailer": "Target",
+      "rating": 3.6,
+      "reviewCount": 13,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.target.com/s?searchTerm=Ninja%20NC501%20CREAMi%20Deluxe%2011-in-1%20Ice%20Cream%20%26%20Frozen%20Treat%20Maker%20for%20Ice%20Cream",
+      "id": "serper:target:ninja nc501 creami deluxe 11-in-1 ice cream & frozen treat maker for ice cream"
+    },
+    {
+      "name": "Ninja CREAMi Scoop & Swirl Ice Cream & Soft Serve Maker",
+      "price": 299.99,
+      "retailer": "SharkNinja",
+      "rating": 4.4,
+      "reviewCount": 1700,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:8852718755293224234,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami scoop & swirl ice cream & soft serve maker"
+    },
+    {
+      "name": "Ninja NC501C CREAMi Deluxe Ice Cream Maker",
+      "price": 148.99,
+      "retailer": "Walmart - Beach Camera",
+      "rating": 4.3,
+      "reviewCount": 120,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.walmart.com/search?q=Ninja%20NC501C%20CREAMi%20Deluxe%20Ice%20Cream%20Maker",
+      "id": "serper:walmart - beach camera:ninja nc501c creami deluxe ice cream maker"
+    },
+    {
+      "name": "Ninja Creami 7-in-1 Ice Cream Maker nc351",
+      "price": 229.99,
+      "retailer": "SharkNinja",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:6910168198160889278,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami 7-in-1 ice cream maker nc351"
+    },
+    {
+      "name": "Ninja Creami XL 11-in-1 Frozen Treats & Ice Cream Maker",
+      "price": 249.99,
+      "retailer": "SharkNinja",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:5587270212115582531,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami xl 11-in-1 frozen treats & ice cream maker"
+    },
+    {
+      "name": "Ninja Creami Deluxe 11-in-1 Ice Cream Maker nc601",
+      "price": 249.99,
+      "retailer": "SharkNinja",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:9175779953657001004,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami deluxe 11-in-1 ice cream maker nc601"
+    },
+    {
+      "name": "Ninja CREAMi 7-in-1 Ice Cream Maker",
+      "price": 85,
+      "retailer": "eBay - hert.jos",
+      "rating": 5,
+      "reviewCount": 7,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ninja%20CREAMi%207-in-1%20Ice%20Cream%20Maker",
+      "id": "serper:ebay - hert.jos:ninja creami 7-in-1 ice cream maker"
+    },
+    {
+      "name": "Ninja CREAMi Deluxe Pints & Lids",
+      "price": 29.99,
+      "retailer": "SharkNinja",
+      "rating": 4.3,
+      "reviewCount": 99,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:11644247222464000768,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami deluxe pints & lids"
+    },
+    {
+      "name": "Ninja Creami Swirl Pints and Lids xsk7pntld2",
+      "price": 34.99,
+      "retailer": "SharkNinja",
+      "rating": 4.6,
+      "reviewCount": 41,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:2763013723514331114,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami swirl pints and lids xsk7pntld2"
+    },
+    {
+      "name": "Ninja CREAMi nc300eu Ice Cream Maker",
+      "price": 159.1,
+      "retailer": "eBay",
+      "rating": 4.5,
+      "reviewCount": 5300,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ninja%20CREAMi%20nc300eu%20Ice%20Cream%20Maker",
+      "id": "serper:ebay:ninja creami nc300eu ice cream maker"
+    },
+    {
+      "name": "Ninja Creami Motor Base xbcn301cco",
+      "price": 136.99,
+      "retailer": "SharkNinja",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:13093890266503839103,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami motor base xbcn301cco"
+    },
+    {
+      "name": "Ninja Creami Scoop & Swirl Ice Cream Maker, Scoopable & Soft Serve, 11 Programs, (2) 16 Oz Pint Containers & Lids, Nc700 Vanilla",
+      "price": 279,
+      "retailer": "Walmart",
+      "rating": 5,
+      "reviewCount": 2,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.walmart.com/search?q=Ninja%20Creami%20Scoop%20%26%20Swirl%20Ice%20Cream%20Maker%2C%20Scoopable%20%26%20Soft%20Serve%2C%2011%20Programs%2C%20(2)%2016%20Oz%20Pint%20Containers%20%26%20Lids%2C%20Nc700%20Vanilla",
+      "id": "serper:walmart:ninja creami scoop & swirl ice cream maker, scoopable & soft serve, 11 programs, (2) 16 oz pint containers & lids, nc700 vanilla"
+    },
+    {
+      "name": "Ninja CREAMi XL Deluxe 11-in-1 Ice Cream and Frozen Treat Maker",
+      "price": 269.99,
+      "retailer": "Target",
+      "rating": 3.3,
+      "reviewCount": 3,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.target.com/s?searchTerm=Ninja%20CREAMi%20XL%20Deluxe%2011-in-1%20Ice%20Cream%20and%20Frozen%20Treat%20Maker",
+      "id": "serper:target:ninja creami xl deluxe 11-in-1 ice cream and frozen treat maker"
+    },
+    {
+      "name": "Ninja 4-Pack CREAMi Pints with Lids",
+      "price": 29.99,
+      "retailer": "SharkNinja",
+      "rating": 4,
+      "reviewCount": 26,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:8560357761614123636,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja 4-pack creami pints with lids"
+    },
+    {
+      "name": "Ninja NC301 CREAMi \u2013 Compact Ice Cream Maker w/ 7 Programs, Makes Gelato, Sorbet, Milkshakes & More, Includes 2 Pint Containers \u2013 Silver",
+      "price": 116.22,
+      "retailer": "littlewoods.com",
+      "rating": 4.4,
+      "reviewCount": 2700,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,productid:17418646149978838330,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:littlewoods.com:ninja nc301 creami \u2013 compact ice cream maker w/ 7 programs, makes gelato, sorbet, milkshakes & more, includes 2 pint containers \u2013 silver"
+    },
+    {
+      "name": "Ninja CREAMi Deluxe 11-in-1 Ice Cream and Frozen Treat Maker",
+      "price": 119.95,
+      "retailer": "eBay",
+      "rating": 5,
+      "reviewCount": 1,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ninja%20CREAMi%20Deluxe%2011-in-1%20Ice%20Cream%20and%20Frozen%20Treat%20Maker",
+      "id": "serper:ebay:ninja creami deluxe 11-in-1 ice cream and frozen treat maker"
+    },
+    {
+      "name": "Ninja NC501 CREAMi Deluxe 11-in-1 XL Ice Cream Maker Silver Bundle with 2 Yr CPS Enhanced Protection Pack",
+      "price": 91.98,
+      "retailer": "Fragonard",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:2917471100214121254,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:fragonard:ninja nc501 creami deluxe 11-in-1 xl ice cream maker silver bundle with 2 yr cps enhanced protection pack"
+    },
+    {
+      "name": "Ninja CREAMi Swirl 13-in-1 Soft Serve Ice Cream Machine",
+      "price": 349.99,
+      "retailer": "mynavyexchange.com",
+      "rating": 4.4,
+      "reviewCount": 116,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:17879694668508254118,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:mynavyexchange.com:ninja creami swirl 13-in-1 soft serve ice cream machine"
+    },
+    {
+      "name": "Ninja CREAMi 7-in-1 Frozen Treat Maker w/ Extra Pints",
+      "price": 178.98,
+      "retailer": "Walmart",
+      "rating": 4.9,
+      "reviewCount": 12,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.walmart.com/search?q=Ninja%20CREAMi%207-in-1%20Frozen%20Treat%20Maker%20w%2F%20Extra%20Pints",
+      "id": "serper:walmart:ninja creami 7-in-1 frozen treat maker w/ extra pints"
+    },
+    {
+      "name": "Ninja Nc299amz CREAMi Ice Cream Maker for Gelato Mix-ins Milkshakes Sorbet",
+      "price": 159.99,
+      "retailer": "Rebel",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:17815046082604715140,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:rebel:ninja nc299amz creami ice cream maker for gelato mix-ins milkshakes sorbet"
+    },
+    {
+      "name": "Ninja CREAMi Ice Cream Maker, 5 One-Touch Programs, with 4 Pints Included, Exclusive NC300",
+      "price": 116.22,
+      "retailer": "littlewoods.com",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,productid:14304225314507566296,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:littlewoods.com:ninja creami ice cream maker, 5 one-touch programs, with 4 pints included, exclusive nc300"
+    },
+    {
+      "name": "Ice Cream Maker Ninja",
+      "price": 249.49,
+      "retailer": "eBay",
+      "rating": 4.5,
+      "reviewCount": 1500,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ice%20Cream%20Maker%20Ninja",
+      "id": "serper:ebay:ice cream maker ninja"
+    },
+    {
+      "name": "Ice Cream Maker Ninja NC501EU",
+      "price": 349,
+      "retailer": "Back Market",
+      "rating": 4.3,
+      "reviewCount": 964,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:1743550435735371373,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:back market:ice cream maker ninja nc501eu"
+    },
+    {
+      "name": "Ninja CREAMi Ice Cream Maker, for Mix-ins, Milkshakes, Sorbet, 5 One-Touch Programs, (2) 16 Oz Pint Containers & Lids, Nc300wh White",
+      "price": 185.97,
+      "retailer": "Walmart - SJV22",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.walmart.com/search?q=Ninja%20CREAMi%20Ice%20Cream%20Maker%2C%20for%20Mix-ins%2C%20Milkshakes%2C%20Sorbet%2C%205%20One-Touch%20Programs%2C%20(2)%2016%20Oz%20Pint%20Containers%20%26%20Lids%2C%20Nc300wh%20White",
+      "id": "serper:walmart - sjv22:ninja creami ice cream maker, for mix-ins, milkshakes, sorbet, 5 one-touch programs, (2) 16 oz pint containers & lids, nc300wh white"
+    },
+    {
+      "name": "Ninja Swirl by Creami",
+      "price": 116.22,
+      "retailer": "littlewoods.com",
+      "rating": 4.7,
+      "reviewCount": 200,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:16525655829601315747,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:littlewoods.com:ninja swirl by creami"
+    },
+    {
+      "name": "Ninja Ninja Creami",
+      "price": 159.99,
+      "retailer": "Rebel",
+      "rating": 4.4,
+      "reviewCount": 2700,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:13509759624593508109,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:rebel:ninja ninja creami"
+    },
+    {
+      "name": "Ninja Creami Deluxe XL 11-1 Frozen Treat Maker w/ Extra Pints",
+      "price": 150.53,
+      "retailer": "eBay",
+      "rating": 3.9,
+      "reviewCount": 715,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ninja%20Creami%20Deluxe%20XL%2011-1%20Frozen%20Treat%20Maker%20w%2F%20Extra%20Pints",
+      "id": "serper:ebay:ninja creami deluxe xl 11-1 frozen treat maker w/ extra pints"
+    },
+    {
+      "name": "Ninja CREAMi Swirl 13-in-1 Soft Serve Ice Cream Machine & Frozen Treat Maker (Manufacturer Refurbished)",
+      "price": 231.99,
+      "retailer": "Target",
+      "rating": 3.7,
+      "reviewCount": 21,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.target.com/s?searchTerm=Ninja%20CREAMi%20Swirl%2013-in-1%20Soft%20Serve%20Ice%20Cream%20Machine%20%26%20Frozen%20Treat%20Maker%20(Manufacturer%20Refurbished)",
+      "id": "serper:target:ninja creami swirl 13-in-1 soft serve ice cream machine & frozen treat maker (manufacturer refurbished)"
+    },
+    {
+      "name": "Ninja Creami Mix-In Tool xskmxintl",
+      "price": 12.99,
+      "retailer": "SharkNinja",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,catalogid:16189773874405120884,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:sharkninja:ninja creami mix-in tool xskmxintl"
+    },
+    {
+      "name": "Ninja Nc301 Creami White",
+      "price": 159.99,
+      "retailer": "Rebel",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,productid:10484971931230557722,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:rebel:ninja nc301 creami white"
+    },
+    {
+      "name": "Ninja Cn315a Creami Ice Cream & Sorbet Maker",
+      "price": 189,
+      "retailer": "eBay - edicodollc",
+      "rating": 4.5,
+      "reviewCount": 574,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ninja%20Cn315a%20Creami%20Ice%20Cream%20%26%20Sorbet%20Maker",
+      "id": "serper:ebay - edicodollc:ninja cn315a creami ice cream & sorbet maker"
+    },
+    {
+      "name": "Ninja NC501 CREAMi Deluxe 11-in-1 Ice Cream & Frozen Treat Maker",
+      "price": 116.22,
+      "retailer": "littlewoods.com",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,productid:2599628262290208800,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:littlewoods.com:ninja nc501 creami deluxe 11-in-1 ice cream & frozen treat maker"
+    },
+    {
+      "name": "Ninja Nc501 Creami Blender",
+      "price": 319,
+      "retailer": "Back Market",
+      "rating": 4.5,
+      "reviewCount": 2200,
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,productid:18010180697474924589,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:back market:ninja nc501 creami blender"
+    },
+    {
+      "name": "NC300 Series CREAMi 7-in-1 Ice Cream Maker",
+      "price": 249.99,
+      "retailer": "BrandsMart USA",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.google.com/search?ibp=oshop&q=ninja+creami&prds=localAnnotatedOfferId:1,productid:16002367360285776669,pvo:2,pvt:hg,rds:PC_6027158597472037202%7CPROD_PC_6027158597472037202&gl=us&udm=28&pvorigin=2",
+      "id": "serper:brandsmart usa:nc300 series creami 7-in-1 ice cream maker"
+    },
+    {
+      "name": "Ninja NC299AMZ CREAMi Ice Cream Maker",
+      "price": 240.91,
+      "retailer": "eBay",
+      "currency": "USD",
+      "sourceMarket": "US",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Ninja%20NC299AMZ%20CREAMi%20Ice%20Cream%20Maker",
+      "id": "serper:ebay:ninja nc299amz creami ice cream maker"
+    }
+  ]
+}

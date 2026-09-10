@@ -50,7 +50,7 @@ export default async function CategorySearchPage({
   };
 
   const data = await performLiveSearch(category.query);
-  const products = enhanceProductsWithGroupInfo(data.results);
+  const products = enhanceProductsWithGroupInfo(data.results, data.results, { query: category.query });
 
   // The scrapers never throw — a transient outage returns [] and would
   // otherwise successfully render the thin fallback, replacing a

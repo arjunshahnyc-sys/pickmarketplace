@@ -390,8 +390,8 @@ export default function Home() {
     // similar-pick reference (the searched item's cluster and its median
     // price), so re-sorting or filtering never changes which listings count
     // as the same item or what the alternatives are compared against.
-    return enhanceProductsWithGroupInfo(filtered, results);
-  }, [results, sortBy, showOnSaleOnly, showVerifiedOnly, selectedFacets, destination, fxProvider]);
+    return enhanceProductsWithGroupInfo(filtered, results, { query });
+  }, [results, query, sortBy, showOnSaleOnly, showVerifiedOnly, selectedFacets, destination, fxProvider]);
 
   // Each toggle's count is computed against the OTHER active filters, so
   // the number on the button always matches what clicking it would show.

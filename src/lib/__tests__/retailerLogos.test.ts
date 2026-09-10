@@ -26,7 +26,7 @@ describe('retailer badge logos', () => {
   });
 
   it('unverified merchants get no logo (text badge stays)', () => {
-    expect(getRetailerLogo('Whatnot')).toBeUndefined();
+    expect(getRetailerLogo('Random Storefront 123')).toBeUndefined();
     expect(getRetailerLogo('Walmart - ABOUTYES')).toBeUndefined();
     expect(getRetailerLogo('Google Shopping')).toBeUndefined();
   });

@@ -40,6 +40,7 @@ import {
   listingHost,
   resolveMerchant,
   REGISTRY,
+  STOREFRONT_SUFFIX,
   type DomainSignal,
   type MerchantEntry,
 } from './trust/registry';
@@ -125,9 +126,11 @@ export function classifySeller(retailer: string, context?: TrustContext): TrustV
 
   // "Platform - Seller": an independent seller on a registered marketplace.
   // Distinct from both the platform badge and plain unknown, so first-party
-  // and third-party inventory can never be confused.
+  // and third-party inventory can never be confused. "Brand - Official" and
+  // "Brand - US" name no seller (resolveMerchant already peeled them), so
+  // they never take this branch.
   const split = splitSellerSuffix(retailer);
-  if (split) {
+  if (split && !STOREFRONT_SUFFIX.test(` - ${split.seller}`)) {
     const platform = resolveMerchant(split.platform, context?.market);
     if (platform?.allowsThirdPartySellers) {
       return { level: 'marketplace-seller', platform, seller: split.seller };

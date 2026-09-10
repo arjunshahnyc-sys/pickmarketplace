@@ -1,3 +1,4 @@
+import { getRetailerLogo } from '@/components/RetailerLogos';
 import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -101,7 +102,7 @@ describe('trust levels', () => {
   });
 
   it('platforms mixing first- and third-party inventory get the marketplace tier', () => {
-    for (const name of ['Amazon', 'eBay', 'Etsy']) {
+    for (const name of ['Amazon', 'eBay', 'Etsy', 'Whatnot', 'Poshmark', 'StockX']) {
       expect(getRetailerTrust(name).level, name).toBe('marketplace');
     }
     expect(getRetailerTrust('Rakuten', { market: 'JP' }).level).toBe('marketplace');
@@ -120,6 +121,14 @@ describe('trust levels', () => {
     expect(getRetailerTrust('Bob - Discount Furniture').level).toBe('unknown');
   });
 
+  it("a brand's own storefront suffix is not a seller (2026-09-06 sweep)", () => {
+    for (const name of ['Dyson Official', 'Hollister Co - Official', 'soundcore US', 'Peppermayo - US', 'Walgreens.com', 'Microsoft Store']) {
+      const t = getRetailerTrust(name);
+      expect(t.level, name).toBe(name.startsWith('Peppermayo') ? 'unknown' : 'verified');
+    }
+    expect(getRetailerLogo('Dyson Official')?.src).toBe('/logos/dyson.svg');
+  });
+
   it('lookalike names never inherit a badge (exact collapse only)', () => {
     expect(getRetailerTrust('Pineapple Boutique').level).toBe('unknown');
     expect(getRetailerTrust('Walmarts Deals').level).toBe('unknown');
@@ -128,7 +137,7 @@ describe('trust levels', () => {
 
   it('default is deny: unknown merchants are unverified', () => {
     expect(getRetailerTrust('Random Storefront 123').level).toBe('unknown');
-    expect(getRetailerTrust('Whatnot').level).toBe('unknown');
+    expect(getRetailerTrust('Nike Outlet Store').level).toBe('unknown');
     expect(getRetailerTrust('Google Shopping').level).toBe('unknown');
   });
 
@@ -149,7 +158,7 @@ describe('trust levels', () => {
     expect(isRecognizedSeller(getRetailerTrust('Walmart').level)).toBe(true);
     expect(isRecognizedSeller(getRetailerTrust('Amazon').level)).toBe(true);
     expect(isRecognizedSeller(getRetailerTrust('Walmart - ABOUTYES').level)).toBe(false);
-    expect(isRecognizedSeller(getRetailerTrust('Whatnot').level)).toBe(false);
+    expect(isRecognizedSeller(getRetailerTrust('Random Storefront 123').level)).toBe(false);
     expect(isRecognizedSeller(getRetailerTrust('Temu').level)).toBe(false);
   });
 });
