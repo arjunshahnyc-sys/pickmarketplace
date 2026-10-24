@@ -197,6 +197,9 @@ export function calculateLandedCost(
   } else {
     if (!input.shipping) {
       warnings.push('Shipping cost is not available from the offer source.');
+      // A deliberate gap (see LandedCostInput.shippingUnknownReason) is
+      // explained to the shopper, not just logged as a data problem.
+      if (input.shippingUnknownReason) assumptions.push(input.shippingUnknownReason);
     }
     lines.push({
       kind: 'shipping',
@@ -204,7 +207,7 @@ export function calculateLandedCost(
       amountMinor: null,
       basis: input.shipping
         ? `Quoted in ${input.shipping.currency}; no rate to ${dest.currency}`
-        : 'Not provided by the offer source',
+        : (input.shippingUnknownReason ?? 'Not provided by the offer source'),
       confidence: 'unknown',
       sourceId: 'input',
     });

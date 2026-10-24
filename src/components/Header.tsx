@@ -1,36 +1,85 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSavedList } from '@/contexts/SavedListContext';
-import { useDestination } from '@/contexts/DestinationContext';
+import { useDestination, type PostalCodeOutcome } from '@/contexts/DestinationContext';
 import { landedCostEnabled } from '@/lib/flags';
 import Link from 'next/link';
-import { Globe, ShoppingBag } from 'lucide-react';
+import { Globe, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { PickLogo } from './PickLogo';
+import InfoTip from './InfoTip';
+import { normalizeZip } from '@/lib/landedCost/usZip';
 
 // Destination + display currency for landed-cost estimates. Rendered only
 // behind LANDED_COST_ENABLED; changing the country snaps the currency to
 // that destination's own (the shopper can still override it, and totals for
 // pairs with no FX data honestly show as unavailable rather than converted
 // at a made-up rate).
+//
+// US ZIP (2026-10-23): typing a ZIP sets the delivery state (sales tax, and
+// which stores' published shipping terms apply) without hunting through a
+// 51-entry dropdown. The ZIP is resolved and kept in the browser only (see
+// DestinationContext); the shield tip beside the field says exactly that,
+// because a shopper typing an address detail deserves to know who can see
+// it: nobody at Pick.
 const CURRENCY_OPTIONS = ['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY'];
 
+const ZIP_PRIVACY_NOTE =
+  "Your ZIP code stays in this browser. It picks the delivery state for the sales tax estimate and tells the estimate which stores' shipping terms apply at your address. It is never sent to Pick's servers, so we cannot see or store it. Clear the field to remove it.";
+
+const ZIP_MESSAGES: Record<Exclude<PostalCodeOutcome, 'set' | 'cleared'>, string> = {
+  invalid: 'Enter a 5-digit US ZIP code.',
+  unsupported: 'Pick estimates delivery to the 50 states and DC only.',
+};
+
+const PICKER_SELECT_CLASS =
+  'h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20';
+
 function DestinationPicker({ compact = false }: { compact?: boolean }) {
-  const { destination, setCountry, setCurrency, setSubdivision, countries, subdivisions } =
-    useDestination();
+  const {
+    destination,
+    setCountry,
+    setCurrency,
+    setSubdivision,
+    setPostalCode,
+    countries,
+    subdivisions,
+  } = useDestination();
+  const suffix = compact ? '-m' : '';
+  const zipNoteId = useId();
+  const zipStatusId = useId();
+
+  // The ZIP field is a draft until it holds a whole ZIP, so partial input
+  // never clears the stored ZIP or flashes an error per keystroke. When the
+  // stored ZIP changes underneath (restored after mount, dropped by a state
+  // or country change), the draft follows it: the "adjust state when a
+  // prop changes" pattern, during render rather than in an effect.
+  const [zipDraft, setZipDraft] = useState(destination.postalCode ?? '');
+  const [zipSynced, setZipSynced] = useState(destination.postalCode);
+  const [zipMessage, setZipMessage] = useState<string | null>(null);
+  if (zipSynced !== destination.postalCode) {
+    setZipSynced(destination.postalCode);
+    setZipDraft(destination.postalCode ?? '');
+  }
+
+  const commitZip = (value: string) => {
+    const outcome = setPostalCode(value);
+    setZipMessage(outcome === 'set' || outcome === 'cleared' ? null : ZIP_MESSAGES[outcome]);
+  };
+
   return (
-    <div className={`flex items-center gap-1.5 ${compact ? 'py-2' : ''}`}>
+    <div className={`relative flex items-center gap-1.5 ${compact ? 'flex-wrap py-2' : ''}`}>
       <Globe className="w-4 h-4 text-pick-muted" aria-hidden="true" />
-      <label className="sr-only" htmlFor={compact ? 'dest-country-m' : 'dest-country'}>
+      <label className="sr-only" htmlFor={`dest-country${suffix}`}>
         Delivery country
       </label>
       <select
-        id={compact ? 'dest-country-m' : 'dest-country'}
+        id={`dest-country${suffix}`}
         value={destination.country}
         title="Delivery country for cost estimates. Starts at your approximate location; your choice here always wins and is remembered."
         onChange={(e) => setCountry(e.target.value)}
-        className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+        className={PICKER_SELECT_CLASS}
       >
         {countries.map((c) => (
           <option key={c} value={c}>
@@ -40,15 +89,60 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
       </select>
       {subdivisions.length > 0 && (
         <>
-          <label className="sr-only" htmlFor={compact ? 'dest-state-m' : 'dest-state'}>
-            Delivery state for the sales tax estimate
+          <InfoTip
+            label="How your ZIP code is used"
+            content={<span id={zipNoteId}>{ZIP_PRIVACY_NOTE}</span>}
+            triggerClassName="inline-flex h-6 w-6 items-center justify-center rounded-full text-pick-muted hover:text-pick-teal transition-colors"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+          </InfoTip>
+          {/* The shield sits BEFORE the field so the tab order runs
+              shield -> ZIP -> state: tabbing out of a half-typed ZIP lands
+              on the state select, not on a tooltip that would open over
+              the field's own error message. */}
+          <label className="sr-only" htmlFor={`dest-zip${suffix}`}>
+            Delivery ZIP code, kept on this device
+          </label>
+          <input
+            id={`dest-zip${suffix}`}
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            maxLength={10}
+            placeholder="ZIP"
+            value={zipDraft}
+            onChange={(e) => {
+              const next = e.target.value;
+              setZipDraft(next);
+              setZipMessage(null);
+              // A whole ZIP applies as typed; an emptied field clears.
+              if (next.trim() === '' || normalizeZip(next)) commitZip(next);
+            }}
+            onBlur={() => {
+              if (zipDraft.trim() !== '' && !normalizeZip(zipDraft)) {
+                setZipMessage(ZIP_MESSAGES.invalid);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitZip(zipDraft);
+              }
+            }}
+            aria-describedby={zipMessage ? `${zipNoteId} ${zipStatusId}` : zipNoteId}
+            aria-invalid={zipMessage ? true : undefined}
+            title="Delivery ZIP code. Sets the state for the tax and shipping estimates. Stays on this device and is never sent to Pick."
+            className="h-8 w-[4.25rem] rounded-full bg-gray-100 px-2.5 text-xs font-medium text-neutral-700 placeholder:text-neutral-400 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+          />
+          <label className="sr-only" htmlFor={`dest-state${suffix}`}>
+            Delivery state for the sales tax and shipping estimates
           </label>
           <select
-            id={compact ? 'dest-state-m' : 'dest-state'}
+            id={`dest-state${suffix}`}
             value={destination.subdivision ?? ''}
-            title="Delivery state, used only to estimate sales tax. Without it the total shows tax as unresolved."
+            title="Delivery state. Used on this device to estimate sales tax and to apply stores' published shipping terms. Without it the total shows tax as unresolved."
             onChange={(e) => setSubdivision(e.target.value)}
-            className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+            className={PICKER_SELECT_CLASS}
           >
             <option value="">State…</option>
             {subdivisions.map((s) => (
@@ -59,14 +153,14 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
           </select>
         </>
       )}
-      <label className="sr-only" htmlFor={compact ? 'dest-currency-m' : 'dest-currency'}>
+      <label className="sr-only" htmlFor={`dest-currency${suffix}`}>
         Display currency
       </label>
       <select
-        id={compact ? 'dest-currency-m' : 'dest-currency'}
+        id={`dest-currency${suffix}`}
         value={destination.currency}
         onChange={(e) => setCurrency(e.target.value)}
-        className="h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+        className={PICKER_SELECT_CLASS}
       >
         {CURRENCY_OPTIONS.map((c) => (
           <option key={c} value={c}>
@@ -74,6 +168,15 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
           </option>
         ))}
       </select>
+      {zipMessage && (
+        <p
+          id={zipStatusId}
+          role="status"
+          className="absolute left-0 top-full z-20 mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] leading-snug text-amber-800 shadow-sm"
+        >
+          {zipMessage}
+        </p>
+      )}
     </div>
   );
 }

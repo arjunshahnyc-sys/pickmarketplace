@@ -64,7 +64,24 @@ export interface MerchantShippingPolicy {
   alwaysFree?: SourcedValue<boolean>;
   /** Conditions on the free tier (membership, loyalty signup), stated as an assumption. */
   conditions?: string;
+  /**
+   * Where the published terms apply, structured from the same policy page
+   * so the estimate can honor it once the shopper's delivery state is
+   * known. Absent = the page states no geographic limit that was captured.
+   */
+  scope?: ShippingPolicyScope;
   notes?: string;
+}
+
+export interface ShippingPolicyScope {
+  /** Terms are published for the contiguous US (48 states + DC); AK and HI are excluded or priced separately. */
+  contiguousOnly?: boolean;
+  /** Terms are published as nationwide ("anywhere in the US"), so they hold for AK and HI too. */
+  nationwide?: boolean;
+  /** States the published free tier explicitly excludes (two-letter codes). */
+  excludedStates?: string[];
+  /** Published surcharge on standard shipping for AK, HI, US territories and military addresses (minor units). */
+  nonContiguousSurchargeMinor?: SourcedValue<number>;
 }
 
 export type TrustTier =
@@ -201,6 +218,14 @@ function usPolicy(spec: {
   flat?: number;
   alwaysFree?: boolean;
   conditions?: string;
+  // Geographic scope (see ShippingPolicyScope), structured on 2026-10-23
+  // from the conditions text the research passes above captured off the
+  // same policy pages. No new facts: a scope field is set only where the
+  // captured wording says so, which is why most policies carry none.
+  contiguousOnly?: boolean;
+  nationwide?: boolean;
+  excludedStates?: string[];
+  nonContiguousSurcharge?: number;
   notes?: string;
 }): MerchantShippingPolicy {
   const sv = <T>(value: T): SourcedValue<T> => ({
@@ -209,6 +234,14 @@ function usPolicy(spec: {
     lastVerified: spec.v,
     verification: 'verified',
   });
+  const scope: ShippingPolicyScope = {
+    ...(spec.contiguousOnly ? { contiguousOnly: true } : {}),
+    ...(spec.nationwide ? { nationwide: true } : {}),
+    ...(spec.excludedStates ? { excludedStates: spec.excludedStates } : {}),
+    ...(spec.nonContiguousSurcharge !== undefined
+      ? { nonContiguousSurchargeMinor: sv(spec.nonContiguousSurcharge) }
+      : {}),
+  };
   return {
     market: 'us',
     currency: 'USD',
@@ -217,6 +250,7 @@ function usPolicy(spec: {
     ...(spec.flat !== undefined ? { flatBelowMinor: sv(spec.flat) } : {}),
     ...(spec.alwaysFree ? { alwaysFree: sv(true) } : {}),
     ...(spec.conditions ? { conditions: spec.conditions } : {}),
+    ...(Object.keys(scope).length > 0 ? { scope } : {}),
     ...(spec.notes ? { notes: spec.notes } : {}),
   };
 }
@@ -249,6 +283,7 @@ const P: Record<string, MerchantShippingPolicy> = {
     url: 'https://www.lowes.com/l/help/shipping-delivery',
     v: '2026-09-01',
     freeOver: 2500,
+    contiguousOnly: true,
     conditions:
       'Parcel orders under 150 lbs to the contiguous US; excludes special orders, hazardous-material orders, major appliances, and marketplace sellers; below-threshold rates are weight-based at checkout (not published).',
   }),
@@ -271,6 +306,7 @@ const P: Record<string, MerchantShippingPolicy> = {
     v: '2026-09-01',
     freeOver: 3500,
     flat: 499,
+    contiguousOnly: true,
     conditions:
       'Contiguous US standard ground; items with their own per-item shipping charges are excluded and do not count toward the $35.',
   }),
@@ -299,6 +335,7 @@ const P: Record<string, MerchantShippingPolicy> = {
     v: '2026-08-31',
     freeOver: 4900,
     flat: 1095,
+    nonContiguousSurcharge: 1000,
     conditions:
       'Baseline non-member tier, pre-tax; a $10 surcharge applies to AK, HI, military addresses, and US territories.',
   }),
@@ -306,6 +343,7 @@ const P: Record<string, MerchantShippingPolicy> = {
     url: 'https://www.nordstrom.com/browse/services/shipping-methods-charges/free-shipping-and-returns',
     v: '2026-08-31',
     alwaysFree: true,
+    nationwide: true,
     conditions: 'Free standard shipping anywhere in the US with no minimum or membership.',
   }),
   'kohls-us': usPolicy({
@@ -340,6 +378,8 @@ const P: Record<string, MerchantShippingPolicy> = {
     url: 'https://www.academy.com/help/free-shipping-qualification',
     v: '2026-08-31',
     freeOver: 5000,
+    contiguousOnly: true,
+    excludedStates: ['CA'],
     conditions:
       'Signed-out tier, pre-tax, standard ground to contiguous states EXCLUDING California; below-threshold rate is not published.',
   }),
@@ -347,12 +387,14 @@ const P: Record<string, MerchantShippingPolicy> = {
     url: 'https://www.bhphotovideo.com/find/HelpCenter/Shipping.jsp',
     v: '2026-08-31',
     alwaysFree: true,
+    contiguousOnly: true,
     conditions: 'Most items, contiguous US; expedited free over $49 on most orders.',
   }),
   'officedepot-us': usPolicy({
     url: 'https://www.officedepot.com/l/help/delivery',
     v: '2026-08-31',
     freeOver: 5000,
+    contiguousOnly: true,
     conditions:
       'Qualifying orders, contiguous US; non-qualifying orders carry a $9.95 MINIMUM fee that varies upward (not a flat rate, so no below-threshold figure is encoded).',
   }),
@@ -1023,6 +1065,28 @@ export function validateRegistry(): string[] {
       }
       if (!p.freeOverMinor && !p.flatBelowMinor && !p.alwaysFree) {
         errors.push(`${e.id}: shipping policy carries no usable rule`);
+      }
+      const scope = p.scope;
+      if (scope) {
+        if (scope.contiguousOnly && scope.nationwide) {
+          errors.push(`${e.id}: shipping policy scope cannot be both contiguous-only and nationwide`);
+        }
+        for (const state of scope.excludedStates ?? []) {
+          if (!/^[A-Z]{2}$/.test(state)) {
+            errors.push(`${e.id}: shipping policy excludedStates entry "${state}" is not a state code`);
+          }
+        }
+        const surcharge = scope.nonContiguousSurchargeMinor;
+        if (
+          surcharge &&
+          surcharge.value !== null &&
+          (!Number.isSafeInteger(surcharge.value) || surcharge.value < 0)
+        ) {
+          errors.push(`${e.id}: shipping policy nonContiguousSurchargeMinor must be a non-negative integer`);
+        }
+        if (surcharge && surcharge.verification === 'verified' && !surcharge.lastVerified) {
+          errors.push(`${e.id}: verified shipping policy nonContiguousSurchargeMinor needs lastVerified`);
+        }
       }
     }
   }

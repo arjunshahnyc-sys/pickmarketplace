@@ -22,7 +22,7 @@ export default function Privacy() {
       {/* Content */}
       <main id="main-content" className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-5xl font-bold mb-8">Privacy Policy</h1>
-        <p className="text-sm text-black/60 mb-12">Last updated: September 1, 2026</p>
+        <p className="text-sm text-black/60 mb-12">Last updated: October 23, 2026</p>
 
         <div className="prose prose-lg max-w-none space-y-8">
           <section>
@@ -41,6 +41,7 @@ export default function Privacy() {
               <li><strong>Search Queries:</strong> Product searches you make on our platform to provide relevant price comparisons</li>
               <li><strong>Usage Data:</strong> Information about how you interact with our service, including pages visited and features used</li>
               <li><strong>Technical Data:</strong> IP address, browser type, device information, and similar technical data for security and optimization</li>
+              <li><strong>Delivery Location:</strong> an approximate country (and, for US visitors, state) that our hosting provider derives from your network connection to pick the default delivery destination for cost estimates. We do not store it. A delivery state or ZIP code you enter yourself stays in your browser&apos;s local storage and is never sent to us, so we cannot see it.</li>
             </ul>
           </section>
 
@@ -73,7 +74,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Cookies and Tracking</h2>
             <p className="text-black/80 leading-relaxed">
-              We use a session cookie to keep you signed in if you create an account, and similar technologies to analyze usage patterns. Your delivery country and saved list are kept in your browser's local storage rather than in cookies, and they never leave your device. You can control cookies and site data through your browser settings.
+              We use a session cookie to keep you signed in if you create an account, and similar technologies to analyze usage patterns. Your delivery country, state, and ZIP code (if you enter one), and your saved list are kept in your browser's local storage rather than in cookies, and they never leave your device. You can control cookies and site data through your browser settings.
             </p>
           </section>
 

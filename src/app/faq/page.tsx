@@ -29,6 +29,16 @@ export default function FAQPage() {
       answer: "This happens for a few reasons: (1) The retailer changed their price after we last checked, (2) The product is on a flash sale or limited-time promotion, (3) Shipping costs or taxes aren't included in our displayed price, (4) The product shown is marked as an \"example\" for demonstration purposes, or (5) The retailer's price varies by location. Always check the final price at checkout.",
     },
     {
+      id: "free-shipping",
+      question: "Why does shipping show as Free on some results and a dollar amount on others?",
+      answer: "Each shipping figure comes from the best published source we have for that store. When a store publishes a standard-shipping policy (for example, free shipping on orders over $35), we apply it to the item price, so an order that qualifies shows Free. When a store publishes no policy, we fall back to a USPS retail benchmark at a typical weight for that type of product, which is deliberately on the high side. Both are marked est., the source is written under the figure, and the store's checkout quote always wins. Shipping to Alaska and Hawaii is priced separately by most stores, so we leave it out of the total there and say so.",
+    },
+    {
+      id: "zip-privacy",
+      question: "If I enter my ZIP code, can Pick see where I live?",
+      answer: "No. Your ZIP code is handled entirely inside your browser: it picks the delivery state used for the sales tax estimate and tells the estimate which stores' shipping terms apply at your address. It is saved only in your browser's local storage so the field is still filled in on your next visit, and it is never sent to our servers, so we cannot see, store, or share it. Clear the field to remove it.",
+    },
+    {
       question: "Which retailers does Pick Marketplace support?",
       answer: "We check Target's catalog directly and aggregate live results from Google Shopping, which covers major retailers like Amazon, Walmart, Best Buy, Costco, eBay, Nordstrom, and Macy's, plus many additional merchants. Visit our Supported Retailers page for more detail.",
     },

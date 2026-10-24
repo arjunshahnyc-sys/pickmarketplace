@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function CompliancePage() {
-  const lastUpdated = 'September 1, 2026';
+  const lastUpdated = 'October 23, 2026';
 
   return (
     <>
@@ -126,7 +126,9 @@ export default function CompliancePage() {
                   <li><strong>Labeled uncertainty:</strong> every estimated figure is marked as an estimate, and components we cannot compute are shown as unknown rather than assumed to be zero.</li>
                   <li><strong>Ranges, not false precision:</strong> when we cannot tell whether a merchant collects duties at checkout, we show a range instead of a single number.</li>
                   <li><strong>Verify before you buy:</strong> always confirm final pricing, shipping, and any import charges with the retailer and carrier before purchasing.</li>
-                  <li><strong>Location default:</strong> the delivery country starts at your approximate location (country level only, derived from your network connection by our hosting provider). We do not store it, and picking a country in the header always overrides it and is remembered instead.</li>
+                  <li><strong>Location default:</strong> the delivery country starts at your approximate location (country level, plus the state for US visitors, derived from your network connection by our hosting provider). We do not store it, and picking a country or state in the header always overrides it and is remembered in your browser instead.</li>
+                  <li><strong>Delivery ZIP code:</strong> optional. A ZIP you enter is resolved and kept in your own browser (local storage) to set the delivery state for the sales tax estimate and to apply stores&apos; published shipping terms. It is never sent to our servers, so we cannot see, store, or share it. Clear the field to remove it.</li>
+                  <li><strong>Shipping figures:</strong> a store&apos;s own published standard-shipping policy comes first (an order that qualifies for free shipping shows Free), then a USPS retail benchmark at a typical weight for the product type, which is deliberately on the high side. Both are marked est., and the store&apos;s checkout quote always wins. Shipping to Alaska and Hawaii is not estimated, and the total says so.</li>
                 </ul>
               </section>
             )}

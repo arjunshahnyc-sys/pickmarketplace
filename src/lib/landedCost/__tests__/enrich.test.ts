@@ -77,6 +77,58 @@ describe('buildLandedCostInput', () => {
     expect(input.shipping!.sourceId).toContain('shipping-estimate:US:US');
   });
 
+  it("a $250 speaker at Dick's rides the free-over-$75 policy: a real zero, labeled", () => {
+    const input = buildLandedCostInput(
+      product({ id: 'speaker', price: 250, retailer: "Dick's Sporting Goods", category: 'speakers' }),
+      { country: 'US', currency: 'USD', subdivision: 'GA' }
+    )!;
+    expect(input.shipping).toMatchObject({
+      costMinor: 0,
+      confidence: 'estimated',
+      sourceId: 'shipping-policy:dickssportinggoods.com:free-over',
+    });
+    expect(input.shipping!.basis).toContain('$75.00 or more');
+    expect(input.shippingUnknownReason).toBeUndefined();
+  });
+
+  it("the delivery state scopes the policy: Academy excludes CA; Lowe's and the benchmark stop at the contiguous US", () => {
+    const academyCa = buildLandedCostInput(
+      product({ id: 'shoe', price: 89.99, retailer: 'Academy Sports + Outdoors', category: 'shoes' }),
+      { country: 'US', currency: 'USD', subdivision: 'CA' }
+    )!;
+    expect(academyCa.shipping!.sourceId).toContain('shipping-estimate:US:US');
+    const academyTx = buildLandedCostInput(
+      product({ id: 'shoe', price: 89.99, retailer: 'Academy Sports + Outdoors', category: 'shoes' }),
+      { country: 'US', currency: 'USD', subdivision: 'TX' }
+    )!;
+    expect(academyTx.shipping).toMatchObject({ costMinor: 0 });
+    const lowesHi = buildLandedCostInput(
+      product({ id: 'shoe', price: 89.99, retailer: "Lowe's", category: 'shoes' }),
+      { country: 'US', currency: 'USD', subdivision: 'HI' }
+    )!;
+    expect(lowesHi.shipping).toBeUndefined();
+    expect(lowesHi.shippingUnknownReason).toContain('HI');
+    // Macy's publishes a $10 AK/HI surcharge: free-over becomes $10, labeled.
+    const macysAk = buildLandedCostInput(
+      product({ id: 'shoe', price: 89.99, retailer: "Macy's", category: 'shoes' }),
+      { country: 'US', currency: 'USD', subdivision: 'AK' }
+    )!;
+    expect(macysAk.shipping).toMatchObject({
+      costMinor: 1_000,
+      sourceId: 'shipping-policy:macys.com:free-over+surcharge',
+    });
+  });
+
+  it('a typed ZIP never enters the input: only country, currency and state do', () => {
+    const picker = { country: 'US', currency: 'USD', subdivision: 'GA', postalCode: '30318' };
+    const input = buildLandedCostInput(
+      product({ id: 'shoe', price: 89.99, retailer: 'Target', category: 'shoes' }),
+      picker
+    )!;
+    expect(input.destination).toEqual({ country: 'US', currency: 'USD', subdivision: 'GA' });
+    expect(JSON.stringify(input)).not.toContain('30318');
+  });
+
   it('returns null for an unusable price', () => {
     expect(
       buildLandedCostInput(product({ id: 'bad', price: NaN }), { country: 'US', currency: 'USD' })

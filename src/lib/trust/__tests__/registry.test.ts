@@ -287,3 +287,29 @@ describe('VERIFIED_RETAILERS export (badge-logo sync contract)', () => {
     }
   });
 });
+
+describe('shipping policy geography (structured from the captured conditions, 2026-10-23)', () => {
+  const scopeOf = (id: string) => getEntryById(id)?.shippingPolicy?.scope;
+
+  it('contiguous-US-only terms are marked as such', () => {
+    for (const id of ['lowes-us', 'wayfair-us', 'bhphoto-us', 'officedepot-us', 'academysports-us']) {
+      expect(scopeOf(id)?.contiguousOnly, id).toBe(true);
+    }
+  });
+
+  it("Academy's free tier excludes California, Macy's publishes a $10 AK/HI surcharge, Nordstrom is nationwide", () => {
+    expect(scopeOf('academysports-us')?.excludedStates).toEqual(['CA']);
+    expect(scopeOf('macys-us')?.nonContiguousSurchargeMinor).toMatchObject({
+      value: 1000,
+      verification: 'verified',
+      lastVerified: '2026-08-31',
+    });
+    expect(scopeOf('nordstrom-us')?.nationwide).toBe(true);
+  });
+
+  it('policies whose captured wording states no geography carry no scope at all', () => {
+    for (const id of ['walmart-us', 'target-us', 'bestbuy-us', 'apple-us', 'dickssportinggoods-us']) {
+      expect(scopeOf(id), id).toBeUndefined();
+    }
+  });
+});

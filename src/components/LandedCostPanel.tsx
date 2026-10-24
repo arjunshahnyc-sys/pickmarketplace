@@ -25,6 +25,10 @@
 //   - While FX rates are still loading, an FX-caused unavailable renders as
 //     "Computing total..." (a loading state, not a verdict), also inline.
 //   - Unknown amounts render as a "not included" tag, never 0.00.
+//   - A shipping line at zero renders as "Free" with its source under it
+//     (the store's published free-shipping rule): "$0.00 est." beside a
+//     neighbor's "$15.80 est." read like a missing number (2026-10-23).
+//     Every shipping figure shows its basis inline for the same reason.
 //   - The summary wording comes from summarizeTotal(); this component adds
 //     no arithmetic of its own.
 
@@ -60,6 +64,19 @@ function confidenceTag(line: BreakdownLine): string | null {
   if (line.amountMinor === null) return 'unknown';
   if (line.confidence === 'exact') return null;
   return 'est.';
+}
+
+/**
+ * The figure shown for a line. A shipping line at zero reads "Free", never
+ * "$0.00": that zero only ever comes from a store's published free-shipping
+ * rule (the source hierarchy has no default tier), and "$0.00" reads like a
+ * number nobody filled in. Unknown amounts never reach here. Exported for
+ * tests.
+ */
+export function amountText(line: BreakdownLine, currency: string): string {
+  if (line.amountMinor === null) return '';
+  if (line.kind === 'shipping' && line.amountMinor === 0) return 'Free';
+  return money(line.amountMinor, currency);
 }
 
 const MISSING_LABELS: Record<LineKind, string> = {
@@ -259,9 +276,12 @@ export function includedSummary(breakdown: LandedCostBreakdown): string {
   const included = lines
     .filter((l) => l !== noImport && l.amountMinor !== null)
     .map((l) => {
-      const label = /^[A-Z][a-z]/.test(l.label)
-        ? l.label.charAt(0).toLowerCase() + l.label.slice(1)
-        : l.label;
+      const label =
+        l.kind === 'shipping' && l.amountMinor === 0
+          ? 'free shipping'
+          : /^[A-Z][a-z]/.test(l.label)
+            ? l.label.charAt(0).toLowerCase() + l.label.slice(1)
+            : l.label;
       return l.confidence === 'exact' ? label : `${label} (est.)`;
     });
   const list =
@@ -407,19 +427,27 @@ export default function LandedCostPanel({
               key={`${line.kind}-${line.label}`}
               className="flex items-baseline justify-between gap-2 text-[11px]"
             >
-              <span className="text-neutral-600" title={line.basis}>
+              <span className="min-w-0 text-neutral-600" title={line.basis}>
                 {line.label}
                 {confidenceTag(line) === 'est.' && (
                   <span className="ml-1 text-[10px] text-amber-700">est.</span>
                 )}
+                {/* The shipping figure is the one shoppers question most
+                    (Free on this card, a benchmark on the next), so where
+                    it comes from reads inline, not only on hover. */}
+                {line.kind === 'shipping' && line.amountMinor !== null && (
+                  <span className="block text-[10px] leading-snug text-neutral-500">
+                    {line.basis}
+                  </span>
+                )}
               </span>
               {line.amountMinor === null ? (
-                <span className="rounded bg-neutral-200/70 px-1 text-[10px] text-neutral-600">
+                <span className="shrink-0 rounded bg-neutral-200/70 px-1 text-[10px] text-neutral-600">
                   not included
                 </span>
               ) : (
-                <span className="tabular-nums text-neutral-800">
-                  {money(line.amountMinor, currency)}
+                <span className="shrink-0 tabular-nums text-neutral-800">
+                  {amountText(line, currency)}
                 </span>
               )}
             </li>

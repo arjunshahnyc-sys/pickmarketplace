@@ -767,8 +767,10 @@ export default function Home() {
                     Prices checked {formatCheckedAt(searchResponse?.checkedAt)}
                     {landedCostEnabled() && (
                       <>
-                        {' '}• Totals estimated for delivery to {destination.country} in{' '}
-                        {destination.currency}, duties not prepaid unless shown
+                        {' '}• Totals estimated for delivery to {destination.country}
+                        {destination.subdivision &&
+                          ` (${destination.subdivision}${destination.postalCode ? ` ${destination.postalCode}` : ''})`}{' '}
+                        in {destination.currency}, duties not prepaid unless shown
                       </>
                     )}
                   </p>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  amountText,
   disclaimerFor,
   gapNotes,
   includedSummary,
@@ -12,7 +13,7 @@ import { summarizeTotal, type TotalSummary } from '../enrich';
 import { NullFxProvider } from '../fx';
 import { EU_MEMBERSHIP } from '../rules/eu';
 import { loadRulesFor } from '../rules/loader';
-import type { LandedCostInput } from '../types';
+import type { BreakdownLine, LandedCostInput } from '../types';
 
 // The row's three modes and the copy under each, as tests: the static
 // modes never expand, the unavailable reasons never blame shipping, and a
@@ -244,5 +245,47 @@ describe('includedSummary: the tooltip lists what the panel actually shows', () 
     expect(text).toContain('import duty (est.)');
     expect(text).toContain('import VAT (20%) (est.)');
     expect(text).toContain('prepaid by the seller (low)');
+  });
+});
+
+describe('amountText: a zero shipping line reads Free, never $0.00', () => {
+  const line = (over: Partial<BreakdownLine>): BreakdownLine => ({
+    kind: 'shipping',
+    label: 'Shipping',
+    amountMinor: 0,
+    basis: 'Free standard shipping on orders of $35.00 or more, per example.test\'s published policy',
+    confidence: 'estimated',
+    sourceId: 'shipping-policy:example.test:free-over',
+    ...over,
+  });
+
+  it('free shipping is Free, paid shipping is money, other zero lines stay money', () => {
+    expect(amountText(line({}), 'USD')).toBe('Free');
+    expect(amountText(line({ confidence: 'exact' }), 'USD')).toBe('Free');
+    expect(amountText(line({ amountMinor: 599 }), 'USD')).toBe('$5.99');
+    expect(amountText(line({ kind: 'tax', label: 'Sales tax (OR)' }), 'USD')).toBe('$0.00');
+    expect(amountText(line({ amountMinor: null }), 'USD')).toBe('');
+  });
+
+  it('the tooltip calls it free shipping too, and never prints $0.00', () => {
+    const input: LandedCostInput = {
+      item: { priceMinor: 10_000, currency: 'USD' },
+      merchant: { id: 'target', country: 'US', incoterm: 'unknown', configConfidence: 'estimated' },
+      shipping: {
+        costMinor: 0,
+        currency: 'USD',
+        confidence: 'estimated',
+        sourceId: 'shipping-policy:example.test:free-over',
+        basis: line({}).basis,
+      },
+      destination: { country: 'US', currency: 'USD', subdivision: 'NJ' },
+    };
+    const { rules, rulesWarnings } = loadRulesFor('US', NOW);
+    const text = includedSummary(
+      calculateLandedCost(input, { rules, eu: EU_MEMBERSHIP, fx: new NullFxProvider(), rulesWarnings })
+    );
+    expect(text).toContain('free shipping (est.)');
+    expect(text).not.toContain('$0.00');
+    expect(text).not.toContain(EM_DASH);
   });
 });

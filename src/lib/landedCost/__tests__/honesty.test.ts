@@ -7,6 +7,7 @@ import {
   buildLandedCostInput,
   clearBreakdownCacheForTests,
   resolveShipping,
+  shippingGapReason,
   summarizeTotal,
   withLandedCosts,
   type TotalSummary,
@@ -347,5 +348,110 @@ describe('unavailable stays unavailable (no silent zeros end to end)', () => {
       url: 'https://example.test/bad',
     };
     expect(buildLandedCostInput(bad, { country: 'US', currency: 'USD' }, NOW)).toBeNull();
+  });
+});
+
+describe('shipping policies honor their published geography (2026-10-23)', () => {
+  const base = {
+    categoryId: 'shoes' as string | undefined,
+    merchantCountry: 'US',
+    destinationCountry: 'US',
+    itemPriceMinor: 10_000,
+    itemCurrency: 'USD',
+    now: NOW,
+  };
+  const contiguousOnly = policy({
+    freeOverMinor: verifiedRow(3500),
+    scope: { contiguousOnly: true },
+  });
+  const unscoped = policy({ freeOverMinor: verifiedRow(3500) });
+  const nationwide = policy({ alwaysFree: verifiedRow(true), scope: { nationwide: true } });
+  const surcharged = policy({
+    freeOverMinor: verifiedRow(4900),
+    flatBelowMinor: verifiedRow(1095),
+    scope: { nonContiguousSurchargeMinor: verifiedRow(1000) },
+  });
+  const excludesCa = policy({
+    freeOverMinor: verifiedRow(5000),
+    scope: { contiguousOnly: true, excludedStates: ['CA'] },
+  });
+
+  it('with no state chosen, policies apply as published', () => {
+    expect(resolveShipping({ ...base, policy: contiguousOnly })!.costMinor).toBe(0);
+    expect(resolveShipping({ ...base, policy: excludesCa })!.costMinor).toBe(0);
+  });
+
+  it('in a contiguous state, only an explicit exclusion falls through to the benchmark', () => {
+    expect(
+      resolveShipping({ ...base, destinationSubdivision: 'NJ', policy: contiguousOnly })!.costMinor
+    ).toBe(0);
+    const ca = resolveShipping({ ...base, destinationSubdivision: 'CA', policy: excludesCa })!;
+    expect(ca.costMinor).toBe(1_580); // Ground Advantage zone-4 benchmark, 5 lb band
+    expect(ca.sourceId).toContain('shipping-estimate:US:US');
+    expect(
+      resolveShipping({ ...base, destinationSubdivision: 'TX', policy: excludesCa })!.costMinor
+    ).toBe(0);
+  });
+
+  it('in AK or HI, a policy applies only when published nationwide or with a surcharge', () => {
+    // Contiguous-only and silent policies do not reach Hawaii; neither does
+    // the zone-4 benchmark, so the gap stays open.
+    expect(
+      resolveShipping({ ...base, destinationSubdivision: 'HI', policy: contiguousOnly })
+    ).toBeUndefined();
+    expect(
+      resolveShipping({ ...base, destinationSubdivision: 'AK', policy: unscoped })
+    ).toBeUndefined();
+    expect(resolveShipping({ ...base, destinationSubdivision: 'AK' })).toBeUndefined();
+    // Published nationwide: free in Alaska too.
+    expect(
+      resolveShipping({ ...base, destinationSubdivision: 'AK', policy: nationwide })!.costMinor
+    ).toBe(0);
+    // Published surcharge: added to whichever rule fires, and said so.
+    const free = resolveShipping({ ...base, destinationSubdivision: 'HI', policy: surcharged })!;
+    expect(free.costMinor).toBe(1_000);
+    expect(free.sourceId).toBe('shipping-policy:example.test:free-over+surcharge');
+    expect(free.basis).toContain('$10.00 surcharge for delivery to HI');
+    const flat = resolveShipping({
+      ...base,
+      destinationSubdivision: 'HI',
+      itemPriceMinor: 2_000,
+      policy: surcharged,
+    })!;
+    expect(flat.costMinor).toBe(2_095);
+    expect(flat.sourceId).toBe('shipping-policy:example.test:flat+surcharge');
+  });
+
+  it('an unverified surcharge row never produces a figure', () => {
+    const unverified = policy({
+      freeOverMinor: verifiedRow(4900),
+      scope: {
+        nonContiguousSurchargeMinor: { ...verifiedRow(1000), verification: 'unverified' },
+      },
+    });
+    expect(
+      resolveShipping({ ...base, destinationSubdivision: 'HI', policy: unverified })
+    ).toBeUndefined();
+  });
+
+  it('the AK/HI gap carries its reason into the breakdown the shopper reads', () => {
+    const us = { merchantCountry: 'US', destinationCountry: 'US' };
+    expect(shippingGapReason({ ...us, destinationSubdivision: 'NJ' })).toBeUndefined();
+    expect(shippingGapReason(us)).toBeUndefined();
+    expect(
+      shippingGapReason({ ...us, destinationCountry: 'GB', destinationSubdivision: 'HI' })
+    ).toBeUndefined();
+    const reason = shippingGapReason({ ...us, destinationSubdivision: 'AK' })!;
+    expect(reason).toContain('AK');
+    expect(reason).not.toContain('—');
+    const input = usInput({}, 'AK');
+    input.shippingUnknownReason = reason;
+    const out = calculateLandedCost(input, usCtx());
+    const shipping = out.lines.find((l) => l.kind === 'shipping')!;
+    expect(shipping.amountMinor).toBeNull();
+    expect(shipping.basis).toBe(reason);
+    expect(out.assumptions).toContain(reason);
+    // Alaska has a verified zero sales-tax row, so shipping is the only gap.
+    expect(summarizeTotal(out)).toMatchObject({ kind: 'subtotal', missing: ['shipping'] });
   });
 });

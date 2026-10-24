@@ -77,6 +77,14 @@ export interface LandedCostInput {
     /** Data-quality note (e.g. a stale published policy); pushed into warnings. */
     warning?: string;
   };
+  /**
+   * Why shipping is unknown, when enrichment left it unknown ON PURPOSE and
+   * can say why (Alaska/Hawaii: stores and carriers price delivery there
+   * separately, so neither the policy tier nor the contiguous-US benchmark
+   * applies). Ignored when `shipping` is present. Becomes the unknown
+   * line's basis and a shopper-facing assumption; never a number.
+   */
+  shippingUnknownReason?: string;
   destination: {
     country: string;
     subdivision?: string;

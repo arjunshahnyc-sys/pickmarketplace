@@ -16,6 +16,7 @@ import { rankByLandedCost, type RankedOffer, type RankResult } from './rank';
 import { EU_MEMBERSHIP } from './rules/eu';
 import { loadRulesFor, RULES_MAX_AGE_DAYS } from './rules/loader';
 import { collectShippingWarnings, getShippingEstimateRoute } from './rules/shippingEstimates';
+import { isContiguousUs } from './usZip';
 import type {
   LandedCostBreakdown,
   LandedCostInput,
@@ -93,44 +94,78 @@ export function estimateShipping(
  *     registry (free-over threshold honored against this item's price, or
  *     a published flat standard rate). US domestic only for now by owner
  *     decision 2026-09-01. Confidence 'estimated' (policies carry
- *     conditions and exclusions), provenance = the policy page.
+ *     conditions and exclusions), provenance = the policy page. A zero
+ *     here is a REAL zero (the store ships this order free), and it is the
+ *     only way a shipping line ever reads Free: the panel renders it as
+ *     "Free" with this basis under it, never as "$0.00".
  *   Tier 3 - carrier-published retail rate tables (USPS) by weight class.
  *   No tier resolves -> undefined -> the shipping line is honestly unknown.
+ *
+ * GEOGRAPHY (2026-10-23): once the delivery state is known (state picker or
+ * the ZIP field), a policy applies only where its page says it does
+ * (policy.scope): a state the free tier excludes falls through to the
+ * carrier benchmark; outside the contiguous US (AK, HI) a policy applies
+ * only when published as nationwide or with a published surcharge for
+ * those addresses, which is added on top. The zone-4 benchmark is a
+ * contiguous-US figure and never stands in for AK or HI, so there the gap
+ * stays open and shippingGapReason() tells the shopper why. With no state
+ * chosen, policies apply as published (their conditions text already
+ * states any contiguous-US limit).
  */
 export function resolveShipping(args: {
   categoryId: string | undefined;
   merchantCountry: string | undefined;
   destinationCountry: string;
+  /** US state code when the shopper has chosen one; undefined = unknown. */
+  destinationSubdivision?: string;
   itemPriceMinor: number;
   itemCurrency: string;
   policy?: MerchantShippingPolicy;
   now: Date;
 }): LandedCostInput['shipping'] | undefined {
-  const { policy } = args;
+  const { policy, destinationSubdivision: state } = args;
   const domesticUs =
     args.merchantCountry === 'US' && args.destinationCountry === 'US';
-  if (policy && domesticUs && policy.currency === args.itemCurrency) {
+  const outsideContiguous = domesticUs && state !== undefined && !isContiguousUs(state);
+  if (
+    policy &&
+    domesticUs &&
+    policy.currency === args.itemCurrency &&
+    policyCoversState(policy, state)
+  ) {
     const host = policy.policyUrl.replace(/^https:\/\/(www\.)?/, '').split('/')[0];
     const staleWarning = policyStaleness(policy, args.now);
     const conditions = policy.conditions
       ? ` Free-shipping conditions: ${policy.conditions}`
       : '';
+    // A published AK/HI surcharge rides on top of whichever rule fires.
+    const surchargeRow = policy.scope?.nonContiguousSurchargeMinor;
+    const surcharge =
+      outsideContiguous &&
+      surchargeRow?.verification === 'verified' &&
+      surchargeRow.value !== null
+        ? surchargeRow.value
+        : 0;
+    const surchargeClause =
+      surcharge > 0
+        ? `, plus the published ${fmtPolicyMoney(surcharge, policy.currency)} surcharge for delivery to ${state}`
+        : '';
     const fromPolicy = (
       costMinor: number,
       rule: string,
       basis: string
     ): LandedCostInput['shipping'] => ({
-      costMinor,
+      costMinor: costMinor + surcharge,
       currency: policy.currency,
       confidence: 'estimated',
-      sourceId: `shipping-policy:${host}:${rule}`,
-      basis,
+      sourceId: `shipping-policy:${host}:${rule}${surcharge > 0 ? '+surcharge' : ''}`,
+      basis: `${basis}${surchargeClause}, per ${host}'s published policy`,
       assumption: `Shipping follows ${host}'s published standard-shipping policy, assuming a single-item order; oversized items and remote addresses can differ.${conditions}`,
       warning: staleWarning,
     });
     const alwaysFree = policy.alwaysFree;
     if (alwaysFree?.verification === 'verified' && alwaysFree.value === true) {
-      return fromPolicy(0, 'always-free', `Free standard shipping per ${host}'s published policy`);
+      return fromPolicy(0, 'always-free', 'Free standard shipping');
     }
     const freeOver = policy.freeOverMinor;
     if (
@@ -141,7 +176,7 @@ export function resolveShipping(args: {
       return fromPolicy(
         0,
         'free-over',
-        `Free standard shipping on orders of ${(freeOver.value / 100).toFixed(2)} ${policy.currency} or more, per ${host}'s published policy`
+        `Free standard shipping on orders of ${fmtPolicyMoney(freeOver.value, policy.currency)} or more`
       );
     }
     const flat = policy.flatBelowMinor;
@@ -149,18 +184,74 @@ export function resolveShipping(args: {
       return fromPolicy(
         flat.value,
         'flat',
-        `Standard shipping ${(flat.value / 100).toFixed(2)} ${policy.currency}, per ${host}'s published policy`
+        `Standard shipping ${fmtPolicyMoney(flat.value, policy.currency)}`
       );
     }
     // The policy has no verified rule that covers this order value (e.g.
     // below a free-over threshold with an unpublished base rate): fall
     // through to the carrier benchmark rather than inventing a number.
   }
+  // The USPS zone-4 benchmark is a contiguous-US figure; AK and HI ride
+  // zones 7 to 9 and most stores price them separately. No number beats an
+  // understated one.
+  if (outsideContiguous) return undefined;
   return estimateShipping(args.categoryId, args.merchantCountry, args.destinationCountry);
 }
 
+/**
+ * Does the policy's published scope cover the delivery state? No state
+ * chosen = covered (terms apply as published, with their conditions
+ * stated as an assumption).
+ */
+function policyCoversState(policy: MerchantShippingPolicy, state: string | undefined): boolean {
+  if (!state) return true;
+  const scope = policy.scope;
+  if (scope?.excludedStates?.includes(state)) return false;
+  if (!isContiguousUs(state)) {
+    const surcharge = scope?.nonContiguousSurchargeMinor;
+    return (
+      scope?.nationwide === true ||
+      (surcharge?.verification === 'verified' && surcharge.value !== null)
+    );
+  }
+  return true;
+}
+
+/**
+ * Why the shipping line is unknown when enrichment leaves it so on
+ * purpose: AK and HI on the US domestic lane. Undefined everywhere else
+ * (an ordinary gap needs no explanation beyond the panel's own note).
+ */
+export function shippingGapReason(args: {
+  merchantCountry: string | undefined;
+  destinationCountry: string;
+  destinationSubdivision?: string;
+}): string | undefined {
+  const state = args.destinationSubdivision;
+  if (
+    args.merchantCountry === 'US' &&
+    args.destinationCountry === 'US' &&
+    state &&
+    !isContiguousUs(state)
+  ) {
+    return `Shipping to ${state} is not estimated: most stores price delivery to Alaska and Hawaii separately and leave it out of free-shipping offers, and the USPS benchmark Pick uses covers the contiguous US only. The store quotes it at checkout.`;
+  }
+  return undefined;
+}
+
+/** "$75.00" for US dollars, "75.00 EUR" otherwise (policies are US-only today). */
+function fmtPolicyMoney(minor: number, currency: string): string {
+  const major = (minor / 100).toFixed(2);
+  return currency === 'USD' ? `$${major}` : `${major} ${currency}`;
+}
+
 function policyStaleness(policy: MerchantShippingPolicy, now: Date): string | undefined {
-  const dates = [policy.freeOverMinor, policy.flatBelowMinor, policy.alwaysFree]
+  const dates = [
+    policy.freeOverMinor,
+    policy.flatBelowMinor,
+    policy.alwaysFree,
+    policy.scope?.nonContiguousSurchargeMinor,
+  ]
     .map((sv) => sv?.lastVerified)
     .filter((d): d is string => Boolean(d));
   if (dates.length === 0) return undefined;
@@ -190,6 +281,19 @@ export function buildLandedCostInput(
     categoryId,
   });
   const merchant = merchantInputFor(product.retailer, product.sourceMarket);
+  // The sources never quote shipping; the policy tier and the carrier
+  // benchmark stand in where their data allows, and shipping stays unknown
+  // otherwise, with the reason attached when there is a specific one.
+  const shipping = resolveShipping({
+    categoryId,
+    merchantCountry: merchant.country,
+    destinationCountry: destination.country,
+    destinationSubdivision: destination.subdivision,
+    itemPriceMinor: priceMinor,
+    itemCurrency: currency,
+    policy: getShippingPolicy(product.retailer, product.sourceMarket),
+    now,
+  });
   return {
     item: {
       priceMinor,
@@ -198,19 +302,22 @@ export function buildLandedCostInput(
       hs: hs ?? undefined,
     },
     merchant,
-    // The sources never quote shipping; the policy tier and the carrier
-    // benchmark stand in where their data allows, and shipping stays
-    // unknown otherwise.
-    shipping: resolveShipping({
-      categoryId,
-      merchantCountry: merchant.country,
-      destinationCountry: destination.country,
-      itemPriceMinor: priceMinor,
-      itemCurrency: currency,
-      policy: getShippingPolicy(product.retailer, product.sourceMarket),
-      now,
-    }),
-    destination,
+    shipping,
+    shippingUnknownReason: shipping
+      ? undefined
+      : shippingGapReason({
+          merchantCountry: merchant.country,
+          destinationCountry: destination.country,
+          destinationSubdivision: destination.subdivision,
+        }),
+    // Copied field by field: the calculator needs country, currency and
+    // state, and nothing else the picker may hold (a typed ZIP stays in the
+    // browser's picker state; see usZip.ts).
+    destination: {
+      country: destination.country,
+      currency: destination.currency,
+      subdivision: destination.subdivision,
+    },
   };
 }
 
