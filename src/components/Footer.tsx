@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 
 export default function Footer() {
@@ -36,6 +37,11 @@ export default function Footer() {
                 <a href="/supported-retailers" className="text-white/70 hover:text-white transition-colors">
                   Supported Retailers
                 </a>
+              </li>
+              <li>
+                <Link href="/compare" className="text-white/70 hover:text-white transition-colors">
+                  Cheaper Twins
+                </Link>
               </li>
             </ul>
           </div>
@@ -90,7 +96,7 @@ export default function Footer() {
 
         <div className="mt-6 pt-6 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="font-heading font-bold text-white text-lg">Don't waste your money.</p>
+            <p className="font-heading font-bold text-white text-lg">Don&apos;t waste your money.</p>
             <p className="text-xs text-white/50">
               © {currentYear} Pick. All rights reserved.
             </p>

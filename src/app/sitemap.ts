@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { SEARCH_CATEGORIES } from '@/lib/searchCategories';
+import { COMPARISONS } from '@/lib/comparisons';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://pickmarketplace.app';
@@ -33,5 +34,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...popularCategories];
+  // Cheaper-twin comparison pages at /compare/[slug] (lib/comparisons.ts),
+  // regenerated every 3 days at most, plus their index.
+  const comparisons = [
+    {
+      url: `${baseUrl}/compare`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    ...COMPARISONS.map((c) => ({
+      url: `${baseUrl}/compare/${c.slug}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    })),
+  ];
+
+  return [...staticPages, ...popularCategories, ...comparisons];
 }
