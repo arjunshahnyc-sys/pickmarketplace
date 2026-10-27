@@ -1,6 +1,8 @@
 'use client';
 
+import { motion } from 'motion/react';
 import Marquee from 'react-fast-marquee';
+import { useReveal } from '@/lib/motion/useReveal';
 import { extendedRetailerLogos } from './RetailerLogos';
 
 // The landing page's ONE retailer list and ONE sourcing sentence. Every other
@@ -9,8 +11,9 @@ import { extendedRetailerLogos } from './RetailerLogos';
 // actually appears in US Google Shopping results (Amazon and Costco do not,
 // so they are not listed); that is what makes the strip an honest claim.
 export function TrustedBy() {
+  const reveal = useReveal();
   return (
-    <section className="py-8 border-y border-black/10 bg-white/50">
+    <motion.section {...reveal()} className="py-8 border-y border-black/10 bg-white/50">
       {/* Sentence case, not the old all-caps eyebrow: this is the page's one
           sourcing disclaimer and it has to be readable. */}
       <p className="text-center text-sm text-neutral-600 mb-6 px-6 max-w-2xl mx-auto">
@@ -37,6 +40,6 @@ export function TrustedBy() {
           </div>
         ))}
       </Marquee>
-    </section>
+    </motion.section>
   );
 }

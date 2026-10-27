@@ -411,51 +411,6 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   }
 }
 
-/* Trending Now marquee. The track holds two identical copies of the card
-   row; animating to -50% loops seamlessly. Fade edges via mask so it works
-   on any background color. */
-.trending-viewport {
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent);
-  mask-image: linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent);
-}
-
-.trending-track {
-  display: flex;
-  width: max-content;
-  animation: trending-scroll 45s linear infinite;
-}
-
-/* Pause for every input mode: mouse hover, touch-hold, keyboard focus,
-   and the explicit Pause button (data-paused). */
-.trending-viewport:hover .trending-track,
-.trending-viewport:active .trending-track,
-.trending-viewport:focus-within .trending-track,
-.trending-viewport[data-paused="true"] .trending-track {
-  animation-play-state: paused;
-}
-
-@keyframes trending-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-/* Reduced motion: no animation, and the row must stay reachable — make it
-   a normal swipe/scrollable strip and drop the loop clone. */
-@media (prefers-reduced-motion: reduce) {
-  .trending-viewport {
-    overflow-x: auto;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-  .trending-track {
-    animation: none !important;
-  }
-  .trending-clone {
-    display: none;
-  }
-}
-
 /* Price tag chip */
 .price-best {
   position: relative;
