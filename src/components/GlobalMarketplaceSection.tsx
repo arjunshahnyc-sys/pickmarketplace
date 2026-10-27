@@ -10,16 +10,15 @@
 
 import { motion } from 'motion/react';
 import { Globe } from 'lucide-react';
+import { useReveal } from '@/lib/motion/useReveal';
 
 const DESTINATIONS = ['US', 'CA', 'GB', 'DE', 'FR', 'AU', 'JP'];
 
 export function GlobalMarketplaceSection() {
+  const reveal = useReveal();
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
+      {...reveal()}
       className="max-w-5xl mx-auto px-6 pt-14 pb-4"
     >
       <div

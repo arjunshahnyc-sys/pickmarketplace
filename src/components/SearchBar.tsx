@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { ArrowRight, Search } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -9,7 +10,10 @@ interface SearchBarProps {
 }
 
 // Realistic example queries, rotated through the placeholder while the
-// input is empty so the box demonstrates what to type.
+// input is empty so the box demonstrates what to type. The native
+// placeholder keeps the text for assistive tech but is drawn transparent;
+// a visual copy on top swaps with a short fade and rise (none under
+// prefers-reduced-motion), since a placeholder attribute cannot animate.
 const PLACEHOLDER_QUERIES = [
   'wireless earbuds',
   'laptop stand',
@@ -23,6 +27,8 @@ const PLACEHOLDER_QUERIES = [
 export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
+  const placeholder = `Try "${PLACEHOLDER_QUERIES[placeholderIndex]}"`;
 
   // Only rotate while the field is empty — once the user types, the
   // placeholder is invisible and the interval is just wasted renders.
@@ -49,10 +55,29 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={`Try "${PLACEHOLDER_QUERIES[placeholderIndex]}"`}
-          className="h-14 md:h-16 w-full rounded-full bg-white pl-12 pr-16 text-base text-neutral-900 placeholder:text-neutral-400 border border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-2 focus:ring-[#2A9D8F] transition-shadow"
+          placeholder={placeholder}
+          className="h-14 md:h-16 w-full rounded-full bg-white pl-12 pr-16 text-base text-neutral-900 placeholder:text-transparent border border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-2 focus:ring-[#2A9D8F] transition-shadow"
           disabled={isLoading}
         />
+        {!query && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-12 right-16 flex items-center overflow-hidden text-base text-neutral-400"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={placeholder}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
+                className="truncate"
+              >
+                {placeholder}
+              </motion.span>
+            </AnimatePresence>
+          </span>
+        )}
         <button
           type="submit"
           disabled={isLoading || !query.trim()}

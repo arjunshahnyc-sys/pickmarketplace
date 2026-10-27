@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { TrendingUp, Pause, Play } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import Footer from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
 import ProductCard from '@/components/ProductCard';
@@ -23,14 +22,10 @@ import {
   type SelectedFacets,
 } from '@/lib/facets/deriveFacets';
 import type { SearchResponse, Product } from '@/lib/types';
-// Removed getTrendingProducts - using static trending searches instead
 import Header from '@/components/Header';
-import { formatPrice } from '@/lib/formatters';
 import { TrustedBy } from '@/components/TrustedBy';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
-import { useSavedList } from '@/contexts/SavedListContext';
-import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { sortProducts } from '@/lib/sortResults';
 import { orderForTrust } from '@/lib/trustOrder';
@@ -41,6 +36,7 @@ import { useDestination } from '@/contexts/DestinationContext';
 import { getRetailerTrust, hasUnverifiedSeller, isRecognizedSeller } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useReveal } from '@/lib/motion/useReveal';
 
 // ============================================================================
 // HERO COMPARISON DATA: AN ILLUSTRATIVE EXAMPLE, NOT A CAPTURED LIVE RESULT.
@@ -142,16 +138,15 @@ function formatCheckedAt(checkedAt?: string): string {
 }
 
 export default function Home() {
-  const { isSaved, toggleItem } = useSavedList();
   const { destination } = useDestination();
+  const reduceMotion = useReducedMotion();
+  const reveal = useReveal();
   const { provider: fxProvider, status: fxStatus } = useFxProvider();
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Searching retailers...');
   const [hasSearched, setHasSearched] = useState(false);
-  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
-  const [trendingPaused, setTrendingPaused] = useState(false);
   const [searchResponse, setSearchResponse] = useState<any>(null);
   const [searchError, setSearchError] = useState(false);
   const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(null);
@@ -254,100 +249,8 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destCountry]);
 
-  // Load trending products and check for URL query on mount
+  // Check for a URL query on mount
   useEffect(() => {
-    const trending = [
-      {
-        id: 'trending-1',
-        name: "Apple AirPods Pro 2nd Gen",
-        price: 189.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61SUj2aKoEL._AC_SL1500_.jpg",
-        retailer: "Amazon",
-        url: "https://www.amazon.com/s?k=airpods+pro+2",
-        rating: 4.7,
-        reviewCount: 45000
-      },
-      {
-        id: 'trending-2',
-        name: "Stanley Quencher H2.0 40oz",
-        price: 35.00,
-        currency: 'USD',
-        imageUrl: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTY1hB8Jy9sKeePkORMfRQ2uki2WnDWLglkr8hq_KOrQShA_VIKXdc0HN3wm6s2d50WjaeugWFLU6EuXDP-mgkm7NOU3M7YmDJdoxBdTUfVvOljy1td6nKHPw",
-        retailer: "Target",
-        url: "https://www.target.com/s?searchTerm=stanley+quencher",
-        rating: 4.8,
-        reviewCount: 12000
-      },
-      {
-        id: 'trending-3',
-        name: "Nike Dunk Low",
-        price: 110.00,
-        currency: 'USD',
-        imageUrl: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcS4K2IMnIFmWcj2D0hzrwAx-t8W_GPiwM_ipNdIVwuItmho5atWVA1AaZAvpXG67Ks5hK6mpwVqoaxS5j0jayDARTI-cEtfxRZxIECJ29c",
-        retailer: "Nike",
-        url: "https://www.nike.com/w/dunk-shoes-90aohZ8y3qp",
-        rating: 4.6,
-        reviewCount: 8500
-      },
-      {
-        id: 'trending-4',
-        name: "Dyson Airwrap Complete",
-        price: 499.99,
-        currency: 'USD',
-        imageUrl: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcR_sr_aR_BCSPZX5qr-8ZnCvFa_jOQzcL5Oid0pbR4KqNNRXP8LnzExKWGAiO-e8jc3z12pVYxLxSJt-BHwu8HAU0_gi7Pst96Ndcoqr4bP1u4xCTZG_S48kg",
-        retailer: "Best Buy",
-        url: "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+airwrap",
-        rating: 4.5,
-        reviewCount: 6200
-      },
-      {
-        id: 'trending-5',
-        name: "Sony WH-1000XM5",
-        price: 328.00,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/51aXvjzcukL._AC_SL1500_.jpg",
-        retailer: "Amazon",
-        url: "https://www.amazon.com/s?k=sony+wh1000xm5",
-        rating: 4.7,
-        reviewCount: 32000
-      },
-      {
-        id: 'trending-6',
-        name: "Lululemon Align Leggings",
-        price: 98.00,
-        currency: 'USD',
-        imageUrl: "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcRSZBZFDswbhXsfgcscQ7KamBr6lFoHklbdPf_9XjiJRPSveAEYitlUxX53o0aB0avGrVt3A2qrBVwUM1BAXq6B7fvCeeIr5amE9lzOSKtISLJuH5dGUkrRdA",
-        retailer: "Nordstrom",
-        url: "https://www.nordstrom.com/sr?origin=keywordsearch&keyword=lululemon+align",
-        rating: 4.8,
-        reviewCount: 15000
-      },
-      {
-        id: 'trending-7',
-        name: "CeraVe Moisturizing Cream 16oz",
-        price: 15.99,
-        currency: 'USD',
-        imageUrl: "https://m.media-amazon.com/images/I/61S7BrCBj7L._SL1000_.jpg",
-        retailer: "Target",
-        url: "https://www.target.com/s?searchTerm=cerave+moisturizing+cream",
-        rating: 4.7,
-        reviewCount: 89000
-      },
-      {
-        id: 'trending-8',
-        name: "Ninja Creami Ice Cream Maker",
-        price: 149.99,
-        currency: 'USD',
-        imageUrl: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcR58LO9Il2TZTUZXpkBzzWdMBo1Ui67ny3FQABxpEsdbbrXrE3DZ8RAXCmVry9dNVTIiLxBlbk6PNEuYb1Je5JlyPRn0b71FkTfOA5irieccUiwo04scuKCZA",
-        retailer: "Walmart",
-        url: "https://www.walmart.com/search?q=ninja+creami",
-        rating: 4.6,
-        reviewCount: 18000
-      },
-    ];
-    setTrendingProducts(trending);
-
     // Check for query parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get('q');
@@ -459,85 +362,6 @@ export default function Home() {
   // while a card in view carries the badge (never with Verified Only on).
   const showUnverifiedNote = useMemo(() => hasUnverifiedSeller(filteredResults), [filteredResults]);
 
-  // Trending card, rendered twice (real + loop clone). Clones are untabbable;
-  // their wrapper is aria-hidden.
-  const renderTrendingCard = (product: any, idx: number, isClone: boolean) => (
-    <a
-      key={idx}
-      href={product.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      tabIndex={isClone ? -1 : undefined}
-      className="group w-56 mx-2 block bg-white border border-black/10 rounded-lg p-4 hover:border-[#2A9D8F] transition-all hover:shadow-md"
-    >
-      <div className="relative aspect-square mb-3 bg-black/5 rounded flex items-center justify-center overflow-hidden">
-        <button
-          type="button"
-          tabIndex={isClone ? -1 : undefined}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleItem({
-              name: product.name,
-              price: product.price,
-              image: product.imageUrl,
-              retailer: product.retailer,
-              url: product.url,
-            });
-          }}
-          aria-label={isSaved(product.url) ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
-          title={isSaved(product.url) ? 'Remove from saved items' : 'Save to your list'}
-          className={`absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
-            isSaved(product.url)
-              ? 'bg-[#2A9D8F] text-white'
-              : 'bg-white/90 text-black/50 hover:text-[#2A9D8F] hover:bg-white'
-          }`}
-        >
-          {isSaved(product.url) ? <Check className="w-4 h-4" /> : <ShoppingBagIcon className="w-4 h-4" />}
-        </button>
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform"
-          loading="lazy"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.onerror = null;
-            target.style.display = 'none';
-            const parent = target.parentElement;
-            if (parent && !parent.querySelector('.image-fallback')) {
-              const fallback = document.createElement('div');
-              fallback.className = 'image-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-4';
-              // Static markup only — the product name is attacker-influenced
-              // (Serper feed) and must go through textContent, never innerHTML.
-              fallback.innerHTML = `
-                <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-2">
-                  <svg class="w-8 h-8 text-black/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                </div>
-              `;
-              const label = document.createElement('span');
-              label.className = 'text-xs text-black/60 font-medium';
-              label.textContent =
-                product.name.length > 30 ? `${product.name.substring(0, 30)}...` : product.name;
-              fallback.appendChild(label);
-              parent.appendChild(fallback);
-            }
-          }}
-        />
-      </div>
-      <h3 className="text-sm font-medium line-clamp-2 mb-2 min-h-[2.5rem] text-black">
-        {product.name}
-      </h3>
-      <div className="flex items-baseline gap-2">
-        <span className="text-lg font-semibold text-[#2A9D8F]">
-          ${formatPrice(product.price)}
-        </span>
-      </div>
-    </a>
-  );
-
   return (
     <div className="relative z-10 texture-bg min-h-screen">
       {/* Header */}
@@ -552,7 +376,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.8, ease: 'easeOut' }}
               className={hasSearched ? 'max-w-2xl' : 'lg:col-span-6'}
             >
               {/* Hero Text First on Mobile, Search Second */}
@@ -582,7 +406,7 @@ export default function Home() {
                       <button
                         key={term}
                         onClick={() => handleSearch(term)}
-                        className="rounded-full bg-gray-100 px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 transition-colors"
+                        className="rounded-full bg-gray-100 px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 active:scale-[0.97] transition-[background-color,scale] duration-200"
                       >
                         {term}
                       </button>
@@ -599,7 +423,7 @@ export default function Home() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.8, ease: 'easeOut', delay: 0.2 }}
                 className="lg:col-span-6"
               >
                 <ComparisonResult data={HERO_COMPARISON} />
@@ -616,7 +440,7 @@ export default function Home() {
             {affiliateLinksEnabled()
               ? 'Retailers pay us a commission when you buy through our links, and results are never ranked by commission.'
               : "Retailer commissions will keep it that way: once our affiliate partnerships go live, we'll earn a commission when you buy through our links. Results are never ranked by commission."}{' '}
-            <a href="/compliance" className="underline decoration-black/20 hover:text-[#14524B]">
+            <a href="/compliance" className="underline decoration-black/20 hover:text-[#14524B] transition-colors">
               Full disclosure
             </a>
           </p>
@@ -628,7 +452,7 @@ export default function Home() {
             sources; that sentence lives once, on the retailer strip below.
             The footnote is the page's single mention of exact-item matching. */}
         {!hasSearched && (
-          <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-16 md:py-20">
+          <motion.section {...reveal()} id="how-it-works" className="max-w-5xl mx-auto px-6 py-16 md:py-20">
             <p className="text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-[#2A9D8F] mb-3">
               How it works
             </p>
@@ -638,9 +462,11 @@ export default function Home() {
             <p className="text-center text-black/60 max-w-md mx-auto mb-10">
               We do the comparison shopping so you don&apos;t have to open a dozen browser tabs.
             </p>
-            <div className="bg-gray-50 rounded-2xl p-8 md:p-12">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div
+                  {...reveal(0.1)}
+                  className="p-6 text-center"
+                >
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
                     1
                   </div>
@@ -649,8 +475,11 @@ export default function Home() {
                     Drop in what you want: a product name, a brand, or a whole category. Be as
                     specific or general as you like.
                   </p>
-                </div>
-                <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                </motion.div>
+                <motion.div
+                  {...reveal(0.18)}
+                  className="p-6 text-center"
+                >
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
                     2
                   </div>
@@ -660,8 +489,11 @@ export default function Home() {
                     key specs of what you searched, costs well under it, and is reviewed about
                     as well, by enough people to count.
                   </p>
-                </div>
-                <div className="bg-white rounded-xl p-6 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                </motion.div>
+                <motion.div
+                  {...reveal(0.26)}
+                  className="p-6 text-center"
+                >
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
                     3
                   </div>
@@ -670,14 +502,13 @@ export default function Home() {
                     Each pick shows what it shares with the original. Click through to
                     whichever store has it. Move on with your day.
                   </p>
-                </div>
-              </div>
+                </motion.div>
             </div>
             <p className="mt-6 text-center text-sm text-neutral-500">
               If the exact item shows up at more than one store, Pick flags the cheapest
               listing while it&apos;s at it.
             </p>
-          </section>
+          </motion.section>
         )}
 
         {/* Retailer strip: the page's one retailer list and one sourcing
@@ -688,52 +519,6 @@ export default function Home() {
             the flag because it CLAIMS the capability; it appears the day
             landed costs do, and never on a deployment that lacks them. */}
         {!hasSearched && landedCostEnabled() && <GlobalMarketplaceSection />}
-
-        {/* Trending Now Section */}
-        {!hasSearched && trendingProducts.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-5xl mx-auto px-6 pb-16 pt-8"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp size={20} className="text-[#2A9D8F]" />
-              <h2 className="text-xl font-semibold text-black">Trending Now</h2>
-              <button
-                type="button"
-                onClick={() => setTrendingPaused(!trendingPaused)}
-                aria-pressed={trendingPaused}
-                className="ml-auto flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-[#2A9D8F] transition-colors"
-              >
-                {trendingPaused ? <Play size={14} /> : <Pause size={14} />}
-                {trendingPaused ? 'Play' : 'Pause'}
-              </button>
-            </div>
-            <p className="text-xs text-neutral-500 mb-6">
-              Products people compare a lot. Prices are approximate; each card links to the
-              retailer&apos;s site for current prices.
-            </p>
-            {/* Scrolling marquee. Pauses on hover, touch-hold, focus, or the
-                toggle above; under prefers-reduced-motion it becomes a static
-                scrollable row. The second copy of the track exists only to
-                make the loop seamless — it's aria-hidden and untabbable. */}
-            <div
-              className="trending-viewport"
-              data-paused={trendingPaused ? 'true' : undefined}
-            >
-              <div className="trending-track">
-                <div className="flex">
-                  {trendingProducts.map((product, idx) => renderTrendingCard(product, idx, false))}
-                </div>
-                <div className="flex trending-clone" aria-hidden="true">
-                  {trendingProducts.map((product, idx) => renderTrendingCard(product, idx, true))}
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        )}
 
         {/* Results Section */}
         {hasSearched && (
@@ -950,32 +735,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* Founder Story */}
-        <section className="py-20 px-6 border-t border-black/5">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-heading font-bold text-black mb-6">
-              Why I Built Pick
-            </h2>
-            <div className="text-black/60 space-y-4 text-base leading-relaxed">
-              <p>
-                I started Pick because I was tired of overpaying for things. Every time I found a product I wanted,
-                the price felt too high, and I knew there had to be a better deal somewhere, but I didn't have
-                the time to check every single retailer.
-              </p>
-              <p>
-                Even more frustrating was when a product was genuinely out of my budget. Instead of just being
-                bummed about it, I wanted a way to find similar products that I'd be just as happy with, but
-                at a price I could actually afford.
-              </p>
-              <p>
-                That&apos;s what Pick does. Type in the thing you had your eye on, and it goes looking
-                for one you&apos;d be just as happy with, for a lot less, and shows you why the two
-                compare. Save money without settling.
-              </p>
-            </div>
-            <p className="mt-8 text-sm text-black/60">Arjun Shah, Founder</p>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}

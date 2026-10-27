@@ -10,8 +10,10 @@
 // real result. Shape mirrors the Product type and the similar-pick rationale
 // in src/lib/productGrouping.ts so a genuine result can be pasted in as-is.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useInView } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
+import { AnimatedAmount } from './AnimatedAmount';
 import { getRetailerLogo } from './RetailerLogos';
 import { isAffiliateUrl } from '@/lib/affiliate';
 import { currencySymbol, formatPrice, formatRating } from '@/lib/formatters';
@@ -107,12 +109,15 @@ function OfferPanel({
   chip,
   emphasized,
   placeholder,
+  countPrice,
 }: {
   offer: ComparisonOffer;
   label: string;
   chip?: string;
   emphasized: boolean;
   placeholder: boolean;
+  /** Starts the price counting down to its real value (see AnimatedAmount). */
+  countPrice: boolean;
 }) {
   const logo = getRetailerLogo(offer.retailer, offer.sourceMarket);
   const symbol = currencySymbol(offer.currency);
@@ -187,7 +192,11 @@ function OfferPanel({
               emphasized ? 'text-[#14524B]' : 'text-neutral-900'
             }`}
           >
-            {price}
+            <AnimatedAmount
+              to={offer.price}
+              active={countPrice}
+              format={(v) => `${symbol}${formatPrice(v, offer.currency)}`}
+            />
           </p>
           {hasRating && (
             <p className="mt-1 flex items-center gap-1 text-xs text-black/60">
@@ -201,7 +210,7 @@ function OfferPanel({
     </>
   );
 
-  const panelClass = `block rounded-xl p-3 transition ${
+  const panelClass = `block rounded-xl p-3 transition duration-200 ${
     emphasized ? 'bg-white border-2 border-[#14524B]/25' : 'bg-white border border-black/10'
   }`;
 
@@ -216,7 +225,7 @@ function OfferPanel({
       <a
         href={offer.url}
         aria-label={`Search Pick for ${offer.name}`}
-        className={`${panelClass} hover:border-[#2A9D8F] hover:shadow-md`}
+        className={`${panelClass} hover:border-[#2A9D8F] hover:shadow-md hover:-translate-y-0.5`}
       >
         {body}
       </a>
@@ -228,7 +237,7 @@ function OfferPanel({
       target="_blank"
       rel={isAffiliateUrl(offer.url) ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
       aria-label={`View ${offer.name} on ${offer.retailer}, ${price}`}
-      className={`${panelClass} hover:border-[#2A9D8F] hover:shadow-md`}
+      className={`${panelClass} hover:border-[#2A9D8F] hover:shadow-md hover:-translate-y-0.5`}
     >
       {body}
     </a>
@@ -237,6 +246,11 @@ function OfferPanel({
 
 export default function ComparisonResult({ data, labels }: ComparisonResultProps) {
   const t = { ...DEFAULT_LABELS, ...labels };
+  // The prices count down and the saving counts up the first time the card
+  // is in view, once per page view (useInView with once). Filler never
+  // counts: a placeholder price is not a figure worth animating.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(cardRef, { once: true, amount: 0.3 });
   const placeholder = Boolean(data.isPlaceholder);
   const example = !placeholder && Boolean(data.isExample);
   const sectionLabel = placeholder
@@ -281,7 +295,10 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
         </div>
       )}
 
-      <div className="bg-white/80 backdrop-blur-sm border border-black/10 rounded-2xl p-4 md:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+      <div
+        ref={cardRef}
+        className="bg-white/80 backdrop-blur-sm border border-black/10 rounded-2xl p-4 md:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+      >
         {/* The label never wraps; the query is what truncates on narrow
             screens (min-w-0 lets the flex child actually shrink). */}
         <div className="flex items-baseline justify-between gap-3 mb-4">
@@ -303,6 +320,7 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
             label={t.inputLabel}
             emphasized={false}
             placeholder={placeholder}
+            countPrice={inView && !placeholder}
           />
           <div className="flex sm:flex-col items-center justify-center text-[#2A9D8F]" aria-hidden="true">
             <ArrowRight className="w-6 h-6 rotate-90 sm:rotate-0" />
@@ -313,6 +331,7 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
             chip={showSavings ? `Similar pick · ${savingsPercent}% less` : undefined}
             emphasized
             placeholder={placeholder}
+            countPrice={inView && !placeholder}
           />
         </div>
 
@@ -320,8 +339,14 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
           {showSavings ? (
             <p className="text-sm text-neutral-700">
               <span className="text-2xl font-bold tabular-nums text-[#14524B]">
-                Save {symbol}
-                {formatPrice(savingsAmount, data.input.currency)}
+                Save{' '}
+                <AnimatedAmount
+                  to={savingsAmount}
+                  from={0}
+                  active={inView && !placeholder}
+                  format={(v) => `${symbol}${formatPrice(v, data.input.currency)}`}
+                  reserve
+                />
               </span>{' '}
               <span className="ml-1 text-neutral-500">
                 {savingsPercent}% less than the product you searched
