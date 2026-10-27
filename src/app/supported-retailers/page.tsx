@@ -5,7 +5,7 @@ import { Check } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Supported Retailers - Pick Marketplace',
-  description: 'See all retailers supported by Pick Marketplace including Amazon, Target, Best Buy, Walmart, Macy\'s, and more.',
+  description: 'See the retailers that appear in Pick Marketplace results, including Target, Best Buy, Walmart, Macy\'s, and more.',
 };
 
 export default function SupportedRetailersPage() {
@@ -13,7 +13,7 @@ export default function SupportedRetailersPage() {
     {
       name: 'Target',
       colorClass: 'bg-red-100 text-red-800 border-red-200',
-      source: 'Direct integration: we query Target\'s catalog API',
+      source: 'Via Google Shopping listings',
       categories: 'Home, Clothing, Electronics, Toys, Beauty, Grocery, Baby',
       coverage: 'Wide selection of household goods, apparel, and everyday essentials',
     },
@@ -23,13 +23,6 @@ export default function SupportedRetailersPage() {
       source: 'Aggregator: our source for every retailer below',
       categories: 'All categories, aggregated from retailers across the web',
       coverage: 'Aggregated listings from Google\'s shopping platform',
-    },
-    {
-      name: 'Amazon',
-      colorClass: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      source: 'Via Google Shopping listings',
-      categories: 'Electronics, Books, Home & Kitchen, Clothing, Beauty, Toys, Sports, and more',
-      coverage: 'Millions of products across all major categories',
     },
     {
       name: 'Best Buy',
@@ -64,9 +57,8 @@ export default function SupportedRetailersPage() {
               Supported Retailers
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Pick pulls prices from two sources: Target's catalog, which we query directly,
-              and Google Shopping, which aggregates listings from dozens of retailers.
-              Here are the stores you'll see most often in results.
+              Pick pulls prices from Google Shopping, which aggregates listings from dozens
+              of retailers. Here are the stores you'll see most often in results.
             </p>
           </div>
 
@@ -141,14 +133,14 @@ export default function SupportedRetailersPage() {
                 Direct Integrations We're Considering
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Retailers like Nordstrom, Costco, Home Depot, and Wayfair already appear in
-                results through Google Shopping. Beyond that, we're evaluating direct API
-                integrations that would give us richer, first-party data:
+                Retailers like Nordstrom, Home Depot, and Wayfair already appear in results
+                through Google Shopping. Beyond that, we're evaluating official retailer APIs
+                and product feeds that would give us richer, first-party data:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-1 mb-4">
-                <li>Best Buy Products API (real-time electronics pricing and availability)</li>
-                <li>Walmart API (full catalog access)</li>
-                <li>Amazon Product Advertising API (required for first-party Amazon price data)</li>
+                <li>Best Buy Developer API (electronics pricing, shipping, and condition)</li>
+                <li>Retailer product feeds offered through affiliate networks</li>
+                <li>Amazon's official product API (available only to Amazon Associates)</li>
               </ul>
               <p className="text-gray-700 leading-relaxed">
                 Want to see a specific retailer added?{' '}
@@ -175,6 +167,9 @@ export default function SupportedRetailersPage() {
                   <a href="/faq#unverified-seller" className="text-teal-700 hover:text-teal-800 underline">
                     More on seller badges
                   </a>.
+                </li>
+                <li>
+                  <strong>Amazon:</strong> Amazon does not list its US store on Google Shopping, so Amazon prices do not appear in US results today.
                 </li>
                 <li>
                   <strong>Price accuracy:</strong> While we check prices regularly, retailers can change prices at any time. Always verify the final price on the retailer's website before purchasing.

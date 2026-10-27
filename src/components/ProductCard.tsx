@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import { useSavedList } from "@/contexts/SavedListContext";
 import { ShoppingBag, Check, BadgeCheck, AlertTriangle, HelpCircle, Store, Users, Info } from "lucide-react";
 import { getRetailerTrust } from "@/lib/retailerTrust";
+import { CONDITION_LABELS, listingCondition } from "@/lib/condition";
 import { TRUST_LEVEL_META, type TrustLevelMeta } from "@/lib/trust/explain";
 import InfoTip from "./InfoTip";
 import { getRetailerLogo } from "./RetailerLogos";
@@ -85,6 +86,14 @@ function ProductCard({
     url: product.url,
   });
   const flagged = trust.level === 'flagged';
+  // Condition from the title and the kind of store (lib/condition.ts); the
+  // feed has no condition field, so this is all a card can know. Example
+  // cards are not offers and carry no condition.
+  const conditionLabel = product.isFallback ? null : CONDITION_LABELS[listingCondition(product, trust.level)];
+  const conditionUnstated = conditionLabel === CONDITION_LABELS.unstated;
+  // Priced far below what verified stores charge for the same item (the
+  // grouping pass's priceFlag). Possible scam cards already warn.
+  const farBelow = !flagged && !product.isFallback ? product.priceFlag : undefined;
   const trustMeta = TRUST_LEVEL_META[trust.level];
   const TrustIcon = TRUST_ICONS[trustMeta.icon];
   const retailerLogo = getRetailerLogo(product.retailer, product.sourceMarket);
@@ -124,6 +133,8 @@ function ProductCard({
         : trust.level === 'marketplace-seller'
           ? '. Independent marketplace seller'
           : ''
+  }${conditionLabel ? `. ${conditionLabel}` : ''}${
+    farBelow ? '. Priced far below what verified stores charge' : ''
   }`;
 
   return (
@@ -273,10 +284,27 @@ function ProductCard({
           <Info className="w-2.5 h-2.5 opacity-70" aria-hidden="true" />
           <span className="sr-only">, about this seller</span>
         </InfoTip>
+        {conditionLabel && (
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+              conditionUnstated
+                ? 'border-gray-300 bg-white text-neutral-600'
+                : 'border-amber-200 bg-amber-50 text-amber-800'
+            }`}
+          >
+            {conditionLabel}
+          </span>
+        )}
       </div>
       {flagged && (
         <p className="mt-1 text-[11px] leading-tight text-red-600">
           Not from a verified reseller. Buy with caution.
+        </p>
+      )}
+      {farBelow && (
+        <p className="mt-1 text-[11px] leading-tight text-amber-700">
+          Priced far below the {currencySymbol(product.currency)}
+          {formatPrice(farBelow.referencePrice, product.currency)} verified stores charge. Check the listing before buying.
         </p>
       )}
 

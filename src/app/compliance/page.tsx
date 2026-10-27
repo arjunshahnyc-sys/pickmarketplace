@@ -44,7 +44,7 @@ export default function CompliancePage() {
                 {affiliateLinksEnabled() ? (
                   <li>Outbound links on this site are affiliate links: retailers pay us a commission on purchases made through them.</li>
                 ) : (
-                  <li>We have no affiliate, sponsorship, or paid-placement relationship with any retailer shown on our platform, including Amazon, Target, Best Buy, and Walmart.</li>
+                  <li>We have no affiliate, sponsorship, or paid-placement relationship with any retailer shown on our platform, including Target, Best Buy, and Walmart.</li>
                 )}
                 <li>No retailer pays us for inclusion, ranking, or placement.</li>
                 <li>Our price comparisons reflect the prices our data sources report and are never adjusted for commercial reasons.</li>
@@ -57,10 +57,10 @@ export default function CompliancePage() {
                 Where Our Price Data Comes From
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Pick uses two data sources: we query Target's public catalog API directly, and we aggregate product listings from Google Shopping, which cover retailers such as Amazon, Walmart, Best Buy, Nordstrom, and Macy's. We do not scrape retailer websites, and prices for retailers other than Target come from their Google Shopping listings rather than from the retailer directly.
+                Pick uses one data source: product listings from Google Shopping, retrieved through a third-party search data provider. They cover retailers such as Walmart, Best Buy, Target, Nordstrom, and Macy's. We do not scrape retailer websites, and every price comes from the retailer's Google Shopping listing rather than from the retailer directly. Amazon does not list its US store on Google Shopping, so Amazon prices do not appear in US results.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                If we join a retailer's affiliate or API program in the future, we will source that retailer's data as its program terms require. For Amazon specifically, that means price and availability data would come from Amazon's Product Advertising API, refreshed and timestamped per the Amazon Associates program policies.
+                If we join a retailer's affiliate or API program in the future, we will source that retailer's data as its program terms require. For Amazon specifically, that means price and availability data would come from Amazon's official product API, refreshed and timestamped per the Amazon Associates program policies.
               </p>
             </section>
 

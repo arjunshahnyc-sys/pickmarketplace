@@ -33,6 +33,7 @@ import { useSavedList } from '@/contexts/SavedListContext';
 import { ShoppingBag as ShoppingBagIcon, Check } from 'lucide-react';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { sortProducts } from '@/lib/sortResults';
+import { orderForTrust } from '@/lib/trustOrder';
 import { landedCostEnabled } from '@/lib/flags';
 import { orderByLandedCost, withLandedCosts } from '@/lib/landedCost/enrich';
 import { useFxProvider } from '@/lib/landedCost/useFxProvider';
@@ -184,9 +185,8 @@ export default function Home() {
     if (!isLoading) return;
 
     const retailers = [
-      'Searching Target...',
       'Checking Google Shopping...',
-      'Finding best prices...',
+      'Comparing prices...',
       'Finding cheaper equivalents...',
       'Analyzing products...',
       'Loading results...',
@@ -413,7 +413,10 @@ export default function Home() {
     // similar-pick reference (the searched item's cluster and its median
     // price), so re-sorting or filtering never changes which listings count
     // as the same item or what the alternatives are compared against.
-    return enhanceProductsWithGroupInfo(filtered, results, { query });
+    // Then the trust rules (lib/trustOrder.ts): Possible scam and bait
+    // never lead, new units come before units that are not new, and a
+    // verified store's listing of the searched item takes the top slot.
+    return orderForTrust(enhanceProductsWithGroupInfo(filtered, results, { query }), sortBy);
   }, [results, query, sortBy, showOnSaleOnly, showVerifiedOnly, selectedFacets, destination, fxProvider]);
 
   // Each toggle's count is computed against the OTHER active filters, so
@@ -871,7 +874,7 @@ export default function Home() {
                              through earns us nothing. If we join affiliate programs in the future, we&apos;ll
                              disclose it here before any commission-earning links go live.</p>
                         )}
-                        <p>Prices shown are current as of the last check from Target API and Google Shopping.
+                        <p>Prices shown are current as of the last check of Google Shopping.
                            Always verify final pricing on retailer sites before purchasing.</p>
                       </div>
                     </details>

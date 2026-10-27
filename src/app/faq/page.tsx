@@ -40,7 +40,7 @@ export default function FAQPage() {
     },
     {
       question: "Which retailers does Pick Marketplace support?",
-      answer: "We check Target's catalog directly and aggregate live results from Google Shopping, which covers major retailers like Amazon, Walmart, Best Buy, Costco, eBay, Nordstrom, and Macy's, plus many additional merchants. Visit our Supported Retailers page for more detail.",
+      answer: "We aggregate live results from Google Shopping, which covers major retailers like Walmart, Best Buy, Target, eBay, Nordstrom, and Macy's, plus many additional merchants. Amazon does not list its US store on Google Shopping, so Amazon prices do not appear in US results. Visit our Supported Retailers page for more detail.",
     },
     {
       question: "Can I set price alerts for products I'm watching?",

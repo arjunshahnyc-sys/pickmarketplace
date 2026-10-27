@@ -19,7 +19,7 @@ export default function HelpPage() {
     {
       icon: TrendingDown,
       title: 'How Price Comparison Works',
-      content: 'When you search, we check Target\'s catalog directly and aggregate current Google Shopping results, which cover major retailers like Amazon, Best Buy, and Walmart. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices are checked throughout the day. Always verify the final price on the retailer\'s site before purchasing.',
+      content: 'When you search, we aggregate current Google Shopping results, which cover major retailers like Best Buy, Walmart, and Target. Results are sorted by total price when possible. Click on any product to go directly to the retailer\'s website. Prices are checked throughout the day. Always verify the final price on the retailer\'s site before purchasing.',
     },
     {
       icon: AlertCircle,

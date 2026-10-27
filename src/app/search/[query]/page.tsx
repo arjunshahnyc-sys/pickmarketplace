@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import CategoryResults from '@/components/CategoryResults';
 import { performLiveSearch } from '@/lib/searchService';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
+import { orderForTrust } from '@/lib/trustOrder';
 import { SEARCH_CATEGORIES, getSearchCategory } from '@/lib/searchCategories';
 
 // Server-rendered landing pages for popular categories so Google indexes
@@ -30,7 +31,7 @@ export async function generateMetadata({
   const label = category?.label ?? query;
   return {
     title: `${label} Price Comparison Across Major Retailers | Pick`,
-    description: `Compare ${label.toLowerCase()} prices from Amazon, Walmart, Target, Best Buy, and more in one search. Live prices, verified sellers, and deals, so you never overpay for ${label.toLowerCase()}.`,
+    description: `Compare ${label.toLowerCase()} prices from Walmart, Target, Best Buy, and more in one search, with a trust label on every seller.`,
     alternates: { canonical: `/search/${query}` },
   };
 }
@@ -50,7 +51,11 @@ export default async function CategorySearchPage({
   };
 
   const data = await performLiveSearch(category.query);
-  const products = enhanceProductsWithGroupInfo(data.results, data.results, { query: category.query });
+  // Relevance order, with the trust rules applied (lib/trustOrder.ts).
+  const products = orderForTrust(
+    enhanceProductsWithGroupInfo(data.results, data.results, { query: category.query }),
+    'relevance'
+  );
 
   // The scrapers never throw — a transient outage returns [] and would
   // otherwise successfully render the thin fallback, replacing a

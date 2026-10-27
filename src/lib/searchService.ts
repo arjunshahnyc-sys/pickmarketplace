@@ -3,7 +3,7 @@
 // The extension-era routes (/api/search, /api/ask, /api/similar) that shared
 // this module were removed along with the browser extension.
 
-import { searchTarget, searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
+import { searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
 import { toAffiliateUrl } from './affiliate';
 import { deriveFacets, type FacetGroup } from './facets/deriveFacets';
 import type { Product, RetailerSearchLink } from './types';
@@ -37,7 +37,7 @@ const MAX_CACHE_SIZE = 100;
 const CACHE_EVICTION_COUNT = 20;
 
 /**
- * Live search (Serper + Target) with a 30-minute in-memory cache.
+ * Live search (Google Shopping via Serper) with a 30-minute in-memory cache.
  *
  * `extraMarkets` adds non-US Google Shopping feeds beside the US one (the
  * landed-cost flow passes the shopper's market so local offers compete with
@@ -59,37 +59,26 @@ export async function performLiveSearch(
     return cached.data;
   }
 
-  // Search every source in parallel
-  const [googleSearch, targetSearch, ...extraSearches] = await Promise.all([
+  // Search every market's feed in parallel (the US feed first).
+  const [googleSearch, ...extraSearches] = await Promise.all([
     searchGoogleShoppingAPI(q),
-    searchTarget(q),
     ...markets.map((m) => searchGoogleShoppingAPI(q, m)),
   ]);
-  const googleResults = googleSearch.products;
-  const targetResults = targetSearch.products;
   const allSourcesFailed = Boolean(
-    googleSearch.sourceError &&
-      targetSearch.sourceError &&
-      extraSearches.every((s) => s.sourceError)
+    googleSearch.sourceError && extraSearches.every((s) => s.sourceError)
   );
 
-  // Combine and deduplicate results. Target goes first because dedup keeps
-  // the first occurrence, and Target copies carry a direct product URL and
-  // originalPrice (sale data) that Google Shopping mirrors of the same
-  // listing lack. Extra-market feeds follow the US ones.
-  const allResults = [
-    ...targetResults,
-    ...googleResults,
-    ...extraSearches.flatMap((s) => s.products),
-  ];
+  const allResults = [...googleSearch.products, ...extraSearches.flatMap((s) => s.products)];
 
-  // Deduplicate by product name (case-insensitive), scoped per market: the
-  // same listing name in two markets is two different offers (different
-  // price, currency, and merchant storefront), never a duplicate.
+  // Drop exact repeats only: the same store's same title in the same
+  // market. Two stores selling under one title are two offers to compare
+  // (keying on the title alone hid a $12.99 T.J.Maxx CeraVe behind
+  // Walmart's $17.97 in a 2026-09-22 capture), and the same title in two
+  // markets is two offers in two currencies.
   const seen = new Set<string>();
   const uniqueResults = allResults
     .filter((product) => {
-      const dedupKey = `${product.sourceMarket ?? 'US'}|${product.name.toLowerCase().trim()}`;
+      const dedupKey = `${product.sourceMarket ?? 'US'}|${product.retailer.toLowerCase().trim()}|${product.name.toLowerCase().trim()}`;
       if (seen.has(dedupKey)) {
         return false;
       }

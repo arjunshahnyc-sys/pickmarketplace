@@ -108,7 +108,7 @@ export default function SignupPage() {
               </div>
               <div>
                 <p className="font-semibold">One Search, Dozens of Stores</p>
-                <p className="text-sm text-white/60">Amazon, Target, Best Buy, Walmart & more</p>
+                <p className="text-sm text-white/60">Target, Best Buy, Walmart & more</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

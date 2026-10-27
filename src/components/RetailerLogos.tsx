@@ -11,14 +11,12 @@ export interface RetailerLogo {
 }
 
 export const retailerLogos: RetailerLogo[] = [
-  { name: 'Amazon', domain: 'amazon.com', color: '#FF9900', src: '/logos/amazon.svg' },
   { name: 'Target', domain: 'target.com', color: '#CC0000', src: '/logos/target.svg' },
   { name: 'Best Buy', domain: 'bestbuy.com', color: '#0046BE', src: '/logos/bestbuy.svg' },
   { name: 'Walmart', domain: 'walmart.com', color: '#0071DC', src: '/logos/walmart.svg' },
   { name: "Macy's", domain: 'macys.com', color: '#E21A2C', src: '/logos/macys.svg' },
   { name: 'Nordstrom', domain: 'nordstrom.com', color: '#000000', src: '/logos/nordstrom.svg' },
   { name: 'Nike', domain: 'nike.com', color: '#111111', src: '/logos/nike.svg' },
-  { name: 'Costco', domain: 'costco.com', color: '#E31837', src: '/logos/costco.svg' },
 ];
 
 export const extendedRetailerLogos: RetailerLogo[] = [

@@ -8,8 +8,9 @@
 //
 // --queries runs each query through the live Serper Google Shopping client
 // (the same code path production search uses) for each market. EVERY
-// query x market pair costs one Serper credit, so the script prints the
-// cost and refuses to run without --yes.
+// query x market pair costs two Serper credits (Serper reports 2 per
+// /shopping call at num 30), so the script prints the cost and refuses to
+// run without --yes.
 //
 // --from-json instead aggregates saved raw Serper /shopping payloads (the
 // {"shopping": [...]} shape) at zero credit cost.
@@ -103,7 +104,7 @@ async function main() {
         process.exit(2);
       }
     }
-    const cost = queries.length * args.markets.length;
+    const cost = queries.length * args.markets.length * 2;
     console.log(
       `${queries.length} queries x ${args.markets.length} market(s) = ${cost} Serper credits.`
     );

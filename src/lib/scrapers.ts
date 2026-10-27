@@ -1,57 +1,13 @@
 import { Product, RetailerSearchLink } from "./types";
 
-/*
- * ══════════════════════════════════════════════════════════════════════════════
- * TODO: Migrate to Official Retail APIs
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Current implementation: Only Target API works via official JSON endpoint.
- * All other scrapers have been removed as they fail in production (bot protection,
- * JS rendering requirements, frequent HTML changes).
- *
- * Recommended API integrations for production:
- *
- * 1. Best Buy Products API
- *    - https://developer.bestbuy.com/
- *    - FREE tier: 50,000 requests/day
- *    - Requires API key (signup at developer.bestbuy.com)
- *    - Reliable JSON responses with product details, pricing, availability
- *
- * 2. Walmart Affiliate API
- *    - https://developer.walmart.com/
- *    - FREE for approved affiliates via Impact Radius partnership
- *    - Requires affiliate approval + API key
- *    - Full product catalog access with real-time pricing
- *
- * 3. Amazon Product Advertising API (PA-API 5.0)
- *    - https://affiliate-program.amazon.com/assoc_credentials/home
- *    - Requires Amazon Associates account + 3 qualifying sales in first 180 days
- *    - Rate limit: 1 request/second (scales with revenue)
- *    - Access Key + Secret Key + Associate Tag required
- *
- * 4. SerpAPI Google Shopping
- *    - https://serpapi.com/google-shopping-api
- *    - $50/month for 5,000 searches (~$0.01/search)
- *    - More reliable than scraping Google directly
- *    - Returns structured JSON with prices, ratings, merchant info
- *
- * 5. Keepa API (Amazon price tracking & history)
- *    - https://keepa.com/#!api
- *    - ~$21/month for 200,000 tokens
- *    - Historical price data for Amazon products
- *    - Great for "price drop" alerts and price history charts
- *
- * ══════════════════════════════════════════════════════════════════════════════
- */
-
-const UA =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
-
-const HEADERS = {
-  "User-Agent": UA,
-  Accept: "application/json",
-  "Accept-Language": "en-US,en;q=0.9",
-};
+// Price sources for live search.
+//
+// One source today: Google Shopping results through the Serper.dev API
+// (searchGoogleShoppingAPI). Pick does not scrape retailer websites. The
+// direct Target call (an internal target.com endpoint) was removed on
+// 2026-10-03: Target's site terms bar automated access, and it returned a
+// bot challenge on every request. Official sources that could be added,
+// with their access rules and terms, are compared in eval/PLAN.md.
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -111,17 +67,56 @@ function coreProductQuery(query: string): string {
   return stripped || query;
 }
 
-function isRelevantResult(title: string, query: string): boolean {
-  const titleLower = title.toLowerCase();
-  const queryWords = coreProductQuery(query).split(/\s+/).filter(word => word.length > 2); // Ignore words <= 2 chars
+// Words that never decide relevance on their own.
+const RELEVANCE_FILLER = new Set(['the', 'and', 'for', 'with', 'from', 'edition']);
+
+// One spelling per meaning, so a title that abbreviates still matches the
+// query that spells it out (and the reverse): "Active Noise Cancellation"
+// and "ANC", "T-shirt" and "Tee", "Refrigerator" and "Fridge". Live
+// searches on 2026-09-22 lost real listings to each of these.
+function relevanceText(text: string): string {
+  return ` ${text.toLowerCase()} `
+    .replace(/\b(?:active\s+)?noise[\s-]*cancel+(?:ing|ation|ed|ers?)?\b/g, ' anc ')
+    .replace(/\bt[\s-]?shirts?\b/g, ' tee ')
+    .replace(/\brefrigerators?\b/g, ' fridge ');
+}
+
+// A model or part number in the query ("wh-1000xm5", "k87", "af141"):
+// letters and digits together, not a size ("16oz") or an ordinal ("4th").
+function queryModelNumbers(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .map((t) => t.replace(/[^a-z0-9]/g, ''))
+    .filter(
+      (t) =>
+        t.length >= 3 &&
+        /[a-z]/.test(t) &&
+        /\d/.test(t) &&
+        !/^\d+(?:st|nd|rd|th)$/.test(t) &&
+        !/^\d+(?:oz|ml|g|kg|lb|lbs|gb|tb|qt|w|in|ft|mm|cm|pk|ct|hr|hrs|mah|hz)$/.test(t)
+    );
+}
+
+/** Exported for tests. */
+export function isRelevantResult(title: string, query: string): boolean {
+  // A title carrying the query's model number is the product asked for,
+  // however few of the query's other words it repeats ("K87 Tee - Navy").
+  const titleAlnum = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (queryModelNumbers(query).some((model) => titleAlnum.includes(model))) return true;
+
+  const titleText = relevanceText(title);
+  const queryWords = relevanceText(coreProductQuery(query))
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !RELEVANCE_FILLER.has(word));
 
   if (queryWords.length === 0) return true; // If no meaningful query words, accept all
 
   // Match singular/plural variants: "laptops" should match a title saying "laptop"
   const matchingWords = queryWords.filter(word => {
-    if (titleLower.includes(word)) return true;
+    if (titleText.includes(word)) return true;
     const singular = word.replace(/(ses|xes|zes|ches|shes)$/, (m) => m.slice(0, -2)).replace(/s$/, '');
-    return singular.length > 2 && titleLower.includes(singular);
+    return singular.length > 2 && titleText.includes(singular);
   });
   const matchPercentage = matchingWords.length / queryWords.length;
 
@@ -299,65 +294,6 @@ export async function searchGoogleShoppingAPI(
     return { products, sourceError: `Serper request failed: ${message}` };
   }
 
-  return { products };
-}
-
-// ─── Target (ONLY WORKING SCRAPER) ────────────────────────────────────────
-export async function searchTarget(query: string): Promise<ScraperResult> {
-  const products: Product[] = [];
-  try {
-    const apiKey = process.env.TARGET_API_KEY || '';
-
-    if (!apiKey) {
-      console.error('[Target] API key not configured');
-      return { products, sourceError: 'Target API key not configured' };
-    }
-
-    const apiUrl = `https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2?key=${apiKey}&channel=WEB&count=20&keyword=${encodeURIComponent(query)}&offset=0&page=%2Fs%2F${encodeURIComponent(query)}&pricing_store_id=3991&scheduled_delivery_store_id=3991&store_ids=3991&visitor_id=web`;
-    const res = await withTimeout(fetch(apiUrl, { headers: HEADERS }), 8000);
-    if (!res.ok) {
-      console.error(`[Target] API returned ${res.status}`);
-      return { products, sourceError: `Target API returned ${res.status}` };
-    }
-    const data = await res.json();
-
-    const items = data?.data?.search?.products || [];
-    for (const item of items) {
-      const name = item.item?.product_description?.title || "";
-      const price = item.price?.formatted_current_price
-        ? parseFirstPrice(item.price.formatted_current_price)
-        : item.price?.current_retail || 0;
-      const origPrice = item.price?.reg_retail || undefined;
-      const img = item.item?.enrichment?.images?.primary_image_url || "";
-      const rating = item.ratings_and_reviews?.statistics?.rating?.average;
-      const reviewCount = item.ratings_and_reviews?.statistics?.rating?.count;
-      const tcin = item.tcin || "";
-      const categoryFromAPI = item.item?.product_classification?.item_type_name || "";
-
-      if (name && price) {
-        products.push({
-          id: tcin ? `target:${tcin}` : `target:${name.toLowerCase()}`,
-          name,
-          price,
-          currency: 'USD',
-          sourceMarket: 'US',
-          originalPrice: origPrice && origPrice > price ? origPrice : undefined,
-          image: img,
-          retailer: "Target",
-          url: `https://www.target.com/p/-/A-${tcin}`,
-          rating,
-          reviewCount,
-          category: categoryFromAPI || guessCategory(name),
-          brand: item.item?.primary_brand?.name || guessBrand(name, "Target"),
-          lastVerified: new Date().toISOString(),
-        });
-      }
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[Target] API request failed:', message);
-    return { products, sourceError: `Target request failed: ${message}` };
-  }
   return { products };
 }
 

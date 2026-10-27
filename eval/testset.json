@@ -1,0 +1,1140 @@
+{
+  "howToFill": [
+    "One entry per query. The harness never edits this file; it reads it every time it scores.",
+    "benchmark: the lowest price you can find for a NEW unit of exactItem, as a single unit, from a store you would buy from.",
+    "benchmark.totalPrice: item price + shipping to you, BEFORE sales tax (tax depends on your state, not the store, so both sides leave it out). Or fill itemPrice and shipping and leave totalPrice null; the harness adds them.",
+    "benchmark.store: the store name as the site shows it (Best Buy, Walmart, Amazon). benchmark.checkedOn: YYYY-MM-DD. url and notes are optional.",
+    "acceptableTwins: null means not reviewed yet. [] means you reviewed it and no twin is acceptable. Otherwise a list of names (every word must appear in the listing name, e.g. \"Soundcore Space One\") or rules ({\"all\": [\"space one\"], \"none\": [\"pro\"]}).",
+    "exactItem.match decides which listing names count as the exact item: every 'all' entry must appear (a list means any one of them) and no 'none' term may. 'variant' pins a size, edition or generation: a title stating another one is not the item, and a title stating none is counted but marked 'variant unstated'. Terms with digits match ignoring spaces and punctuation (\"wh-1000xm5\" matches WH1000XM5); other terms match whole words. Edit these if an entry pins something you would not.",
+    "Shipping in your benchmark: use what a shopper with no membership pays (no Prime, Walmart+ or Target Circle 360), the same guest-tier assumption Pick's shipping figures use.",
+    "Re-score after editing: npx tsx eval/run.ts --replay latest (free, no API calls)."
+  ],
+  "destination": {
+    "country": "US",
+    "state": "NY"
+  },
+  "queries": [
+    {
+      "id": "earbuds-airpods-pro-3",
+      "category": "earbuds",
+      "query": "airpods pro 3",
+      "exactItem": {
+        "description": "Apple AirPods Pro 3 (2025). New, one unit, any listing of the current model.",
+        "match": {
+          "all": [["airpods pro 3", "airpods pro (3rd generation)", "airpods pro 3rd gen", "airpods pro gen 3"]],
+          "none": ["airpods pro 2", "airpods pro 2nd", "matte", "glossy", "retro", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-airpods-4-anc",
+      "category": "earbuds",
+      "query": "airpods 4 with active noise cancellation",
+      "exactItem": {
+        "description": "Apple AirPods 4 with Active Noise Cancellation (not the $129 AirPods 4 without ANC). New, one unit.",
+        "match": {
+          "all": [["airpods 4"], ["noise cancellation", "noise cancelling", "noise canceling", "anc"]],
+          "none": ["airpods pro", "matte", "glossy", "retro", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-galaxy-buds3-pro",
+      "category": "earbuds",
+      "query": "samsung galaxy buds3 pro",
+      "exactItem": {
+        "description": "Samsung Galaxy Buds3 Pro, any color. New, one unit.",
+        "match": {
+          "all": [["samsung", "galaxy"], ["buds3 pro", "buds 3 pro"]],
+          "none": ["buds3 fe", "buds 3 fe", "for galaxy", "for samsung", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-sony-wf-1000xm5",
+      "category": "earbuds",
+      "query": "sony wf-1000xm5",
+      "exactItem": {
+        "description": "Sony WF-1000XM5 true wireless earbuds, any color. New, one unit.",
+        "match": {
+          "all": [["wf-1000xm5", "wf 1000 xm5"]],
+          "none": ["for sony", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-pixel-buds-pro-2",
+      "category": "earbuds",
+      "query": "google pixel buds pro 2",
+      "exactItem": {
+        "description": "Google Pixel Buds Pro 2, any color. New, one unit.",
+        "match": {
+          "all": [["pixel buds pro 2", "pixel buds pro (2nd"]],
+          "none": ["for pixel", "for google", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-beats-studio-buds-plus",
+      "category": "earbuds",
+      "query": "beats studio buds+",
+      "exactItem": {
+        "description": "Beats Studio Buds + (the plus model, not the original Studio Buds), any color. New, one unit.",
+        "match": {
+          "all": [["studio buds plus"]],
+          "none": ["for beats", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-soundcore-liberty-4-nc",
+      "category": "earbuds",
+      "query": "soundcore liberty 4 nc",
+      "exactItem": {
+        "description": "Soundcore by Anker Liberty 4 NC, any color. New, one unit.",
+        "match": {
+          "all": [["liberty 4 nc"]],
+          "none": ["liberty 4 pro", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-jlab-go-air-pop",
+      "category": "earbuds",
+      "query": "jlab go air pop",
+      "exactItem": {
+        "description": "JLab Go Air Pop true wireless earbuds, any color. New, one unit.",
+        "match": {
+          "all": [["go air pop"]],
+          "none": ["go air pop plus", "go air sport", "for jlab", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "earbuds-bose-qc-ultra-earbuds-2",
+      "category": "earbuds",
+      "query": "bose quietcomfort ultra earbuds",
+      "exactItem": {
+        "description": "Bose QuietComfort Ultra Earbuds, 2nd Gen (2025). New, one unit. A listing that does not say 2nd Gen does not count.",
+        "match": {
+          "all": [["quietcomfort ultra", "qc ultra"], ["earbuds"]],
+          "variant": ["2nd gen", "2nd generation", "gen 2", "second gen"],
+          "none": ["for bose", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "for airpods", "compatible with", "case for", "case cover", "protective case", "silicone", "skin", "ear tips", "eartips", "replacement", "sticker", "strap", "lanyard", "cleaning kit", "charging case only", "left earbud", "right earbud"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-sony-wh-1000xm5",
+      "category": "headphones",
+      "query": "sony wh-1000xm5",
+      "exactItem": {
+        "description": "Sony WH-1000XM5 over-ear headphones, any color. New, one unit.",
+        "match": {
+          "all": [["wh-1000xm5", "wh 1000 xm5"]],
+          "none": ["for sony", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-sony-wh-1000xm6",
+      "category": "headphones",
+      "query": "sony wh-1000xm6",
+      "exactItem": {
+        "description": "Sony WH-1000XM6 over-ear headphones, any color. New, one unit.",
+        "match": {
+          "all": [["wh-1000xm6", "wh 1000 xm6"]],
+          "none": ["for sony", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-bose-qc-ultra-2",
+      "category": "headphones",
+      "query": "bose quietcomfort ultra headphones",
+      "exactItem": {
+        "description": "Bose QuietComfort Ultra Headphones, 2nd Gen (2025). New, one unit. A listing that does not say 2nd Gen does not count.",
+        "match": {
+          "all": [["quietcomfort ultra", "qc ultra"], ["headphones"]],
+          "variant": ["2nd gen", "2nd generation", "gen 2", "second gen"],
+          "none": ["earbuds", "for bose", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-airpods-max",
+      "category": "headphones",
+      "query": "airpods max",
+      "exactItem": {
+        "description": "Apple AirPods Max with USB-C (2024 model), any color. New, one unit. Lightning-port listings are the older model.",
+        "match": {
+          "all": [["airpods max"]],
+          "none": ["lightning", "for airpods", "case for", "cover for", "smart case for", "skin", "headband", "matte", "glossy", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-beats-studio-pro",
+      "category": "headphones",
+      "query": "beats studio pro",
+      "exactItem": {
+        "description": "Beats Studio Pro wireless headphones, any color. New, one unit.",
+        "match": {
+          "all": [["beats studio pro"]],
+          "none": ["studio buds", "studio3", "studio 3", "for beats", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-soundcore-space-one",
+      "category": "headphones",
+      "query": "soundcore space one",
+      "exactItem": {
+        "description": "Soundcore by Anker Space One (not the Space One Pro), any color. New, one unit.",
+        "match": {
+          "all": [["space one"]],
+          "none": ["space one pro", "space q45", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-sony-wh-ch720n",
+      "category": "headphones",
+      "query": "sony wh-ch720n",
+      "exactItem": {
+        "description": "Sony WH-CH720N wireless noise canceling headphones, any color. New, one unit.",
+        "match": {
+          "all": [["ch720n", "ch-720n"]],
+          "none": ["for sony", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "headphones-bose-quietcomfort",
+      "category": "headphones",
+      "query": "bose quietcomfort headphones",
+      "exactItem": {
+        "description": "Bose QuietComfort Headphones (2023, the non-Ultra model), any color. New, one unit.",
+        "match": {
+          "all": [["quietcomfort", "qc"], ["headphones"]],
+          "none": ["ultra", "quietcomfort 45", "qc45", "qc 45", "quietcomfort 35", "qc35", "qc 35", "earbuds", "for bose", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-cerave-moisturizing-cream-16oz",
+      "category": "skincare",
+      "query": "cerave moisturizing cream 16 oz",
+      "exactItem": {
+        "description": "CeraVe Moisturizing Cream, 16 oz jar. New, one unit.",
+        "match": {
+          "all": [["cerave"], ["moisturizing cream"]],
+          "variant": ["16 oz", "16 ounce", "16 fl oz", "453 g", "454 g"],
+          "none": ["lotion", "baby", "itch relief", "diabetics", "intensive", "soap", "refill", "oil control", "gel cream", "set", "kit"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-cerave-hydrating-cleanser-16oz",
+      "category": "skincare",
+      "query": "cerave hydrating facial cleanser",
+      "exactItem": {
+        "description": "CeraVe Hydrating Facial Cleanser, 16 fl oz (473 mL). New, one unit.",
+        "match": {
+          "all": [["cerave"], ["hydrating"], ["cleanser"]],
+          "variant": ["16 oz", "16 fl oz", "16 ounce", "473 ml"],
+          "none": ["cream to foam", "foaming", "acne", "sa", "set", "kit"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-lrp-toleriane-double-repair",
+      "category": "skincare",
+      "query": "la roche-posay toleriane double repair moisturizer",
+      "exactItem": {
+        "description": "La Roche-Posay Toleriane Double Repair Face Moisturizer (original, no SPF), 3.38 fl oz (100 mL). New, one unit.",
+        "match": {
+          "all": [["toleriane"], ["double repair"], ["moisturizer"]],
+          "variant": ["3.38 oz", "3.38 fl oz", "3.4 oz", "3.4 fl oz", "100 ml"],
+          "none": ["uv", "spf", "matte", "set", "kit"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-ordinary-niacinamide-30ml",
+      "category": "skincare",
+      "query": "the ordinary niacinamide 10% + zinc 1%",
+      "exactItem": {
+        "description": "The Ordinary Niacinamide 10% + Zinc 1%, 30 mL (1 fl oz). New, one unit.",
+        "match": {
+          "all": [["ordinary"], ["niacinamide"]],
+          "variant": ["30 ml", "1 oz", "1 fl oz"],
+          "none": ["set", "kit", "regimen", "collection"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-neutrogena-hydro-boost-gel",
+      "category": "skincare",
+      "query": "neutrogena hydro boost water gel",
+      "exactItem": {
+        "description": "Neutrogena Hydro Boost Water Gel face moisturizer, 1.7 oz (either scent version). New, one unit.",
+        "match": {
+          "all": [["neutrogena"], ["hydro boost"], ["water gel"]],
+          "variant": ["1.7 oz", "1.7 fl oz", "48 g", "50 ml"],
+          "none": ["gel cream", "extra dry", "cleanser", "serum", "eye", "spf", "sunscreen", "body", "set", "kit"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-cetaphil-gentle-cleanser-16oz",
+      "category": "skincare",
+      "query": "cetaphil gentle skin cleanser",
+      "exactItem": {
+        "description": "Cetaphil Gentle Skin Cleanser, 16 fl oz. New, one unit.",
+        "match": {
+          "all": [["cetaphil"], ["gentle skin cleanser"]],
+          "variant": ["16 oz", "16 fl oz", "16 ounce", "473 ml"],
+          "none": ["foaming", "oily", "baby", "bar", "exfoliating", "set", "kit"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-eltamd-uv-clear-spf46",
+      "category": "skincare",
+      "query": "eltamd uv clear spf 46",
+      "exactItem": {
+        "description": "EltaMD UV Clear Face Sunscreen SPF 46, untinted, 1.7 oz. New, one unit.",
+        "match": {
+          "all": [["eltamd", "elta md"], ["uv clear"], ["spf 46", "spf46"]],
+          "variant": ["1.7 oz", "1.7 fl oz", "48 g"],
+          "none": ["tinted", "travel", "set", "kit"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-paulas-choice-bha-4oz",
+      "category": "skincare",
+      "query": "paula's choice 2% bha liquid exfoliant",
+      "exactItem": {
+        "description": "Paula's Choice Skin Perfecting 2% BHA Liquid Exfoliant, 4 fl oz (118 mL). New, one unit.",
+        "match": {
+          "all": [["paulas choice"], ["bha"], ["liquid exfoliant"]],
+          "variant": ["4 oz", "4 fl oz", "118 ml"],
+          "none": ["travel", "body", "trial", "set", "kit", "duo"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "skincare-supergoop-unseen-spf40",
+      "category": "skincare",
+      "query": "supergoop unseen sunscreen spf 40",
+      "exactItem": {
+        "description": "Supergoop! Unseen Sunscreen SPF 40, 1.7 fl oz (50 mL). New, one unit.",
+        "match": {
+          "all": [["supergoop"], ["unseen"], ["spf 40", "spf40"]],
+          "variant": ["1.7 oz", "1.7 fl oz", "50 ml"],
+          "none": ["travel", "mini", "set", "kit", "duo", "refill"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-galanz-retro-mini-fridge",
+      "category": "dorm appliances",
+      "query": "galanz retro mini fridge 3.1 cu ft",
+      "exactItem": {
+        "description": "Galanz 3.1 cu ft retro compact refrigerator with freezer (GLR31T series), any color. New, one unit.",
+        "match": {
+          "all": [["galanz"], ["retro"]],
+          "variant": ["3.1 cu ft", "3.1 cubic", "glr31t"],
+          "none": ["parts", "shelf", "gasket", "door bin", "replacement"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-keurig-k-mini",
+      "category": "dorm appliances",
+      "query": "keurig k-mini",
+      "exactItem": {
+        "description": "Keurig K-Mini single serve coffee maker (not the K-Mini Plus), any color. New, one unit.",
+        "match": {
+          "all": [["k mini", "kmini"]],
+          "none": ["k mini plus", "kmini plus", "pod holder", "reusable", "descaling", "water reservoir", "replacement", "carafe", "for keurig"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-ninja-air-fryer-pro",
+      "category": "dorm appliances",
+      "query": "ninja air fryer pro 4-in-1",
+      "exactItem": {
+        "description": "Ninja Air Fryer Pro 4-in-1, 5 qt (AF141). New, one unit.",
+        "match": {
+          "all": [["ninja"], ["air fryer pro", "af141"], ["4 in 1", "af141"]],
+          "variant": ["5 qt", "5 quart", "af141"],
+          "none": ["xl", "max", "dual", "dualzone", "crispi", "foodi", "toaster", "oven", "grill", "6 in 1", "5 in 1", "basket for", "liner", "liners", "replacement", "accessories", "parchment", "for ninja", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-dash-mini-waffle-maker",
+      "category": "dorm appliances",
+      "query": "dash mini waffle maker",
+      "exactItem": {
+        "description": "Dash Mini Waffle Maker, classic round 4 inch, any color. New, one unit.",
+        "match": {
+          "all": [["dash"], ["mini waffle"]],
+          "none": ["heart", "pumpkin", "snowflake", "bunny", "tree", "shaped", "deluxe", "no drip", "flip", "multi", "multimaker", "disney", "mickey", "minnie", "2 in 1", "set"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-shark-navigator-adv",
+      "category": "dorm appliances",
+      "query": "shark navigator lift-away adv",
+      "exactItem": {
+        "description": "Shark Navigator Lift-Away ADV upright vacuum (LA322). New, one unit.",
+        "match": {
+          "all": [["shark"], ["navigator"], ["lift away adv", "la322"]],
+          "none": ["deluxe", "professional", "xl", "filter for", "filters for", "replacement", "for shark", "compatible with", "hose for", "brush for", "belt for", "parts"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-vornado-533",
+      "category": "dorm appliances",
+      "query": "vornado 533 air circulator fan",
+      "exactItem": {
+        "description": "Vornado 533 compact air circulator fan (not the 533DC). New, one unit.",
+        "match": {
+          "all": [["vornado"], ["533"]],
+          "none": ["533dc", "533 dc", "replacement", "parts", "for vornado"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-brita-everyday-10-cup",
+      "category": "dorm appliances",
+      "query": "brita 10 cup everyday water filter pitcher",
+      "exactItem": {
+        "description": "Brita Everyday 10-cup water filter pitcher with one standard filter, any color. New, one unit.",
+        "match": {
+          "all": [["brita"], ["everyday"], ["pitcher"]],
+          "variant": ["10 cup", "10 cups"],
+          "none": ["replacement", "replacements", "filters only"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-nutribullet-pro-900",
+      "category": "dorm appliances",
+      "query": "nutribullet pro 900 blender",
+      "exactItem": {
+        "description": "NutriBullet Pro 900 watt personal blender. New, one unit.",
+        "match": {
+          "all": [["nutribullet"], ["pro"]],
+          "variant": ["900"],
+          "none": ["prime", "ultra", "pro plus", "1000", "1200", "1500", "rx", "blade for", "replacement", "cup only", "cups only", "lid for", "lids for", "gasket", "for nutribullet", "compatible with", "select"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-levoit-core-300",
+      "category": "dorm appliances",
+      "query": "levoit core 300 air purifier",
+      "exactItem": {
+        "description": "Levoit Core 300 air purifier (not the Core 300S smart model). New, one unit.",
+        "match": {
+          "all": [["levoit"], ["core 300"], ["purifier", "purifiers"]],
+          "none": ["core 300s", "core 300 rf", "core 300 rac", "replacement", "filter for", "filters for", "compatible with", "pre filter", "for levoit", "humidifier"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-campbell-biology-12e",
+      "category": "textbooks",
+      "query": "campbell biology 12th edition",
+      "exactItem": {
+        "description": "Campbell Biology, 12th edition (Urry et al., Pearson). New print copy; note the format (hardcover or loose-leaf) in benchmark notes.",
+        "match": {
+          "all": [["campbell"], ["biology"]],
+          "variant": ["12th", "twelfth"],
+          "none": ["concepts", "connections", "in focus", "essential", "11th", "mastering", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-stewart-calculus-et-9e",
+      "category": "textbooks",
+      "query": "stewart calculus early transcendentals 9th edition",
+      "exactItem": {
+        "description": "Calculus: Early Transcendentals, 9th edition (Stewart, Clegg, Watson; Cengage). New print copy, full volume (not single variable or multivariable only).",
+        "match": {
+          "all": [["calculus"], ["early transcendentals"]],
+          "variant": ["9th", "ninth"],
+          "none": ["8th", "single variable", "multivariable", "webassign", "metric", "anton", "briggs", "larson", "thomas", "university calculus", "essential calculus", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-mankiw-economics-10e",
+      "category": "textbooks",
+      "query": "mankiw principles of economics 10th edition",
+      "exactItem": {
+        "description": "Principles of Economics, 10th edition (N. Gregory Mankiw; Cengage). New print copy (not Principles of Micro or Macroeconomics).",
+        "match": {
+          "all": [["principles of economics"]],
+          "variant": ["10th", "tenth"],
+          "none": ["microeconomics", "macroeconomics", "essentials", "brief", "9th", "mindtap", "case fair", "frank", "bernanke", "openstax", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-brown-chemistry-15e",
+      "category": "textbooks",
+      "query": "chemistry the central science 15th edition",
+      "exactItem": {
+        "description": "Chemistry: The Central Science, 15th edition (Brown, LeMay et al.; Pearson). New print copy.",
+        "match": {
+          "all": [["central science"]],
+          "variant": ["15th", "fifteenth"],
+          "none": ["14th", "mastering", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-clrs-algorithms-4e",
+      "category": "textbooks",
+      "query": "introduction to algorithms 4th edition",
+      "exactItem": {
+        "description": "Introduction to Algorithms, 4th edition (Cormen, Leiserson, Rivest, Stein; MIT Press 2022). New print copy.",
+        "match": {
+          "all": [["introduction to algorithms"]],
+          "variant": ["4th", "fourth"],
+          "none": ["3rd", "third", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-klein-organic-chemistry-4e",
+      "category": "textbooks",
+      "query": "klein organic chemistry 4th edition",
+      "exactItem": {
+        "description": "Organic Chemistry, 4th edition (David Klein; Wiley). New print copy (not the study guide or Organic Chemistry as a Second Language).",
+        "match": {
+          "all": [["organic chemistry"], ["klein"]],
+          "variant": ["4th", "fourth"],
+          "none": ["as a second language", "3rd", "wileyplus", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "textbooks-university-physics-15e",
+      "category": "textbooks",
+      "query": "university physics 15th edition",
+      "exactItem": {
+        "description": "University Physics with Modern Physics, 15th edition (Young and Freedman; Pearson). New print copy, full text (not a single volume).",
+        "match": {
+          "all": [["university physics"]],
+          "variant": ["15th", "fifteenth"],
+          "none": ["volume 1", "volume 2", "volume 3", "vol 1", "vol 2", "vol 3", "14th", "mastering", "students guide", "student guide", "guide for", "ap edition", "si units", "instant access", "review only", "study guide", "student solutions", "solutions manual", "solution manual", "test bank", "workbook", "lab manual", "laboratory manual", "notes", "access code", "access card", "international", "global edition", "ebook", "e book", "etextbook", "pdf", "rental", "digital", "kindle", "instructor"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-levis-501-original",
+      "category": "clothing",
+      "query": "levi's 501 original fit jeans",
+      "exactItem": {
+        "description": "Levi's 501 Original Fit men's jeans, standard sizes, any wash. New, one pair.",
+        "match": {
+          "all": [["levis"], ["501"], ["original"]],
+          "none": ["women", "womens", "shorts", "short", "skinny", "slim", "taper", "tapered", "501 93", "501 90s", "crop", "cropped", "shrink to fit", "big tall", "big and tall", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-nike-club-fleece-hoodie",
+      "category": "clothing",
+      "query": "nike club fleece hoodie",
+      "exactItem": {
+        "description": "Nike Sportswear Club Fleece men's pullover hoodie, any color. New, one unit.",
+        "match": {
+          "all": [["nike"], ["club fleece", "club pullover fleece"], ["hoodie"]],
+          "none": ["zip", "full zip", "women", "womens", "jogger", "joggers", "pants", "crew", "shorts", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-carhartt-k87",
+      "category": "clothing",
+      "query": "carhartt k87 pocket t-shirt",
+      "exactItem": {
+        "description": "Carhartt K87 loose fit heavyweight short-sleeve pocket T-shirt, regular sizes, any color. New, one unit.",
+        "match": {
+          "all": [["k87"]],
+          "none": ["long sleeve", "women", "womens", "tall", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-uniqlo-airism-oversized-tee",
+      "category": "clothing",
+      "query": "uniqlo airism oversized t-shirt",
+      "exactItem": {
+        "description": "Uniqlo AIRism Cotton oversized crew neck half-sleeve T-shirt (men's/unisex), any color. New, one unit.",
+        "match": {
+          "all": [["uniqlo"], ["airism"], ["oversized"], ["t shirt", "tee", "tshirt"]],
+          "none": ["women", "womens", "long sleeve", "polo", "striped", "stripe", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-lululemon-align-25",
+      "category": "clothing",
+      "query": "lululemon align pant 25",
+      "exactItem": {
+        "description": "lululemon Align High-Rise Pant 25\", any color, regular sizes. New, one unit.",
+        "match": {
+          "all": [["lululemon"], ["align"], ["25"]],
+          "none": ["28", "31", "jogger", "short", "shorts", "tank", "bra", "crop", "cropped", "flare", "wide leg", "21", "19", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-converse-chuck-taylor-hi",
+      "category": "clothing",
+      "query": "converse chuck taylor all star high top",
+      "exactItem": {
+        "description": "Converse Chuck Taylor All Star high top (the classic, not Chuck 70, Lift or Move), adult sizes, any color. New, one pair.",
+        "match": {
+          "all": [["chuck taylor"], ["all star"], ["high top", "hi top", "hightop", "hi"]],
+          "none": ["low top", "ox", "lift", "platform", "chuck 70", "move", "cx", "crafted", "pro", "leather", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-adidas-samba-og",
+      "category": "clothing",
+      "query": "adidas samba og",
+      "exactItem": {
+        "description": "adidas Samba OG shoes, adult sizes, any colorway. New, one pair.",
+        "match": {
+          "all": [["adidas"], ["samba og"]],
+          "none": ["decon", "xlg", "jane", "lt", "spikeless", "golf", "sock", "socks", "laces", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "clothing-patagonia-better-sweater",
+      "category": "clothing",
+      "query": "patagonia better sweater jacket",
+      "exactItem": {
+        "description": "Patagonia men's Better Sweater fleece jacket (full zip), any color. New, one unit.",
+        "match": {
+          "all": [["patagonia"], ["better sweater"], ["jacket"]],
+          "none": ["vest", "1/4 zip", "quarter zip", "hoody", "hoodie", "pullover", "women", "womens", "ws", "lightweight", "down", "coat", "kids", "kid", "boys", "girls", "toddler", "toddlers", "infant", "baby", "youth", "little kids", "big kids", "junior", "grade school", "preschool"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    }
+  ]
+}

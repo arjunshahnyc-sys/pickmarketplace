@@ -6,7 +6,7 @@ import { Search, Zap, ShoppingCart, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: "How It Works - Pick Marketplace",
-  description: "Learn how Pick Marketplace compares prices using Target's catalog and Google Shopping results from major retailers. Free to use, no account required.",
+  description: "Learn how Pick Marketplace compares prices using Google Shopping results from major retailers. Free to use, no account required.",
 };
 
 export default function HowItWorksPage() {
@@ -19,7 +19,7 @@ export default function HowItWorksPage() {
     {
       icon: Zap,
       title: "We Check Prices Across Retailers",
-      description: "Pick checks Target's catalog directly and aggregates live Google Shopping results, which cover major retailers like Amazon, Walmart, and Best Buy plus many smaller merchants. This happens in seconds.",
+      description: "Pick aggregates live Google Shopping results, which cover major retailers like Walmart, Best Buy, and Target plus many smaller merchants. This happens in seconds.",
     },
     {
       icon: ShoppingCart,

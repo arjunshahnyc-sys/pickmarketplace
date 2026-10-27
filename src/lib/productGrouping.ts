@@ -1,4 +1,5 @@
 import { Product } from './types';
+import { isKnownNotNew } from './condition';
 import { classifySeller } from './retailerTrust';
 import { sharedSpecLabels, specsOfNames, type SpecClaims } from './sharedSpecs';
 
@@ -135,13 +136,6 @@ const TIER_WORDS = new Set([
   'big', 'little', 'child', 'children', 'teen', 'teens',
 ]);
 
-// A listing in one of these conditions is never a "cheaper twin": it is the
-// searched item, worn.
-const CONDITION_WORDS = new Set([
-  'refurbished', 'refurb', 'renewed', 'used', 'preowned', 'owned', 'open',
-  'certified',
-]);
-
 // Things sold FOR a product. A name carrying one of these that the searched
 // item's name lacks is an accessory, never the item and never its twin.
 const ACCESSORY_WORDS = new Set([
@@ -239,10 +233,6 @@ function accessoryWords(name: string): Set<string> {
 function isAccessoryOf(name: string, reference: string): boolean {
   const refAccessories = accessoryWords(reference);
   return [...accessoryWords(name)].some(word => !refAccessories.has(word));
-}
-
-function hasConditionWord(name: string): boolean {
-  return normalizeProductName(name).some(word => CONDITION_WORDS.has(word));
 }
 
 function isSubset(a: Set<string>, b: Set<string>): boolean {
@@ -356,6 +346,12 @@ export interface EnhancedProduct extends Product {
    * the page can rank it last. `referencePrice` is the verified median.
    */
   priceFlag?: { kind: 'far-below-verified'; referencePrice: number };
+  /**
+   * In the same-item cluster Pick treats as the searched item (the anchor,
+   * see pickAnchor). Ordering uses it to give the top slot to a verified
+   * store's listing of the item the shopper asked for.
+   */
+  inSearchedItem?: boolean;
 }
 
 /**
@@ -407,6 +403,11 @@ export interface GroupingOptions {
    * so the grouping math can be tested without it.
    */
   sellerClass?: (product: Product) => SellerClass;
+  /**
+   * Seller labeled Possible scam. Their prices never feed a reference price
+   * or a group's typical price. Defaults to the trust registry.
+   */
+  isPossibleScam?: (product: Product) => boolean;
 }
 
 /** A listing needs this many reviews before its rating counts for anything. */
@@ -446,6 +447,10 @@ function defaultSellerClass(product: Product): SellerClass {
   return 'marketplace';
 }
 
+function defaultIsPossibleScam(product: Product): boolean {
+  return classifySeller(product.retailer, { market: product.sourceMarket, url: product.url }).level === 'flagged';
+}
+
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)];
@@ -479,14 +484,24 @@ export function pickAnchor(
   relevanceOrdered: Product[],
   options: GroupingOptions = {}
 ): AnchorReference | undefined {
+  return chooseAnchor(relevanceOrdered, options)?.anchor;
+}
+
+/** The anchor and the listings of its cluster. */
+function chooseAnchor(
+  relevanceOrdered: Product[],
+  options: GroupingOptions
+): { anchor: AnchorReference; members: Product[] } | undefined {
   const sellerClass = options.sellerClass ?? defaultSellerClass;
+  const isPossibleScam = options.isPossibleScam ?? defaultIsPossibleScam;
   const isVerified = (p: Product) => sellerClass(p) === 'verified';
   const groups = groupProducts(relevanceOrdered.filter(p => !p.isFallback));
   const query = options.query;
 
   // A cluster speaks through its first listing that is a new unit; a
-  // cluster of only refurbished or used listings is not the searched item.
-  const isNewUnit = (p: Product) => !hasConditionWord(p.name);
+  // cluster of only refurbished, used or resale listings is not the
+  // searched item (see condition.ts for what counts as not new).
+  const isNewUnit = (p: Product) => !isKnownNotNew(p);
   const wellReviewed = (p: Product) => (p.rating ?? 0) > 0 && (p.reviewCount ?? 0) >= MIN_REVIEWS;
 
   let best: { group: Product[]; name: string; coverage: number } | undefined;
@@ -504,17 +519,22 @@ export function pickAnchor(
   const bestReviewed = group
     .filter(p => isNewUnit(p) && wellReviewed(p))
     .reduce((top, p) => ((p.reviewCount ?? 0) > (top.reviewCount ?? 0) ? p : top));
-  const usualSized = usualSizeListings(group);
+  // Possible scam prices never set the item's typical price.
+  const statsGroup = group.filter(p => !isPossibleScam(p));
+  const usualSized = usualSizeListings(statsGroup.length > 0 ? statsGroup : group);
   const reference = verifiedReference(usualSized, isVerified);
   return {
-    name: best.name,
-    price: reference ?? median(usualSized.map(p => p.price)),
-    priceBasis: reference === undefined ? 'all' : 'verified',
-    currency: group[0].currency ?? 'USD',
-    rating: bestReviewed.rating as number,
-    reviewCount: bestReviewed.reviewCount as number,
-    listingCount: group.length,
-    specs: specsOfNames(group.map(p => p.name)),
+    anchor: {
+      name: best.name,
+      price: reference ?? median(usualSized.map(p => p.price)),
+      priceBasis: reference === undefined ? 'all' : 'verified',
+      currency: group[0].currency ?? 'USD',
+      rating: bestReviewed.rating as number,
+      reviewCount: bestReviewed.reviewCount as number,
+      listingCount: group.length,
+      specs: specsOfNames(group.map(p => p.name)),
+    },
+    members: group,
   };
 }
 
@@ -536,7 +556,7 @@ function findSimilarMatch(
   // Cross-currency price ratios are meaningless; similar-pick claims only
   // compare offers priced in the anchor's currency.
   if ((product.currency ?? 'USD') !== anchor.currency) return undefined;
-  if (hasConditionWord(product.name)) return undefined;
+  if (isKnownNotNew(product)) return undefined;
   if (!sameTier(product.name, anchor.name)) return undefined;
   if (isAccessoryOf(product.name, anchor.name)) return undefined;
   if (isSameItem(product.name, anchor.name)) return undefined;
@@ -601,8 +621,11 @@ export function enhanceProductsWithGroupInfo(
   options: GroupingOptions = {}
 ): EnhancedProduct[] {
   const sellerClass = options.sellerClass ?? defaultSellerClass;
+  const isPossibleScam = options.isPossibleScam ?? defaultIsPossibleScam;
   const isVerified = (p: Product) => sellerClass(p) === 'verified';
-  const anchor = pickAnchor(relevanceOrder, options);
+  const chosen = chooseAnchor(relevanceOrder, options);
+  const anchor = chosen?.anchor;
+  const searchedItem = new Set((chosen?.members ?? []).map(productKey));
 
   // Group in relevance order regardless of the display sort, then write
   // the results back by display index.
@@ -637,7 +660,9 @@ export function enhanceProductsWithGroupInfo(
     // Price statistics compare like with like: only listings of the
     // cluster's usual size take part ("50 ml" against the 16 oz jar is
     // priced for a different size, so it is neither flagged nor cheapest).
-    const usual = new Set(usualSizeListings(group));
+    // Possible scam prices never count toward the item's typical price.
+    const statsGroup = group.filter(p => !isPossibleScam(p));
+    const usual = new Set(usualSizeListings(statsGroup.length > 0 ? statsGroup : group));
     const usualSized = (p: Product) => usual.has(p);
     const verifiedMedian = verifiedReference([...usual], isVerified);
     const flagged = new Set<Product>(
@@ -648,14 +673,19 @@ export function enhanceProductsWithGroupInfo(
               usualSized(p) && !isVerified(p) && p.price < verifiedMedian * FAR_BELOW_VERIFIED
           )
     );
-    const priced = group.filter(p => !flagged.has(p));
+    const priced = group.filter(p => !flagged.has(p) && !isPossibleScam(p));
     // The lowest-price chip is a recommendation, so it never lands on a
-    // refurbished or used unit (not the same item at a lower price), on a
-    // marketplace offer (the price describes that seller, not the item),
-    // or on another size.
-    const chipEligible = priced.filter(
-      p => usualSized(p) && !hasConditionWord(p.name) && sellerClass(p) !== 'marketplace'
+    // unit that is not new (refurbished, used, resale, lease: see
+    // condition.ts), on a marketplace offer (the price describes that
+    // seller, not the item), or on another size. When a verified store
+    // carries the item, the chip is a verified store's: a 2026-09-22
+    // capture put it on pawn and liquidation stores' listings while Best
+    // Buy sold the same item.
+    const eligible = priced.filter(
+      p => usualSized(p) && !isKnownNotNew(p) && sellerClass(p) !== 'marketplace'
     );
+    const verifiedEligible = eligible.filter(isVerified);
+    const chipEligible = verifiedEligible.length > 0 ? verifiedEligible : eligible;
 
     // "Save $X" compares the cheapest chip-eligible listing to the group's
     // typical price (the verified median when there is one, else the group
@@ -697,6 +727,7 @@ export function enhanceProductsWithGroupInfo(
           matchType: similarTo ? 'similar' : undefined,
           similarTo,
           priceFlag,
+          inSearchedItem: searchedItem.has(productKey(product)),
         };
         return;
       }
@@ -718,6 +749,7 @@ export function enhanceProductsWithGroupInfo(
         matchType: similarTo ? 'similar' : 'same',
         similarTo,
         priceFlag,
+        inSearchedItem: searchedItem.has(productKey(product)),
       };
     });
   });

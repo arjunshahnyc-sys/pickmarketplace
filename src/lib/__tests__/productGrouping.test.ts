@@ -360,11 +360,23 @@ describe('price flags and the lowest-price chip', () => {
     expect(enhanced.filter((p) => p.priceFlag).every((p) => !p.isLowestInGroup && p.matchType !== 'similar')).toBe(true);
   });
 
-  it('the lowest-price chip skips refurbished units and lands on the cheapest credible listing', () => {
+  it('the lowest-price chip goes to a verified store when one carries the item, never to a refurbished unit', () => {
+    // Plan item 2 (2026-10-03): with Target and Best Buy selling the item at
+    // $249, an unverified store's $199 listing no longer wears Pick's
+    // lowest-price marker; it still shows, ranked by its price.
     const enhanced = enhance(airpods());
     const lowest = enhanced.filter((p) => p.isLowestInGroup);
-    expect(lowest.map((p) => p.name)).toEqual(['Apple AirPods Pro 3 Wireless Earbuds, Active Noise Cancellation']);
-    expect(lowest[0].groupSavingsAmount).toBe(50); // vs the $249 verified price, not a median dragged down by $34 listings
+    expect(lowest.map((p) => `${p.name} @ ${p.retailer}`)).toEqual(['Apple AirPods Pro 3 @ Target']);
+    expect(lowest[0].groupSavingsAmount).toBeUndefined(); // the verified price is the typical price: nothing to save
+  });
+
+  it('without a verified seller, the chip lands on the cheapest listing of the usual size', () => {
+    const enhanced = enhance([
+      listing({ name: 'CeraVe Moisturizing Cream', price: 17.99, rating: 4.8, reviewCount: 94000 }),
+      listing({ name: 'CeraVe Moisturizing Cream', price: 16.5, rating: 4.8, reviewCount: 94000 }),
+      listing({ name: 'CeraVe Moisturizing Cream, 50 ml', price: 7, rating: 4.8, reviewCount: 94000 }),
+    ]);
+    expect(enhanced.filter((p) => p.isLowestInGroup).map((p) => p.price)).toEqual([16.5]);
   });
 
   it('the lowest-price chip never lands on a marketplace offer', () => {
@@ -384,7 +396,9 @@ describe('price flags and the lowest-price chip', () => {
       listing({ name: 'CeraVe Moisturizing Cream, 50 ml', price: 7, rating: 4.8, reviewCount: 94000 }),
     ]);
     expect(flaggedNames(enhanced)).toEqual([]);
-    expect(enhanced.filter((p) => p.isLowestInGroup).map((p) => p.price)).toEqual([16.5]);
+    // Best Buy's $17.97, not the 50 ml at $7, and (verified stores carry it)
+    // not the unverified $16.50 either.
+    expect(enhanced.filter((p) => p.isLowestInGroup).map((p) => p.price)).toEqual([17.97]);
   });
 
   it('flags nothing without a verified reference', () => {
@@ -552,7 +566,10 @@ describe('captured live searches', () => {
     },
     {
       fixture: airpods2Fixture,
-      anchor: { name: 'Apple AirPods Pro 2', price: 80, priceBasis: 'all' },
+      // Since 2026-10-03 a resale store's listing (Poshmark's "Apple AirPods
+      // Pro 2") cannot speak for the searched item, so the cluster's first
+      // new listing names it; the cluster and its price are unchanged.
+      anchor: { name: 'Apple AirPods Pro 2 White In Ear Headphones Mqd83ch/A MW0227M/A', price: 80, priceBasis: 'all' },
       // The model-number listing that used to pass is the same earbuds.
       picks: [],
       flagged: ['Refurbished AirPods Pro 2 with MagSafe Charging Case'],
