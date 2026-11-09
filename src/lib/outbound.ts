@@ -11,12 +11,18 @@
 // the lookup runs only when a shopper clicks: result links point at
 // /api/out, which resolves, caches, and redirects.
 //
+// The lookup misses often (4 of 7 live clicks resolved on 2026-11-09): a
+// local-store listing's product lists other sellers but not the clicked
+// one, and some product ids are simply not found. On a miss, a second
+// chance runs: a web search restricted to the seller's own domain (1
+// credit), accepted only when the result is clearly the same product.
+//
 // SERVER ONLY (node:crypto, SERPER_API_KEY). Client components read the
 // finished `product.clickUrl` string and never import this module.
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { isCommissionExcluded } from './affiliate';
-import { collapse } from './trust/identity';
+import { collapse, registrableDomain, splitSellerSuffix } from './trust/identity';
 import { resolveMerchant } from './trust/registry';
 import type { Product } from './types';
 
@@ -36,11 +42,18 @@ export interface ClickParams {
   market: string;
   /** Where to send the shopper when resolution fails: the pre-existing link. */
   fallback: string;
+  /**
+   * Listing title, for the second-chance site search. Optional so links
+   * issued before it existed (cached searches, ISR pages) still verify.
+   */
+  title?: string;
 }
 
 function sign(p: ClickParams, secret: string): string {
   return createHmac('sha256', secret)
-    .update([p.pid, p.retailer, p.market, p.fallback].join('\n'))
+    // The title joins the signed payload only when present, so a link
+    // issued without one keeps the signature it was issued with.
+    .update([p.pid, p.retailer, p.market, p.fallback, ...(p.title ? [p.title] : [])].join('\n'))
     .digest('base64url')
     .slice(0, 22); // 132 bits, plenty for a redirect guard
 }
@@ -69,12 +82,14 @@ export function buildClickUrl(product: Product): string | undefined {
     retailer: product.retailer,
     market,
     fallback: product.url,
+    title: product.name || undefined,
   };
   const qs = new URLSearchParams({
     pid: p.pid,
     r: p.retailer,
     m: p.market,
     u: p.fallback,
+    ...(p.title ? { t: p.title } : {}),
     s: sign(p, secret),
   });
   return `/api/out?${qs.toString()}`;
@@ -90,7 +105,8 @@ export function verifyClickParams(search: URLSearchParams): ClickParams | null {
   const sig = search.get('s');
   if (!secret || !pid || !retailer || !market || !fallback || !sig) return null;
 
-  const p: ClickParams = { pid, retailer, market, fallback };
+  const title = search.get('t') || undefined;
+  const p: ClickParams = { pid, retailer, market, fallback, ...(title ? { title } : {}) };
   const expected = Buffer.from(sign(p, secret));
   const given = Buffer.from(sig);
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
@@ -132,17 +148,35 @@ const TTL_OK = 6 * 60 * 60 * 1000;
 // cannot be retried on every click.
 const TTL_FAILED = 10 * 60 * 1000;
 const MAX_ENTRIES = 2000;
-const LOOKUP_TIMEOUT_MS = 6000;
+// A miss runs both calls back to back while the shopper waits on the
+// redirect, so each gets a tight budget.
+const LOOKUP_TIMEOUT_MS = 5000;
+const SITE_SEARCH_TIMEOUT_MS = 4000;
 
 // Anchored on globalThis for the same reason as the rate limiter: Next
 // bundles each route with its own copy of a module-level Map.
 type OfferCache = Map<string, { offers: MerchantOffer[] | null; ts: number }>;
-const globalStore = globalThis as unknown as { __pickOfferCache?: OfferCache };
+/** `failed` = the search itself errored (retry soon); url null = searched, no match. */
+type SiteCache = Map<string, { url: string | null; failed: boolean; ts: number }>;
+const globalStore = globalThis as unknown as {
+  __pickOfferCache?: OfferCache;
+  __pickSiteSearchCache?: SiteCache;
+};
 const cache: OfferCache = (globalStore.__pickOfferCache ??= new Map());
+const siteCache: SiteCache = (globalStore.__pickSiteSearchCache ??= new Map());
+
+function remember<V>(map: Map<string, V>, key: string, value: V): void {
+  if (map.size >= MAX_ENTRIES) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(key, value);
+}
 
 /** Test hook. */
 export function clearOfferCache(): void {
   cache.clear();
+  siteCache.clear();
 }
 
 async function fetchOffers(pid: string, market: string): Promise<MerchantOffer[] | null> {
@@ -191,28 +225,132 @@ function sameSeller(offerSource: string, retailer: string, market: string): bool
   return a !== undefined && a === b;
 }
 
+// ─── Second chance: search the seller's own site ───────────────────────────
+
+/**
+ * The domain to search for a seller, or null when a site search could not
+ * be trusted to find THIS seller's offer:
+ *  - "Platform - Seller" names: the platform's site lists the product from
+ *    many sellers at many prices.
+ *  - Marketplace-tier merchants (eBay, Etsy): every listing is a different
+ *    seller's.
+ *  - Names that are neither in the registry nor a bare domain: no domain
+ *    to search.
+ */
+export function sellerDomain(retailer: string, market: string): string | null {
+  if (splitSellerSuffix(retailer)) return null;
+  const entry = resolveMerchant(retailer, market);
+  if (entry) return entry.tier === 'marketplace' ? null : entry.domains.canonical;
+  const bare = retailer.trim().toLowerCase();
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(bare) ? registrableDomain(bare) : null;
+}
+
+const FILLER = new Set(['the', 'a', 'an', 'and', 'with', 'for', 'of', 'in', 'by', 'new']);
+const tokens = (text: string): string[] =>
+  text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter((t) => t && !FILLER.has(t));
+const hasDigit = (t: string) => /\d/.test(t);
+
+/**
+ * Whether a search result's title names the same product as the listing.
+ * Strict on purpose: the shopper was shown one price, and a sibling variant
+ * (1TB vs 512GB, Series X vs Series S) carries another.
+ *  - Model numbers and capacities (any token with a digit) must be the same
+ *    set on both sides.
+ *  - At least three quarters of the listing's words must appear in the result.
+ */
+export function isSameProduct(listingName: string, resultTitle: string): boolean {
+  const want = tokens(listingName);
+  const got = new Set(tokens(resultTitle));
+  if (want.length === 0) return false;
+
+  const wantDigits = new Set(want.filter(hasDigit));
+  const gotDigits = new Set([...got].filter(hasDigit));
+  if (wantDigits.size !== gotDigits.size || [...wantDigits].some((t) => !gotDigits.has(t))) return false;
+
+  const covered = want.filter((t) => got.has(t)).length;
+  return covered / want.length >= 0.75;
+}
+
+async function searchSellerSite(
+  title: string,
+  domain: string,
+  market: string
+): Promise<{ url: string | null; failed: boolean }> {
+  const apiKey = process.env.SERPER_API_KEY;
+  if (!apiKey) return { url: null, failed: true };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SITE_SEARCH_TIMEOUT_MS);
+  try {
+    const response = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: `${title} site:${domain}`, gl: market.toLowerCase(), hl: 'en', num: 5 }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error(`[Serper] site search returned ${response.status}`);
+      return { url: null, failed: true };
+    }
+    const data = await response.json();
+    const organic: unknown[] = Array.isArray(data?.organic) ? data.organic : [];
+    for (const item of organic) {
+      const { link, title: resultTitle } = (item ?? {}) as { link?: unknown; title?: unknown };
+      if (typeof link !== 'string' || typeof resultTitle !== 'string') continue;
+      let parsed: URL;
+      try {
+        parsed = new URL(link);
+      } catch {
+        continue;
+      }
+      if (!/^https?:$/.test(parsed.protocol)) continue;
+      if (registrableDomain(parsed.hostname) !== domain) continue;
+      // A homepage is not a product page.
+      if (parsed.pathname.length <= 1) continue;
+      if (!isSameProduct(title, resultTitle)) continue;
+      return { url: stripTrackingParams(link), failed: false };
+    }
+    return { url: null, failed: false };
+  } catch (error) {
+    console.error('[Serper] site search failed:', error instanceof Error ? error.message : String(error));
+    return { url: null, failed: true };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * The clicked seller's own product page for this product, cleaned of
- * Google attribution, or null when the lookup fails or does not list that
- * seller. Never throws; null means "use the fallback link".
+ * Google attribution, or null when neither the product lookup nor the
+ * second-chance site search finds that seller. Never throws; null means
+ * "use the fallback link".
  */
 export async function resolveMerchantUrl(
   pid: string,
   retailer: string,
-  market: string
+  market: string,
+  title?: string
 ): Promise<string | null> {
   const key = `${market.toLowerCase()}:${pid}`;
   const now = Date.now();
   let entry = cache.get(key);
   if (!entry || now - entry.ts >= (entry.offers ? TTL_OK : TTL_FAILED)) {
     entry = { offers: await fetchOffers(pid, market), ts: now };
-    if (cache.size >= MAX_ENTRIES) {
-      const oldest = cache.keys().next().value;
-      if (oldest !== undefined) cache.delete(oldest);
-    }
-    cache.set(key, entry);
+    remember(cache, key, entry);
   }
 
   const offer = entry.offers?.find((o) => sameSeller(o.source, retailer, market));
-  return offer ? stripTrackingParams(offer.link) : null;
+  if (offer) return stripTrackingParams(offer.link);
+
+  if (!title) return null;
+  const domain = sellerDomain(retailer, market);
+  if (!domain) return null;
+
+  const siteKey = `${key}:${domain}`;
+  let site = siteCache.get(siteKey);
+  if (!site || now - site.ts >= (site.failed ? TTL_FAILED : TTL_OK)) {
+    site = { ...(await searchSellerSite(title, domain, market)), ts: now };
+    remember(siteCache, siteKey, site);
+  }
+  return site.url;
 }

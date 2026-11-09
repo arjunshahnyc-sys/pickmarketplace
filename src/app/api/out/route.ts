@@ -4,8 +4,9 @@ import { resolveMerchantUrl, verifyClickParams } from "@/lib/outbound";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 // Outbound click redirect. Result links point here so the merchant's real
-// product page is looked up (2 Serper credits, cached) only when a shopper
-// actually clicks; see lib/outbound.ts for why.
+// product page is looked up (2 Serper credits, plus 1 for a site search
+// when that misses; both cached) only when a shopper actually clicks; see
+// lib/outbound.ts for why.
 //
 // Every failure path still redirects the shopper to the link the card would
 // have carried anyway. This route must never strand a click.
@@ -38,6 +39,6 @@ export async function GET(req: NextRequest) {
   // Over budget: skip the paid lookup, keep the click.
   if (!checkRateLimit(req, RATE_LIMITS.out).ok) return redirect(fallback);
 
-  const resolved = await resolveMerchantUrl(params.pid, params.retailer, params.market);
+  const resolved = await resolveMerchantUrl(params.pid, params.retailer, params.market, params.title);
   return redirect(resolved ? toAffiliateUrl(resolved, source) : fallback);
 }
