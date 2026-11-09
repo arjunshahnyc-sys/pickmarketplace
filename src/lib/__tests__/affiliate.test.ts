@@ -42,8 +42,8 @@ describe('affiliate tagging, wrapper set', () => {
   it('is enabled and wraps an ordinary retailer link', () => {
     expect(mod.affiliateLinksEnabled()).toBe(true);
 
-    const url = 'https://www.walmart.com/ip/123';
-    const tagged = mod.toAffiliateUrl(url, { retailer: 'Walmart', market: 'US' });
+    const url = 'https://www.macys.com/shop/product/123';
+    const tagged = mod.toAffiliateUrl(url, { retailer: "Macy's", market: 'US' });
 
     expect(tagged).toBe(`${WRAPPER}${encodeURIComponent(url)}`);
     expect(mod.isAffiliateUrl(tagged)).toBe(true);
@@ -51,13 +51,13 @@ describe('affiliate tagging, wrapper set', () => {
 
   it('leaves non-http(s) links alone', () => {
     for (const url of ['mailto:x@example.com', '/search/foo', 'javascript:alert(1)']) {
-      expect(mod.toAffiliateUrl(url, { retailer: 'Walmart' })).toBe(url);
+      expect(mod.toAffiliateUrl(url, { retailer: "Macy's" })).toBe(url);
     }
   });
 
   it('wraps Google intermediary links, which carry no merchant domain', () => {
-    const url = 'https://www.google.com/url?q=https%3A%2F%2Fwww.target.com%2Fp%2F123';
-    expect(mod.toAffiliateUrl(url, { retailer: 'Target', market: 'US' })).not.toBe(url);
+    const url = 'https://www.google.com/url?q=https%3A%2F%2Fwww.macys.com%2Fp%2F123';
+    expect(mod.toAffiliateUrl(url, { retailer: "Macy's", market: 'US' })).not.toBe(url);
   });
 });
 
@@ -108,9 +108,56 @@ describe('Amazon is never commission-tagged', () => {
   });
 
   it('still tags other marketplaces and their third-party sellers', () => {
-    const url = 'https://www.walmart.com/ip/123';
-    expect(mod.isCommissionExcluded(url, { retailer: 'Walmart - ABOUTYES' })).toBe(false);
+    const url = 'https://www.google.com/url?q=x';
+    expect(mod.isCommissionExcluded(url, { retailer: "Macy's", market: 'US' })).toBe(false);
     expect(mod.isCommissionExcluded(url, { retailer: 'eBay', market: 'US' })).toBe(false);
     expect(mod.isCommissionExcluded(url, { retailer: 'Etsy', market: 'US' })).toBe(false);
+  });
+});
+
+describe('Best Buy, Walmart and Target are never commission-tagged', () => {
+  let mod: typeof import('../affiliate');
+  const GOOGLE = 'https://www.google.com/url?q=x';
+
+  beforeEach(async () => {
+    mod = await loadWith(WRAPPER);
+  });
+
+  it.each([
+    ['Best Buy', 'US'],
+    ['BestBuy.com', 'US'],
+    ['Best Buy Canada', 'CA'],
+    ['Best Buy - TechSeller', 'US'],
+    ['Walmart', 'US'],
+    ['Walmart - ABOUTYES', 'US'],
+    ['Walmart Canada', 'CA'],
+    ['Walmart Business', 'US'],
+    ['Target', 'US'],
+    ['Target - SomeSeller', 'US'],
+  ])('excludes %s (%s) by name, even behind a Google link', (retailer, market) => {
+    expect(mod.isCommissionExcluded(GOOGLE, { retailer, market })).toBe(true);
+    expect(mod.toAffiliateUrl(GOOGLE, { retailer, market })).toBe(GOOGLE);
+    expect(mod.isAffiliateUrl(mod.toAffiliateUrl(GOOGLE, { retailer, market }))).toBe(false);
+  });
+
+  it.each([
+    'https://www.bestbuy.com/site/123.p',
+    'https://www.bestbuy.ca/en-ca/product/123',
+    'https://www.walmart.com/ip/123',
+    'https://www.walmart.ca/ip/123',
+    'https://www.target.com/p/-/A-123',
+  ])('excludes %s by domain with no retailer name', (url) => {
+    expect(mod.toAffiliateUrl(url)).toBe(url);
+  });
+
+  it('does not exclude Target Australia, an unrelated company', () => {
+    expect(mod.isCommissionExcluded(GOOGLE, { retailer: 'Target', market: 'AU' })).toBe(false);
+    expect(mod.isCommissionExcluded('https://www.target.com.au/p/123')).toBe(false);
+  });
+
+  it('does not exclude lookalike domains', () => {
+    for (const url of ['https://walmart.evil.com/ip/1', 'https://bestbuy-deals.com/1', 'https://target-sale.com/1']) {
+      expect(mod.isCommissionExcluded(url)).toBe(false);
+    }
   });
 });
