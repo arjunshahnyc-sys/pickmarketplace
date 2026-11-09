@@ -5,6 +5,7 @@
 
 import { searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
 import { toAffiliateUrl } from './affiliate';
+import { buildClickUrl } from './outbound';
 import { deriveFacets, type FacetGroup } from './facets/deriveFacets';
 import type { Product, RetailerSearchLink } from './types';
 
@@ -89,8 +90,10 @@ export async function performLiveSearch(
     // ordering. Results stay ranked by the sources' relevance order.
     // Identity is passed through because some merchants (Amazon) are barred
     // from tagging entirely; see isCommissionExcluded.
+    // clickUrl is built from the raw link (its fallback), before wrapping.
     .map((product) => ({
       ...product,
+      clickUrl: buildClickUrl(product),
       url: toAffiliateUrl(product.url, {
         retailer: product.retailer,
         market: product.sourceMarket,

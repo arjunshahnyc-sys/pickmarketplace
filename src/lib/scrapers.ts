@@ -285,6 +285,7 @@ export async function searchGoogleShoppingAPI(
           category: guessCategory(name),
           brand: guessBrand(name, retailer),
           lastVerified: new Date().toISOString(),
+          googleProductId: typeof item.productId === 'string' && item.productId ? item.productId : undefined,
         });
       }
     }

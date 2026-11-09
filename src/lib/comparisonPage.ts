@@ -20,6 +20,8 @@ export interface ComparisonRow {
   name: string;
   store: string;
   url: string;
+  /** /api/out link that resolves the store's product page on click; see Product.clickUrl. */
+  clickUrl?: string;
   image: string;
   price: number;
   currency: string;
@@ -94,6 +96,7 @@ function rowOf(p: EnhancedProduct): ComparisonRow {
     name: p.name,
     store: p.retailer,
     url: p.url,
+    clickUrl: p.clickUrl,
     image: p.image,
     price: p.price,
     currency: p.currency ?? 'USD',

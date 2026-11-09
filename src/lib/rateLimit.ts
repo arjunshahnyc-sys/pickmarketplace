@@ -31,6 +31,10 @@ export const RATE_LIMITS = {
   // hits it, tight enough to stop bots hammering the paid Serper pipeline.
   // /api/search-live is the only route that hits that pipeline.
   search: { name: 'search', limit: 60, windowMs: 60 * 1000 },
+  // Outbound click redirect (/api/out): each uncached click can spend a paid
+  // product lookup. Over the limit the click still redirects, just without
+  // the lookup, so this never blocks a shopper.
+  out: { name: 'out', limit: 30, windowMs: 60 * 1000 },
 } satisfies Record<string, RateLimitRule>;
 
 interface Bucket {

@@ -58,12 +58,23 @@ const price = (row: ComparisonRow) => `${currencySymbol(row.currency)}${formatPr
 const shippingText = (row: ComparisonRow) =>
   row.shippingMinor === null ? 'Shipping unknown' : row.shippingMinor === 0 ? 'Free shipping' : `${money(row.shippingMinor, row.currency)} shipping`;
 
-function OutboundLink({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
+function OutboundLink({
+  href,
+  clickHref,
+  className,
+  children,
+}: {
+  href: string;
+  /** Click-time resolver link (row.clickUrl); href stays the identity that decides rel. */
+  clickHref?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
   // rel=sponsored is a machine-readable paid-link claim; only make it when
   // the link really carries commission tracking (ProductCard does the same).
   return (
     <a
-      href={href}
+      href={clickHref ?? href}
       target="_blank"
       rel={isAffiliateUrl(href) ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
       className={className}
@@ -123,6 +134,7 @@ function TwinCard({ twin, against }: { twin: ComparisonTwin; against: string }) 
       )}
       <OutboundLink
         href={twin.url}
+        clickHref={twin.clickUrl}
         className="mt-4 inline-block rounded-xl bg-[#2A9D8F] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#238B7E]"
       >
         See it at {twin.store} ↗
@@ -237,6 +249,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
               )}
               <OutboundLink
                 href={item.top.url}
+                clickHref={item.top.clickUrl}
                 className="mt-4 inline-block rounded-xl border border-[#2A9D8F] px-4 py-2 text-sm font-medium text-[#1F7A6F] transition hover:bg-teal-50"
               >
                 See it at {item.top.store} ↗
@@ -276,7 +289,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                   {item.rows.map((row, i) => (
                     <tr key={`${row.store}|${row.name}|${i}`} className="border-t border-black/5 align-top">
                       <td className="px-4 py-2.5">
-                        <OutboundLink href={row.url} className="font-medium text-neutral-900 hover:text-[#2A9D8F]">
+                        <OutboundLink href={row.url} clickHref={row.clickUrl} className="font-medium text-neutral-900 hover:text-[#2A9D8F]">
                           {row.store}
                         </OutboundLink>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
@@ -320,7 +333,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                   <ul className="space-y-2">
                     {comparison.moreTwins.map((t) => (
                       <li key={`${t.store}|${t.name}`} className="text-sm text-neutral-700">
-                        <OutboundLink href={t.url} className="font-medium text-neutral-900 hover:text-[#2A9D8F]">
+                        <OutboundLink href={t.url} clickHref={t.clickUrl} className="font-medium text-neutral-900 hover:text-[#2A9D8F]">
                           {t.name}
                         </OutboundLink>{' '}
                         · {price(t)} at {t.store} · {t.savingsPercent}% less

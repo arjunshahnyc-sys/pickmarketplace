@@ -318,7 +318,9 @@ function ProductCard({
           must stay non-positioned so the overlay measures the wrapper. */}
       <h3 className="text-sm font-semibold text-neutral-900 mt-2 line-clamp-2 leading-tight! min-h-[2.5em] group-hover:text-pick-teal transition">
         <a
-          href={product.url}
+          // clickUrl resolves the store's own product page on click; url
+          // stays the offer's identity and decides the rel below.
+          href={product.clickUrl ?? product.url}
           target="_blank"
           // rel=sponsored is a machine-readable paid-link claim; only make it
           // when THIS link actually carries commission tracking. Per-link, not

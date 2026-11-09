@@ -35,6 +35,18 @@ export interface Product {
   category?: string;
   brand?: string;
   lastVerified?: string;
+  /**
+   * Google Shopping product id from the feed row. Lets /api/out look up the
+   * merchant's real product page when the shopper clicks (lib/outbound.ts).
+   */
+  googleProductId?: string;
+  /**
+   * Site-relative /api/out link that resolves the merchant's product page
+   * on click. Prefer it over `url` for the outbound href; `url` stays the
+   * offer's identity (saved list, trust, rel=sponsored) and the fallback.
+   * Absent when the offer keeps its plain link.
+   */
+  clickUrl?: string;
   /** True for example/deep-link cards shown when live results are thin */
   isFallback?: boolean;
   /**

@@ -254,7 +254,7 @@ export default function CompareModal({ products, onClose }: CompareModalProps) {
           {/* View Deal Buttons */}
           <div className="grid grid-cols-2 gap-4 mt-6">
             <a
-              href={product1.url}
+              href={product1.clickUrl ?? product1.url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-6 py-3 bg-[#2A9D8F] text-white rounded-lg hover:bg-[#238B7E] transition-colors font-medium"
@@ -263,7 +263,7 @@ export default function CompareModal({ products, onClose }: CompareModalProps) {
               <ExternalLink size={16} />
             </a>
             <a
-              href={product2.url}
+              href={product2.clickUrl ?? product2.url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-6 py-3 bg-[#2A9D8F] text-white rounded-lg hover:bg-[#238B7E] transition-colors font-medium"
