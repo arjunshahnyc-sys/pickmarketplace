@@ -194,12 +194,8 @@ export default function ContactPage() {
                 {status === 'success' && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
-                      Thanks! Our contact form is still in beta and may not reach
-                      us reliably yet, so please also email{' '}
-                      <a href="mailto:support@pickmarketplace.app" className="underline font-medium">
-                        support@pickmarketplace.app
-                      </a>{' '}
-                      to make sure we see it.
+                      Thanks, your message was sent. We reply by email to the
+                      address you entered.
                     </p>
                   </div>
                 )}
@@ -207,7 +203,11 @@ export default function ContactPage() {
                 {status === 'error' && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm text-red-800">
-                      Failed to send message. Please try again or email us directly.
+                      Your message was not sent. Please email us directly at{' '}
+                      <a href="mailto:support@pickmarketplace.app" className="underline font-medium">
+                        support@pickmarketplace.app
+                      </a>
+                      .
                     </p>
                   </div>
                 )}

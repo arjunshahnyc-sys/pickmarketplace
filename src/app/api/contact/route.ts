@@ -1,66 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendContactEmail, validateContact, SUPPORT_EMAIL } from '@/lib/contactEmail';
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
+// Contact form submissions are emailed to the support inbox (see
+// lib/contactEmail.ts). Success is returned only when the email service
+// accepted the message; every other outcome is an error the form shows with
+// the direct address, so a shopper is never told a lost message was sent.
+// Nothing about the submission is logged: no name, email or message.
 export async function POST(request: NextRequest) {
+  const rl = checkRateLimit(request, RATE_LIMITS.contact);
+  if (!rl.ok) {
+    return rateLimitResponse(rl.retryAfterSeconds);
+  }
+
+  let body: unknown;
   try {
-    const rl = checkRateLimit(request, RATE_LIMITS.contact);
-    if (!rl.ok) {
-      return rateLimitResponse(rl.retryAfterSeconds);
-    }
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
 
-    const body = await request.json();
-    const { name, email, subject, message } = body;
+  const checked = validateContact(body);
+  if (!checked.ok) {
+    return NextResponse.json({ error: checked.error }, { status: 400 });
+  }
 
-    // Validation
-    if (!name || !email || !subject || !message) {
-      return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      );
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email address' },
-        { status: 400 }
-      );
-    }
-
-    // TODO: Connect to email service (SendGrid, Resend, AWS SES, etc.)
-    // Until then, log receipt only — no name/email/message, so PII doesn't
-    // accumulate in server logs. (When wiring the email template, HTML-escape
-    // name/subject/message: they are user input.)
-    console.log('📧 Contact form submission received:', {
-      timestamp: new Date().toISOString(),
-      subjectLength: subject.length,
-      messageLength: message.length,
-    });
-
-    // TODO: Send email notification
-    // Example with Resend:
-    // await resend.emails.send({
-    //   from: 'Pick Marketplace <noreply@pickmarketplace.app>',
-    //   to: 'support@pickmarketplace.app',
-    //   subject: `Contact Form: ${subject}`,
-    //   html: `
-    //     <p><strong>From:</strong> ${name} (${email})</p>
-    //     <p><strong>Subject:</strong> ${subject}</p>
-    //     <p><strong>Message:</strong></p>
-    //     <p>${message}</p>
-    //   `,
-    // });
-
+  const sent = await sendContactEmail(checked.submission);
+  if (!sent.ok) {
     return NextResponse.json(
-      { success: true, message: 'Message received' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Contact form error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
+      {
+        error:
+          sent.reason === 'not-configured'
+            ? 'The contact form is not available right now.'
+            : 'Your message could not be sent.',
+        fallbackEmail: SUPPORT_EMAIL,
+      },
+      // 503: this deployment cannot send. 502: the email service refused or timed out.
+      { status: sent.reason === 'not-configured' ? 503 : 502 }
     );
   }
+
+  return NextResponse.json({ success: true, message: 'Message sent' }, { status: 200 });
 }
