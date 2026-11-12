@@ -31,6 +31,14 @@ const SITE_DESCRIPTION =
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // Every page names its own address as the official one. "./" resolves
+  // against the current pathname (Next's resolveRelativeUrl), so this single
+  // default gives /about, /faq, the homepage and the rest a self-canonical
+  // with the query string dropped. Without it Google filed a homepage search
+  // address (/?q=...) as a duplicate with no chosen original (Search Console,
+  // 2026-11-09). Pages that set their own alternates (compare, category) are
+  // unaffected: a child's alternates replaces this one.
+  alternates: { canonical: "./" },
   verification: {
     google: "0RU8rMwul--pZJv97ilC5UBOsETNmJByI5sV-pOoziA",
   },
