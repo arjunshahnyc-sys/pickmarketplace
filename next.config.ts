@@ -51,6 +51,20 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // One canonical host. www.pickmarketplace.app is attached to the Vercel
+  // project so the address works, and everything on it is sent permanently
+  // to the bare domain (path and query preserved), so search engines index
+  // one copy of each page.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.pickmarketplace.app" }],
+        destination: "https://pickmarketplace.app/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
