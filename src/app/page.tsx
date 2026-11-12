@@ -24,6 +24,7 @@ import {
 import type { SearchResponse, Product } from '@/lib/types';
 import Header from '@/components/Header';
 import { TrustedBy } from '@/components/TrustedBy';
+import { HeroHeadline } from '@/components/HeroHeadline';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
@@ -380,9 +381,9 @@ export default function Home() {
               className={hasSearched ? 'max-w-2xl' : 'lg:col-span-6'}
             >
               {/* Hero Text First on Mobile, Search Second */}
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
+              <HeroHeadline className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
                 Find a cheaper product.
-              </h1>
+              </HeroHeadline>
               <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6">
                 Type in what you were about to buy. Pick looks for its cheaper twin:{' '}
                 <strong className="font-semibold text-neutral-800">

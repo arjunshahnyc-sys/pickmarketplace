@@ -461,3 +461,21 @@ input[type="text"]:hover:not(:focus):not(:disabled) {
   background: var(--accent);
   border-radius: 1px;
 }
+
+/* The landing headline's ink (HeroHeadline.tsx): the letters show the
+   element's background, which is how a band of light can pass through
+   them. Without background-clip: text, and under forced colors, the
+   headline keeps its ordinary solid text color. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-ink {
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+@media (forced-colors: active) {
+  .hero-ink {
+    background-image: none !important;
+    -webkit-text-fill-color: currentColor;
+  }
+}
