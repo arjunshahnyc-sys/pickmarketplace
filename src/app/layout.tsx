@@ -25,7 +25,12 @@ const ibmPlex = IBM_Plex_Sans({
 const SITE_URL = "https://pickmarketplace.app";
 // One source for the page title and description: the <title>, OpenGraph,
 // Twitter card, and both JSON-LD blocks all read these, so they cannot drift.
-const SITE_TITLE = "Pick - Find a cheaper product with the same key specs.";
+// The full name leads the title: until 2026-11-12 the homepage never said
+// "Pick Marketplace" anywhere, so a Google search for the name returned
+// /how-it-works, /about and /help (whose titles do) and not the homepage.
+const SITE_NAME = "Pick Marketplace";
+const SITE_SHORT_NAME = "Pick";
+const SITE_TITLE = "Pick Marketplace - Find a cheaper product with the same key specs.";
 const SITE_DESCRIPTION =
   "Type in what you want. Pick looks for a different product with the same key specs, reviews about as good, and a lower price, and shows why they compare. Free.";
 
@@ -48,7 +53,7 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     type: "website",
-    siteName: "Pick",
+    siteName: SITE_NAME,
     images: ["/og-image.png"],
   },
   twitter: {
@@ -65,13 +70,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-pick-bg">
         <SkipToContent />
         <OrganizationSchema
-          name="Pick"
+          name={SITE_NAME}
+          alternateName={SITE_SHORT_NAME}
           url={SITE_URL}
           logo={`${SITE_URL}/logo.svg`}
           description={SITE_DESCRIPTION}
         />
         <WebsiteSchema
-          name="Pick"
+          name={SITE_NAME}
+          alternateName={SITE_SHORT_NAME}
           url={SITE_URL}
           description={SITE_DESCRIPTION}
         />

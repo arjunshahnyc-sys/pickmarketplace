@@ -2,18 +2,21 @@ import { formatPrice } from '@/lib/formatters';
 
 interface OrganizationSchemaProps {
   name: string;
+  /** The short form people also use ("Pick" for "Pick Marketplace"). */
+  alternateName?: string;
   url: string;
   logo: string;
   description: string;
 }
 
-export function OrganizationSchema({ name, url, logo, description }: OrganizationSchemaProps) {
+export function OrganizationSchema({ name, alternateName, url, logo, description }: OrganizationSchemaProps) {
   // No sameAs links until real social profiles exist — pointing Google at
   // unregistered handles hurts rather than helps entity recognition.
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name,
+    ...(alternateName ? { alternateName } : {}),
     url,
     logo,
     description,
@@ -98,15 +101,18 @@ export function ProductSchema({
 
 interface WebsiteSchemaProps {
   name: string;
+  /** The short form of the site name, offered to Google as an alternate. */
+  alternateName?: string;
   url: string;
   description: string;
 }
 
-export function WebsiteSchema({ name, url, description }: WebsiteSchemaProps) {
+export function WebsiteSchema({ name, alternateName, url, description }: WebsiteSchemaProps) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name,
+    ...(alternateName ? { alternateName } : {}),
     url,
     description,
     potentialAction: {

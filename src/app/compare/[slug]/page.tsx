@@ -52,7 +52,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: `/compare/${entry.slug}` },
-    openGraph: { title, description, type: 'article', siteName: 'Pick', images: ['/og-image.png'] },
+    openGraph: { title, description, type: 'article', siteName: 'Pick Marketplace', images: ['/og-image.png'] },
   };
 }
 
