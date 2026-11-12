@@ -110,12 +110,15 @@ export const SPEC_RULES: ReadonlyArray<SpecRule> = [
   { kind: 'phrase', key: 'closed-back', label: 'Closed back', pattern: /closed[\s-]back\b/i },
   // Audio: noise. "Noise cancelling" on headphones always means active
   // cancellation (passive isolation is sold as "noise isolating"); a
-  // noise-cancelling MICROPHONE is a different feature and is skipped.
+  // noise-cancelling MICROPHONE is a different feature and is skipped, and
+  // so is "Environmental Noise Canceling" (ENC), which is the same thing
+  // under another name: it cleans up calls, not what the wearer hears.
   {
     kind: 'phrase',
     key: 'anc',
     label: 'Active noise canceling',
-    pattern: /noise[\s-]?cancel+(?:ing|ation|ed)?\b(?![\s-]*(?:mic|microphone))|\banc\b/i,
+    pattern:
+      /(?<!environmental[\s-])(?<!\benc[\s-])(?<!call[\s-])noise[\s-]?cancel+(?:ing|ation|ed)?\b(?![\s-]*(?:mic|microphone))|\banc\b/i,
   },
   { kind: 'phrase', key: 'transparency', label: 'Transparency mode', pattern: /transparency|ambient[\s-](?:sound|mode|aware)/i },
   // Audio: codecs and quality
@@ -160,9 +163,54 @@ export const SPEC_RULES: ReadonlyArray<SpecRule> = [
   { kind: 'phrase', key: 'non-comedogenic', label: 'Non-comedogenic', pattern: /non-?\s?comedogenic/i },
   { kind: 'phrase', key: 'hyaluronic', label: 'Hyaluronic acid', pattern: /hyaluronic/i },
   { kind: 'phrase', key: 'ceramides', label: 'Ceramides', pattern: /\bceramides?\b/i },
+  { kind: 'phrase', key: 'niacinamide', label: 'Niacinamide', pattern: /\bniacinamide\b/i },
+  { kind: 'phrase', key: 'zinc', label: 'Zinc', pattern: /\bzinc\b/i },
+  { kind: 'phrase', key: 'salicylic', label: 'Salicylic acid (BHA)', pattern: /salicylic|\bbha\b/i },
+  { kind: 'phrase', key: 'mineral', label: 'Mineral', pattern: /\bmineral\b/i },
+  { kind: 'phrase', key: 'broad-spectrum', label: 'Broad spectrum', pattern: /broad[\s-]spectrum/i },
+  { kind: 'phrase', key: 'sensitive-skin', label: 'For sensitive skin', pattern: /sensitive[\s-]skin/i },
+
+  // Home appliances
+  { kind: 'figure', key: 'cu-ft', read: firstFigure(/(\d+(?:\.\d+)?)\s*-?\s*(?:cu\.?\s*-?ft\.?|cubic[\s-]+(?:feet|foot|ft))/i), share: 'exact', format: (n) => `${n} cu ft` },
+  { kind: 'figure', key: 'quart', read: firstFigure(/(\d+(?:\.\d+)?)\s*-?\s*(?:qt\.?|quarts?)\b/i), share: 'exact', format: (n) => `${n} qt` },
+  { kind: 'figure', key: 'cups', read: firstFigure(/(\d{1,2})\s*-?\s*cups?\b/i), share: 'exact', format: (n) => `${n} cup` },
+  { kind: 'figure', key: 'watts', read: firstFigure(/(\d{3,4})\s*-?\s*(?:w|watts?)\b/i), share: 'exact', format: (n) => `${n} W` },
+  { kind: 'phrase', key: 'freezer', label: 'Freezer compartment', pattern: /\bfreezer\b/i },
+  { kind: 'phrase', key: 'single-serve', label: 'Single serve', pattern: /single[\s-]serve/i },
+  { kind: 'phrase', key: 'k-cup', label: 'K-Cup pods', pattern: /\bk-?\s?cups?\b/i },
+  { kind: 'phrase', key: 'hepa', label: 'HEPA filter', pattern: /\bhepa\b/i },
+  { kind: 'phrase', key: 'bagless', label: 'Bagless', pattern: /\bbagless\b/i },
+  { kind: 'phrase', key: 'upright', label: 'Upright', pattern: /\bupright\b/i },
+  { kind: 'phrase', key: 'cordless', label: 'Cordless', pattern: /\bcordless\b/i },
+  { kind: 'phrase', key: 'nonstick', label: 'Nonstick', pattern: /non-?\s?stick/i },
 
   // Apparel
   { kind: 'phrase', key: 'high-rise', label: 'High rise', pattern: /high[\s-](?:rise|waist(?:ed)?)\b/i },
+  { kind: 'phrase', key: 'fleece', label: 'Fleece', pattern: /\bfleece\b/i },
+  { kind: 'phrase', key: 'pullover', label: 'Pullover', pattern: /\bpull-?over\b/i },
+  { kind: 'phrase', key: 'full-zip', label: 'Full zip', pattern: /full[\s-]zip/i },
+  { kind: 'phrase', key: 'heavyweight', label: 'Heavyweight', pattern: /\bheavy-?weight\b/i },
+  { kind: 'phrase', key: 'chest-pocket', label: 'Pocket', pattern: /\bpocket\b(?=\s+(?:t-?shirt|tee)\b)/i },
+  { kind: 'phrase', key: 'straight-fit', label: 'Straight fit', pattern: /straight[\s-](?:fit|leg)/i },
+  { kind: 'phrase', key: 'loose-fit', label: 'Loose fit', pattern: /(?:loose|relaxed)[\s-]fit/i },
+  { kind: 'phrase', key: 'slim-fit', label: 'Slim fit', pattern: /slim[\s-]fit/i },
+  { kind: 'phrase', key: 'high-top', label: 'High top', pattern: /high[\s-]?tops?\b/i },
+  { kind: 'phrase', key: 'low-top', label: 'Low top', pattern: /low[\s-]?tops?\b/i },
+  { kind: 'phrase', key: 'canvas', label: 'Canvas', pattern: /\bcanvas\b/i },
+];
+
+/**
+ * Specs of which a product has exactly one. An item's claims are a union
+ * over many sellers' listing names, and one careless title (or a bundle the
+ * bundle rule missed) can add a second form factor: live XM6 listings on
+ * 2026-11-12 made the over-ear XM6 "in ear" and "on ear" as well. Within a
+ * group only the claim most listings make is kept.
+ */
+const EXCLUSIVE_SPECS: ReadonlyArray<ReadonlyArray<string>> = [
+  ['over-ear', 'on-ear', 'in-ear'],
+  ['open-back', 'closed-back'],
+  ['high-top', 'low-top'],
+  ['straight-fit', 'loose-fit', 'slim-fit'],
 ];
 
 const RULE_ORDER = new Map(SPEC_RULES.map((rule, i) => [rule.key, i]));
@@ -225,15 +273,70 @@ export function specsOf(name: string): SpecClaim[] {
  */
 export function specsOfNames(names: Iterable<string>): SpecClaims {
   const claims = new Map<string, SpecClaim>();
+  const listingsStating = new Map<string, number>();
   for (const name of names) {
     for (const claim of specsOf(name)) {
       const key = claimKey(claim);
+      listingsStating.set(key, (listingsStating.get(key) ?? 0) + 1);
       const existing = claims.get(key);
       if (!existing) claims.set(key, claim);
       else if (claim.rule.kind === 'figure' && claim.rule.share === 'floor' && (claim.value as number) < (existing.value as number)) {
         claims.set(key, claim);
       }
     }
+  }
+  // One form factor, one fit: keep the claim most listings make (the
+  // earlier rule on a tie), drop its rivals.
+  for (const group of EXCLUSIVE_SPECS) {
+    const stated = group.filter((key) => claims.has(key));
+    if (stated.length < 2) continue;
+    const keep = stated.reduce((best, key) =>
+      (listingsStating.get(key) ?? 0) > (listingsStating.get(best) ?? 0) ? key : best
+    );
+    for (const key of stated) if (key !== keep) claims.delete(key);
+  }
+  return claims;
+}
+
+/**
+ * True when the two items state different members of an exclusive group
+ * (one over-ear, the other on-ear). An item that states none conflicts
+ * with nothing.
+ */
+export function hasConflictingSpecs(a: SpecClaims, b: SpecClaims): boolean {
+  return EXCLUSIVE_SPECS.some((group) => {
+    const inA = group.find((key) => a.has(key));
+    const inB = group.find((key) => b.has(key));
+    return inA !== undefined && inB !== undefined && inA !== inB;
+  });
+}
+
+/**
+ * Capacity and power figures of which an appliance has one. Listing names
+ * for one air fryer stated 5, 6, 6.5 and 8 quarts on 2026-11-12 (sibling
+ * models grouped with it), and an 8 quart fryer then "shared" its size.
+ * Sizes sold in several volumes (oz, ml) are left alone: a cream really
+ * does come in 8, 16 and 19 ounces.
+ */
+const SINGLE_VALUE_FIGURES = new Set(['cu-ft', 'quart', 'cups', 'watts', 'screen-inch']);
+
+/**
+ * specsOfNames for the item a claim is measured against: where its listing
+ * names disagree on a single-value figure, only the figure most of them
+ * state is kept.
+ */
+export function settledSpecsOfNames(names: Iterable<string>): SpecClaims {
+  const list = [...names];
+  const claims = new Map(specsOfNames(list));
+  const counts = new Map<string, number>();
+  for (const name of list) {
+    for (const claim of specsOf(name)) counts.set(claimKey(claim), (counts.get(claimKey(claim)) ?? 0) + 1);
+  }
+  for (const ruleKey of SINGLE_VALUE_FIGURES) {
+    const stated = [...claims.keys()].filter((key) => key.startsWith(`${ruleKey}=`));
+    if (stated.length < 2) continue;
+    const keep = stated.reduce((best, key) => ((counts.get(key) ?? 0) > (counts.get(best) ?? 0) ? key : best));
+    for (const key of stated) if (key !== keep) claims.delete(key);
   }
   return claims;
 }
@@ -248,6 +351,21 @@ function labelOf(claim: SpecClaim): string {
  * (Wireless beside Bluetooth) is left out.
  */
 export function sharedSpecLabels(a: SpecClaims, b: SpecClaims): string[] {
+  return sharedSpecs(a, b).map((spec) => spec.label);
+}
+
+/** Package sizes: two products in the same size bottle share a size, not a spec. */
+const PACKAGE_SIZE_SPECS = new Set(['oz', 'ml', 'liter']);
+
+export interface SharedSpec {
+  key: string;
+  label: string;
+  /** True for a package size (oz, ml, liters), which alone says nothing about equivalence. */
+  isPackageSize: boolean;
+}
+
+/** sharedSpecLabels with each chip's spec key, for callers that weigh them. */
+export function sharedSpecs(a: SpecClaims, b: SpecClaims): SharedSpec[] {
   const shared: SpecClaim[] = [];
   for (const [key, claim] of a) {
     const other = b.get(key);
@@ -263,5 +381,9 @@ export function sharedSpecLabels(a: SpecClaims, b: SpecClaims): string[] {
     .filter((claim) => !implied.has(claim.rule.key))
     .sort((x, y) => (RULE_ORDER.get(x.rule.key) as number) - (RULE_ORDER.get(y.rule.key) as number))
     .slice(0, MAX_SHARED_SPECS)
-    .map(labelOf);
+    .map((claim) => ({
+      key: claim.rule.key,
+      label: labelOf(claim),
+      isPackageSize: PACKAGE_SIZE_SPECS.has(claim.rule.key),
+    }));
 }

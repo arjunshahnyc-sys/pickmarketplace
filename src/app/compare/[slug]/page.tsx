@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import UnverifiedSellerNote from '@/components/UnverifiedSellerNote';
 import { isAffiliateUrl } from '@/lib/affiliate';
 import { buildComparison, formatCheckedDate, type ComparisonRow, type ComparisonTwin } from '@/lib/comparisonPage';
-import { COMPARISON_CATEGORY_LABELS, COMPARISONS, getComparison } from '@/lib/comparisons';
+import { brandWord, COMPARISON_CATEGORY_LABELS, COMPARISONS, getAlternativeSearch, getComparison } from '@/lib/comparisons';
 import { formatMinorUnits } from '@/lib/landedCost/money';
 import { currencySymbol, formatPrice, formatRating } from '@/lib/formatters';
 import { performLiveSearch } from '@/lib/searchService';
@@ -16,15 +16,18 @@ import { performLiveSearch } from '@/lib/searchService';
 // of it Pick trusts enough to show, and the cheaper twin Pick's own engine
 // picked, with a stamp saying when the prices were checked.
 //
-// Cost model. Each render is one paid Google Shopping search (2 Serper
-// credits), so the page is cached and regenerated on a schedule, not per
-// visit: generateStaticParams returns nothing, so `next build` renders no
-// comparison page and costs no credits; a page renders on its first visit
-// and is then served from the cache until REVALIDATE_DAYS have passed,
-// when the next visit serves the cached page and regenerates it in the
-// background. Fifty pages visited constantly cost at most about 33
-// credits a day; pages nobody visits cost nothing. Unknown slugs 404
-// before any search runs, so a crawler probing URLs costs nothing.
+// Cost model. Each render is one paid Google Shopping search for the item
+// (2 Serper credits) plus, on pages that look for a twin, one brand-free
+// search for products of its kind (2 more; pages that share a search, like
+// the earbuds, share its 30-minute cache). So the page is cached and
+// regenerated on a schedule, not per visit: generateStaticParams returns
+// nothing, so `next build` renders no comparison page and costs no
+// credits; a page renders on its first visit and is then served from the
+// cache until REVALIDATE_DAYS have passed, when the next visit serves the
+// cached page and regenerates it in the background. Fifty pages visited
+// constantly cost at most about 62 credits a day; pages nobody visits cost
+// nothing. Unknown slugs 404 before any search runs, so a crawler probing
+// URLs costs nothing.
 const REVALIDATE_DAYS = 3;
 // Must be a literal (statically analyzable): 3 days, see REVALIDATE_DAYS.
 export const revalidate = 259200;
@@ -149,15 +152,33 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   // Before any paid search: an unknown slug is a 404, not a query.
   if (!entry) notFound();
 
-  const data = await performLiveSearch(entry.query);
+  // A cheaper twin is a different product, so it is looked for in a second,
+  // brand-free search (lib/comparisons.ts). Textbooks have none.
+  const alternativeSearch = getAlternativeSearch(entry.slug);
+  const [data, alternativeData] = await Promise.all([
+    performLiveSearch(entry.query),
+    alternativeSearch ? performLiveSearch(alternativeSearch.query) : Promise.resolve(null),
+  ]);
   // The scrapers never throw: an outage returns [] and would otherwise
   // render an empty page into the cache for REVALIDATE_DAYS. Throwing
   // keeps the last good page (or, on a first render, retries next visit).
   if (data.results.length === 0) {
     throw new Error(`No live results for "${entry.query}", keeping last good page`);
   }
+  // Same for the twin search: "no twin passed the bar" must mean Pick
+  // looked, not that the search was down.
+  if (alternativeSearch && (!alternativeData || alternativeData.allSourcesFailed)) {
+    throw new Error(`No live results for "${alternativeSearch.query}", keeping last good page`);
+  }
 
-  const comparison = buildComparison(data, entry.query, new Date());
+  const comparison = buildComparison(
+    data,
+    entry.query,
+    new Date(),
+    alternativeSearch && alternativeData
+      ? { data: alternativeData, search: alternativeSearch, brand: brandWord(entry) }
+      : undefined
+  );
   const { item, twin } = comparison;
   const checked = formatCheckedDate(comparison.checkedAt);
   const categoryLabel = COMPARISON_CATEGORY_LABELS[entry.category];
@@ -319,11 +340,22 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
           <h2 id="cheaper-twin" className="text-xl font-semibold text-neutral-900 mb-1">
             A cheaper twin
           </h2>
-          <p className="text-xs text-neutral-500 mb-3">
-            A different product Pick&apos;s engine found in the same search: related to the {entry.name}, well reviewed,
-            sold by a verified store, and far under what the {entry.name}
-            {' '}typically costs. The chips are specs both products&apos; listings state, nothing more.
-          </p>
+          {comparison.twinSearch ? (
+            <p className="text-xs text-neutral-500 mb-3">
+              A different product from another brand. Pick searched for &ldquo;{comparison.twinSearch}&rdquo; and kept
+              only products of the same kind that state at least one spec the {entry.name} states, are rated 4 stars
+              or more (and no more than half a star below it) from at least 50 reviews, are sold new by a verified
+              store, and cost at least 25% less
+              {comparison.twinReferencePrice !== null
+                ? ` than ${currencySymbol(item.top?.currency ?? 'USD')}${formatPrice(comparison.twinReferencePrice, item.top?.currency ?? 'USD')}, the lower of the price on top and what it typically costs`
+                : ''}
+              . The chips are specs both products&apos; listings state, nothing more.
+            </p>
+          ) : (
+            <p className="text-xs text-neutral-500 mb-3">
+              Pick does not look for a twin here: a different book is not an equivalent of this one.
+            </p>
+          )}
           {twin ? (
             <>
               <TwinCard twin={twin} against={entry.name} />
@@ -343,12 +375,12 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                 </div>
               )}
             </>
-          ) : (
+          ) : comparison.twinSearch ? (
             <div className="rounded-2xl border border-dashed border-black/15 bg-white/60 p-5 text-sm text-neutral-600">
               No product passed that bar on {checked}. Pick would rather show nothing than a lookalike that is not
               as good, so this section stays empty until a search turns one up.
             </div>
-          )}
+          ) : null}
         </section>
 
         {comparison.hasUnverifiedSeller && <UnverifiedSellerNote className="mb-10" />}

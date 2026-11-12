@@ -95,6 +95,108 @@ export const COMPARISONS: ComparisonEntry[] = [
   { slug: 'patagonia-better-sweater-jacket', evalId: 'clothing-patagonia-better-sweater', query: 'patagonia better sweater jacket', name: 'Patagonia Better Sweater Fleece Jacket', category: 'clothing' },
 ];
 
+// ─── Where each page looks for a cheaper twin ─────────────────────────────
+//
+// A search for "sony wh-1000xm6" returns listings of the XM6. A cheaper twin
+// is by definition a different product, so it is almost never in those
+// results: on the 2026-09-22 capture 34 of 50 pages had no twin, and several
+// of the rest offered the wrong kind of thing (a JLab speaker against JLab
+// earbuds). So each page runs a second search that describes what the item
+// IS, without its brand, and looks for the twin there.
+//
+// `kind` names the product type: a twin's listing name must carry one of
+// these words, and none of the `not` words. This is what keeps a speaker,
+// a case or a pair of earbuds from standing in for headphones.
+//
+// Textbooks have no entry on purpose: a different book is not an
+// equivalent, so those pages say plainly that there is no twin.
+
+export interface AlternativeSearch {
+  /** The brand-free search Pick runs for candidates. */
+  query: string;
+  /** A twin's name carries at least one of these words. */
+  kind: string[];
+  /** A twin's name carries none of these. */
+  not?: string[];
+}
+
+const EARBUDS = { kind: ['earbuds', 'earbud', 'buds'], not: ['speaker', 'speakers', 'headset'] };
+const ANC_EARBUDS: AlternativeSearch = { query: 'wireless noise cancelling earbuds', ...EARBUDS };
+const ANC_HEADPHONES: AlternativeSearch = {
+  query: 'wireless noise cancelling over-ear headphones',
+  kind: ['headphones', 'headphone'],
+  not: ['earbuds', 'earbud', 'buds', 'speaker', 'speakers'],
+};
+const SNEAKERS = ['sneakers', 'sneaker', 'shoes', 'shoe'];
+
+export const COMPARISON_ALTERNATIVES: Record<string, AlternativeSearch> = {
+  // Earbuds
+  'airpods-pro-3': ANC_EARBUDS,
+  'airpods-4-anc': ANC_EARBUDS,
+  'samsung-galaxy-buds3-pro': ANC_EARBUDS,
+  'sony-wf-1000xm5': ANC_EARBUDS,
+  'google-pixel-buds-pro-2': ANC_EARBUDS,
+  'beats-studio-buds-plus': ANC_EARBUDS,
+  'soundcore-liberty-4-nc': ANC_EARBUDS,
+  'jlab-go-air-pop': { query: 'true wireless bluetooth earbuds', ...EARBUDS },
+  'bose-quietcomfort-ultra-earbuds': ANC_EARBUDS,
+  // Headphones
+  'sony-wh-1000xm5': ANC_HEADPHONES,
+  'sony-wh-1000xm6': ANC_HEADPHONES,
+  'bose-quietcomfort-ultra-headphones': ANC_HEADPHONES,
+  'airpods-max': ANC_HEADPHONES,
+  'beats-studio-pro': ANC_HEADPHONES,
+  'soundcore-space-one': ANC_HEADPHONES,
+  'sony-wh-ch720n': ANC_HEADPHONES,
+  'bose-quietcomfort-headphones': ANC_HEADPHONES,
+  // Skincare
+  'cerave-moisturizing-cream-16oz': { query: 'ceramide moisturizing cream 16 oz', kind: ['cream'], not: ['cleanser', 'wash'] },
+  'cerave-hydrating-facial-cleanser-16oz': { query: 'hydrating facial cleanser 16 oz', kind: ['cleanser'] },
+  'la-roche-posay-toleriane-double-repair': { query: 'ceramide face moisturizer', kind: ['moisturizer'], not: ['cleanser', 'wash'] },
+  'the-ordinary-niacinamide-10-zinc-1': { query: 'niacinamide 10% zinc serum', kind: ['niacinamide'] },
+  'neutrogena-hydro-boost-water-gel': { query: 'hyaluronic acid water gel moisturizer', kind: ['gel'], not: ['cleanser', 'wash', 'body', 'hand', 'eye'] },
+  'cetaphil-gentle-skin-cleanser-16oz': { query: 'gentle skin cleanser 16 oz', kind: ['cleanser'] },
+  'eltamd-uv-clear-spf-46': { query: 'facial sunscreen spf 46', kind: ['sunscreen'] },
+  'paulas-choice-2-bha-liquid-exfoliant': { query: '2% bha liquid exfoliant', kind: ['exfoliant', 'bha'] },
+  'supergoop-unseen-sunscreen-spf-40': { query: 'invisible gel sunscreen spf 40', kind: ['sunscreen'] },
+  // Dorm appliances
+  'galanz-retro-mini-fridge-3-1-cu-ft': { query: '3.1 cu ft mini fridge with freezer', kind: ['fridge', 'refrigerator'] },
+  'keurig-k-mini': { query: 'single serve k-cup coffee maker', kind: ['maker', 'brewer'] },
+  'ninja-air-fryer-pro-4-in-1': { query: '5 qt air fryer', kind: ['fryer'] },
+  'dash-mini-waffle-maker': { query: 'mini waffle maker', kind: ['waffle'] },
+  'shark-navigator-lift-away-adv': { query: 'upright bagless vacuum cleaner', kind: ['vacuum'] },
+  'vornado-533': { query: 'air circulator fan', kind: ['fan', 'circulator'] },
+  'brita-everyday-10-cup-pitcher': { query: '10 cup water filter pitcher', kind: ['pitcher'] },
+  'nutribullet-pro-900': { query: 'personal blender', kind: ['blender'] },
+  'levoit-core-300': { query: 'hepa air purifier', kind: ['purifier'] },
+  // Clothing
+  'levis-501-original-fit-jeans': { query: "men's straight fit jeans", kind: ['jeans'] },
+  'nike-club-fleece-hoodie': { query: "men's fleece pullover hoodie", kind: ['hoodie', 'sweatshirt'] },
+  'carhartt-k87-pocket-t-shirt': { query: "men's heavyweight pocket t-shirt", kind: ['shirt', 'tee'] },
+  'uniqlo-airism-oversized-t-shirt': { query: 'oversized crew neck t-shirt', kind: ['shirt', 'tee'] },
+  'lululemon-align-pant-25': { query: 'high rise yoga leggings 25 inch', kind: ['leggings', 'legging', 'pant', 'pants'] },
+  'converse-chuck-taylor-all-star-high-top': { query: 'canvas high top sneakers', kind: SNEAKERS },
+  'adidas-samba-og': { query: 'leather low top sneakers gum sole', kind: SNEAKERS },
+  'patagonia-better-sweater-jacket': { query: 'fleece full zip jacket', kind: ['jacket', 'fleece'] },
+};
+
+export function getAlternativeSearch(slug: string): AlternativeSearch | undefined {
+  return COMPARISON_ALTERNATIVES[slug];
+}
+
+const NOT_A_BRAND = new Set(['the', 'la', 'le', 'by']);
+
+/**
+ * The brand as one lowercase word: the first word of the entry's name that
+ * is not an article ("The Ordinary" -> "ordinary", "La Roche-Posay" ->
+ * "roche", "Levi's" -> "levi"). A twin is another maker's product, so
+ * listings carrying this word are never one (see findAlternatives).
+ */
+export function brandWord(entry: ComparisonEntry): string {
+  const words = entry.name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  return words.find((word) => word.length > 2 && !NOT_A_BRAND.has(word)) ?? words[0] ?? '';
+}
+
 export function getComparison(slug: string): ComparisonEntry | undefined {
   return COMPARISONS.find((c) => c.slug === slug);
 }

@@ -9,7 +9,8 @@
 
 import { CONDITION_LABELS, listingCondition } from './condition';
 import { orderByLandedCost, withLandedCosts } from './landedCost/enrich';
-import { enhanceProductsWithGroupInfo, pickAnchor, type EnhancedProduct } from './productGrouping';
+import type { AlternativeSearch } from './comparisons';
+import { enhanceProductsWithGroupInfo, findAlternatives, pickAnchor, type EnhancedProduct } from './productGrouping';
 import { getRetailerTrust, hasUnverifiedSeller, type TrustLevel } from './retailerTrust';
 import type { LiveSearchData } from './searchService';
 import { orderForTrust } from './trustOrder';
@@ -72,8 +73,16 @@ export interface Comparison {
     /** Listings of the item Pick left out of the table: priced far below verified stores, or a flagged seller. */
     leftOut: number;
   };
-  /** The first listing wearing the Similar pick chip, or null when none passed Pick's bar. */
+  /** The best cheaper twin, or null when none passed Pick's bar. */
   twin: ComparisonTwin | null;
+  /**
+   * The brand-free search the twin candidates came from ("wireless noise
+   * cancelling earbuds"); null when the page looked only among the item's
+   * own search results.
+   */
+  twinSearch: string | null;
+  /** The price a twin's savings are measured against; null when there is no searched-item price. */
+  twinReferencePrice: number | null;
   /** Further similar picks of other items, in Pick's order. */
   moreTwins: ComparisonTwin[];
   /** A row in view carries the Unverified seller badge, so the page shows its disclosure. */
@@ -123,7 +132,21 @@ function twinOf(p: EnhancedProduct): ComparisonTwin {
 /** The twin's own item, so two listings of one alternative count once. */
 const twinKey = (p: EnhancedProduct) => p.groupId ?? p.name;
 
-export function buildComparison(data: LiveSearchData, query: string, now: Date): Comparison {
+/** A second search to look for the twin in, and what a twin must be. */
+export interface AlternativesInput {
+  /** Results of the brand-free search (see comparisons.ts). */
+  data: LiveSearchData;
+  search: AlternativeSearch;
+  /** The searched item's brand as one lowercase word. */
+  brand: string;
+}
+
+export function buildComparison(
+  data: LiveSearchData,
+  query: string,
+  now: Date,
+  alternatives?: AlternativesInput
+): Comparison {
   const results: Product[] = data.results.filter((p) => !p.isFallback);
 
   // The homepage pipeline, default settings, no delivery state.
@@ -146,7 +169,46 @@ export function buildComparison(data: LiveSearchData, query: string, now: Date):
     ? [topProduct, ...shown.filter((p) => p !== topProduct)].slice(0, MAX_ITEM_ROWS)
     : [];
 
-  const similar = ranked.filter((p) => p.matchType === 'similar' && !isFlagged(p));
+  // A twin's savings are measured against the price the page puts on top
+  // when that is a verified store's new unit and lower than the typical
+  // price: a twin that is "54% less" than a typical $329 but only 24% under
+  // today's $198 at Best Buy would be a claim the page itself contradicts.
+  const twinReferencePrice = anchor
+    ? topProduct && isVerifiedNew(topProduct)
+      ? Math.min(anchor.price, topProduct.price)
+      : anchor.price
+    : null;
+
+  let similar: EnhancedProduct[];
+  if (alternatives) {
+    // Candidates from the brand-free search, plus anything else the item's
+    // own search returned, priced like every other listing on the page.
+    const pool = withLandedCosts(
+      [...alternatives.data.results.filter((p) => !p.isFallback), ...results],
+      { country: 'US', currency: 'USD' },
+      now
+    );
+    // Cheaper has to survive shipping: a $9.88 pair of earbuds with $6.99
+    // shipping is not a cheaper twin of a $14.99 pair that ships free (live
+    // on 2026-11-12). Where Pick has both delivered totals, the twin's must
+    // be the lower one.
+    const topDelivered = topProduct ? rowOf(topProduct).preTaxMinor : null;
+    const cheaperDelivered = (p: EnhancedProduct) => {
+      const delivered = rowOf(p).preTaxMinor;
+      return topDelivered === null || delivered === null || delivered < topDelivered;
+    };
+    similar =
+      anchor && twinReferencePrice !== null
+        ? findAlternatives({ ...anchor, price: twinReferencePrice }, pool, {
+            query,
+            kind: alternatives.search.kind,
+            not: alternatives.search.not,
+            brand: alternatives.brand,
+          }).filter(cheaperDelivered)
+        : [];
+  } else {
+    similar = ranked.filter((p) => p.matchType === 'similar' && !isFlagged(p));
+  }
   const twinProduct = similar[0] ?? null;
   const seen = new Set<string>(twinProduct ? [twinKey(twinProduct)] : []);
   const more: EnhancedProduct[] = [];
@@ -174,6 +236,8 @@ export function buildComparison(data: LiveSearchData, query: string, now: Date):
       leftOut: ofItem.length - shown.length,
     },
     twin: twinProduct ? twinOf(twinProduct) : null,
+    twinSearch: alternatives ? alternatives.search.query : null,
+    twinReferencePrice,
     moreTwins: more.map(twinOf),
     hasUnverifiedSeller: hasUnverifiedSeller(inView),
   };

@@ -1,7 +1,14 @@
 import { Product } from './types';
 import { isKnownNotNew } from './condition';
 import { classifySeller } from './retailerTrust';
-import { sharedSpecLabels, specsOfNames, type SpecClaims } from './sharedSpecs';
+import {
+  hasConflictingSpecs,
+  settledSpecsOfNames,
+  sharedSpecLabels,
+  sharedSpecs,
+  specsOfNames,
+  type SpecClaims,
+} from './sharedSpecs';
 
 // One word per meaning, so that two listings of one item written by two
 // sellers still read as the same name: British spellings become American,
@@ -532,7 +539,7 @@ function chooseAnchor(
       rating: bestReviewed.rating as number,
       reviewCount: bestReviewed.reviewCount as number,
       listingCount: group.length,
-      specs: specsOfNames(group.map(p => p.name)),
+      specs: settledSpecsOfNames(group.map(p => p.name)),
     },
     members: group,
   };
@@ -755,4 +762,178 @@ export function enhanceProductsWithGroupInfo(
   });
 
   return enhanced;
+}
+
+// ─── Alternatives from a wider search ───────────────────────────────────
+//
+// enhanceProductsWithGroupInfo looks for a similar pick among the results
+// of the shopper's own search. On a search for one named product those
+// results are listings of that product, so a different, cheaper product is
+// rarely among them. findAlternatives applies the same bar to candidates
+// from anywhere (the comparison pages pass the results of a brand-free
+// search for the product's kind, see comparisons.ts).
+//
+// Because the candidates no longer share a search with the item, name
+// overlap with it says nothing. Two explicit checks take its place: the
+// candidate must be the same KIND of product, and it must state at least
+// MIN_SHARED_SPECS specs the searched item also states.
+
+export interface AlternativeOptions extends GroupingOptions {
+  /** Words that name the product's kind; a candidate's name carries at least one. */
+  kind: string[];
+  /** Words a candidate's name must not carry (another kind, an accessory). */
+  not?: string[];
+  /**
+   * The searched item's brand, as one lowercase word. A twin is another
+   * maker's product: the same brand's other sizes, bundles and sibling
+   * models are where every wrong twin in the 2026-11-12 capture came from
+   * (a body cream for the face gel, the 8 quart fryer for the 5 quart).
+   */
+  brand?: string;
+}
+
+/**
+ * A twin states at least this many specs the searched item states too.
+ * Package sizes do not count: the same size bottle is not the same product.
+ */
+export const MIN_SHARED_SPECS = 1;
+
+// A name that opens with a description instead of a maker ("Active Noise
+// Cancelling Headphones Over Ear Wireless Bluetooth 5.4...") is an unbranded
+// import. Pick recommends a twin by name, so it has to have one.
+const DESCRIPTION_OPENERS = new Set([
+  'active', 'hybrid', 'wireless', 'bluetooth', 'noise', 'true', 'over', 'ear', 'portable',
+  'upgraded', 'new', 'premium', 'professional', 'digital', 'smart', 'electric', 'compact',
+  'mini', 'large', 'small', 'best', 'top', 'original', 'genuine', 'high', 'ultra', 'super',
+  'the', 'for', 'with',
+]);
+
+function opensWithDescription(name: string): boolean {
+  const first = name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim().split(/\s+/)[0] ?? '';
+  return first === '' || /^\d+$/.test(first) || DESCRIPTION_OPENERS.has(first);
+}
+
+/**
+ * A twin costs at least this share of the searched item's typical price.
+ * A $17 pair of earbuds against a $249 pair shares words on a spec sheet,
+ * not a class of product, and calling it an equivalent would not be honest.
+ */
+export const MIN_ALTERNATIVE_PRICE_SHARE = 0.25;
+
+/** A twin costs at most this share of the searched item's typical price. */
+const MAX_ALTERNATIVE_PRICE_SHARE = 0.75;
+
+const MENS_WORDS = new Set(['men', 'mens', 'man', 'male']);
+const WOMENS_WORDS = new Set(['women', 'womens', 'woman', 'ladies', 'female']);
+
+/**
+ * Not a men's item against a women's one. Within one item's listings the
+ * gender is a variant (VARIANT_WORDS); between two different products it
+ * decides whether one can stand in for the other. A name that states no
+ * gender is compatible with either.
+ */
+function sameGender(a: string, b: string): boolean {
+  const gender = (name: string) => {
+    const words = normalizeProductName(name);
+    const mens = words.some(word => MENS_WORDS.has(word));
+    const womens = words.some(word => WOMENS_WORDS.has(word));
+    return mens === womens ? undefined : mens ? 'men' : 'women';
+  };
+  const ga = gender(a);
+  const gb = gender(b);
+  return ga === undefined || gb === undefined || ga === gb;
+}
+
+/**
+ * Cheaper alternatives to the anchor among `candidates`, best first, one
+ * listing per product. Each result carries matchType 'similar' and
+ * similarTo, like a similar pick from enhanceProductsWithGroupInfo.
+ *
+ * Order: products sharing nearly as many specs as the best match (within
+ * one) come first, and among those the one with the most reviews behind
+ * its rating leads, then the lower price. Counting shared specs alone would
+ * hand the top slot to whichever seller stuffed the most keywords into a
+ * title; reviews are the evidence that the product is as good.
+ */
+export function findAlternatives(
+  anchor: AnchorReference,
+  candidates: Product[],
+  options: AlternativeOptions
+): EnhancedProduct[] {
+  const sellerClass = options.sellerClass ?? defaultSellerClass;
+  const isPossibleScam = options.isPossibleScam ?? defaultIsPossibleScam;
+  const isVerified = (p: Product) => sellerClass(p) === 'verified';
+  const kind = new Set(options.kind);
+  const not = new Set(options.not ?? []);
+
+  const picks: Array<{ product: EnhancedProduct; shared: number }> = [];
+  const groups = groupProducts(candidates.filter(p => !p.isFallback));
+
+  groups.forEach((group, groupIndex) => {
+    // The searched item's own listings are not alternatives to it.
+    if (isSameItem(group[0].name, anchor.name)) return;
+    const groupSpecs = specsOfNames(group.map(p => p.name));
+    // On-ear is not over-ear: a product that states a different form
+    // factor or fit than the searched item is not its twin.
+    if (hasConflictingSpecs(anchor.specs, groupSpecs)) return;
+    const shared = sharedSpecs(anchor.specs, groupSpecs);
+    const sharedCount = shared.filter(spec => !spec.isPackageSize).length;
+    if (sharedCount < MIN_SHARED_SPECS) return;
+    const sharedLabels = shared.map(spec => spec.label);
+
+    // Like every price statistic here: possible-scam listings and other
+    // sizes of the product do not speak for it.
+    const statsGroup = group.filter(p => !isPossibleScam(p));
+    const usual = usualSizeListings(statsGroup.length > 0 ? statsGroup : group);
+
+    const eligible = usual.filter(product => {
+      if ((product.currency ?? 'USD') !== anchor.currency) return false;
+      if (isKnownNotNew(product) || isPossibleScam(product) || !isVerified(product)) return false;
+      const words = new Set(normalizeProductName(product.name));
+      if (options.brand && words.has(options.brand)) return false;
+      if (opensWithDescription(product.name)) return false;
+      if (![...kind].some(word => words.has(word))) return false;
+      if ([...not].some(word => words.has(word))) return false;
+      if (!sameTier(product.name, anchor.name)) return false;
+      if (!sameGender(product.name, anchor.name)) return false;
+      if (isAccessoryOf(product.name, anchor.name)) return false;
+      if (isSameItem(product.name, anchor.name)) return false;
+      if (isSameItemByContainment(product.name, withoutLeadingWord(anchor.name))) return false;
+      if (product.price > anchor.price * MAX_ALTERNATIVE_PRICE_SHARE) return false;
+      if (product.price < anchor.price * MIN_ALTERNATIVE_PRICE_SHARE) return false;
+      if (!product.rating || product.rating < 4.0) return false;
+      if (!product.reviewCount || product.reviewCount < MIN_REVIEWS) return false;
+      if (product.rating < anchor.rating - 0.5) return false;
+      return true;
+    });
+    if (eligible.length === 0) return;
+
+    // One listing speaks for the product: its cheapest eligible one.
+    const best = eligible.reduce((low, p) => (p.price < low.price ? p : low));
+    picks.push({
+      shared: sharedCount,
+      product: {
+        ...best,
+        matchType: 'similar',
+        groupId: `alternative-${groupIndex}`,
+        groupSize: group.length,
+        similarTo: {
+          name: anchor.name,
+          savingsPercent: Math.round(((anchor.price - best.price) / anchor.price) * 100),
+          sharedSpecs: sharedLabels,
+        },
+      },
+    });
+  });
+
+  const mostShared = Math.max(0, ...picks.map(pick => pick.shared));
+  const closeMatch = (pick: { shared: number }) => pick.shared >= mostShared - 1;
+  return picks
+    .sort(
+      (a, b) =>
+        Number(closeMatch(b)) - Number(closeMatch(a)) ||
+        (b.product.reviewCount ?? 0) - (a.product.reviewCount ?? 0) ||
+        a.product.price - b.product.price
+    )
+    .map(pick => pick.product);
 }
