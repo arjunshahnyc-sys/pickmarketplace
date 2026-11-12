@@ -197,6 +197,61 @@ export function brandWord(entry: ComparisonEntry): string {
   return words.find((word) => word.length > 2 && !NOT_A_BRAND.has(word)) ?? words[0] ?? '';
 }
 
+// ─── Page copy ─────────────────────────────────────────────────────────────
+//
+// The title, description and headings of a /compare/[slug] page, written in
+// the words a shopper types into a search box. Search Console (2026-11-12)
+// showed the pages earning almost no impressions under the earlier wording
+// ("the real price, and a cheaper twin"): "twin" is Pick's own word and
+// nobody searches for it. People search "<product> alternatives", "cheaper
+// alternative to <product>", and for skincare and clothing "<product> dupe".
+//
+// Two rules keep the copy honest. It never states a price, a saving or that
+// an alternative exists: Google keeps a title for weeks and the page's
+// prices change every few days, so those facts live on the page, next to
+// the date they were checked. And a textbook page promises no alternative
+// at all, because Pick does not look for one (see COMPARISON_ALTERNATIVES).
+
+/** Categories whose shoppers call a cheaper equivalent a "dupe". */
+const DUPE_CATEGORIES: ReadonlySet<ComparisonCategory> = new Set<ComparisonCategory>(['skincare', 'clothing']);
+
+export interface ComparisonCopy {
+  /** The <title>, site suffix included. */
+  title: string;
+  /** The meta description. */
+  description: string;
+  /** The page's h1. */
+  heading: string;
+  /** The h2 over the cheaper-equivalent section. */
+  alternativesHeading: string;
+}
+
+export function comparisonCopy(entry: ComparisonEntry, revalidateDays: number): ComparisonCopy {
+  const { name } = entry;
+  if (!getAlternativeSearch(entry.slug)) {
+    return {
+      title: `${name}: lowest price across stores | Pick`,
+      description: `The lowest real price for ${name} across verified stores, shipping included, rechecked every ${revalidateDays} days. Pick does not suggest a different book in its place.`,
+      heading: `${name}: the lowest real price`,
+      alternativesHeading: 'A cheaper alternative',
+    };
+  }
+  if (DUPE_CATEGORIES.has(entry.category)) {
+    return {
+      title: `${name}: dupes, cheaper alternatives and lowest price | Pick`,
+      description: `Looking for a dupe for the ${name}? See the closest cheaper match with the same key specs and similar reviews, when one passes Pick's bar, plus the lowest real price for the original, shipping included.`,
+      heading: `${name}: lowest real price, dupes and cheaper alternatives`,
+      alternativesHeading: `Dupes and cheaper alternatives to the ${name}`,
+    };
+  }
+  return {
+    title: `${name}: cheaper alternatives and lowest price | Pick`,
+    description: `Looking for a cheaper alternative to the ${name}? See the closest match with the same key specs and similar reviews for at least 25% less, when one passes Pick's bar, plus its lowest real price, shipping included.`,
+    heading: `${name}: lowest real price and cheaper alternatives`,
+    alternativesHeading: `Cheaper alternatives to the ${name}`,
+  };
+}
+
 export function getComparison(slug: string): ComparisonEntry | undefined {
   return COMPARISONS.find((c) => c.slug === slug);
 }

@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import UnverifiedSellerNote from '@/components/UnverifiedSellerNote';
 import { isAffiliateUrl } from '@/lib/affiliate';
 import { buildComparison, formatCheckedDate, type ComparisonRow, type ComparisonTwin } from '@/lib/comparisonPage';
-import { brandWord, COMPARISON_CATEGORY_LABELS, COMPARISONS, getAlternativeSearch, getComparison } from '@/lib/comparisons';
+import { brandWord, COMPARISON_CATEGORY_LABELS, COMPARISONS, comparisonCopy, getAlternativeSearch, getComparison } from '@/lib/comparisons';
 import { formatMinorUnits } from '@/lib/landedCost/money';
 import { currencySymbol, formatPrice, formatRating } from '@/lib/formatters';
 import { performLiveSearch } from '@/lib/searchService';
@@ -46,8 +46,8 @@ export async function generateMetadata({
   const { slug } = await params;
   const entry = getComparison(slug);
   if (!entry) return { title: 'Not found | Pick' };
-  const title = `${entry.name} price and cheaper alternatives | Pick`;
-  const description = `The lowest real price for the ${entry.name} across verified stores, item plus shipping, and a cheaper product with the same key specs if one passed Pick's bar. Checked every ${REVALIDATE_DAYS} days.`;
+  // Worded the way shoppers search; see comparisonCopy.
+  const { title, description } = comparisonCopy(entry, REVALIDATE_DAYS);
   return {
     title,
     description,
@@ -182,6 +182,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   const { item, twin } = comparison;
   const checked = formatCheckedDate(comparison.checkedAt);
   const categoryLabel = COMPARISON_CATEGORY_LABELS[entry.category];
+  const copy = comparisonCopy(entry, REVALIDATE_DAYS);
   const related = COMPARISONS.filter((c) => c.category === entry.category && c.slug !== entry.slug);
 
   // Product with an AggregateOffer over the listings shown, for search
@@ -222,7 +223,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
         </nav>
 
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 mb-3">
-          {entry.name}: the real price, and a cheaper twin
+          {copy.heading}
         </h1>
         <p className="text-sm text-neutral-600 mb-8 max-w-2xl">
           Prices checked <time dateTime={comparison.checkedAt}>{checked}</time> across {comparison.listingCount}{' '}
@@ -338,7 +339,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
         {/* The cheaper twin */}
         <section aria-labelledby="cheaper-twin" className="mb-10">
           <h2 id="cheaper-twin" className="text-xl font-semibold text-neutral-900 mb-1">
-            A cheaper twin
+            {copy.alternativesHeading}
           </h2>
           {comparison.twinSearch ? (
             <p className="text-xs text-neutral-500 mb-3">
@@ -405,6 +406,8 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                 <Link
                   key={c.slug}
                   href={`/compare/${c.slug}`}
+                  // A prefetch would render the target, and a render is a paid search.
+                  prefetch={false}
                   className="px-3 py-1.5 bg-white border border-black/10 rounded-full text-xs text-black/70 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
                 >
                   {c.name}

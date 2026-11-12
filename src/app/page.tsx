@@ -25,6 +25,7 @@ import type { SearchResponse, Product } from '@/lib/types';
 import Header from '@/components/Header';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HeroHeadline } from '@/components/HeroHeadline';
+import { PopularComparisons } from '@/components/PopularComparisons';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
@@ -520,6 +521,10 @@ export default function Home() {
             the flag because it CLAIMS the capability; it appears the day
             landed costs do, and never on a deployment that lacks them. */}
         {!hasSearched && landedCostEnabled() && <GlobalMarketplaceSection />}
+
+        {/* Directory of the /compare pages: the homepage's links to them
+            (see the note in PopularComparisons.tsx). */}
+        {!hasSearched && <PopularComparisons />}
 
         {/* Results Section */}
         {hasSearched && (
