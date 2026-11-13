@@ -35,6 +35,7 @@
 //
 // Server only.
 
+import { request as httpsRequest } from 'node:https';
 import { unstable_cache } from 'next/cache';
 
 /** Credits a UTC day may spend before paid calls pause. About 2,000 visitor searches. */
@@ -95,32 +96,65 @@ interface BudgetState {
 const globalStore = globalThis as unknown as { __pickSearchBudget?: BudgetState };
 const state = (globalStore.__pickSearchBudget ??= { balance: null, dayStart: null, pending: null, lastLogged: null });
 
-/** Serper's current credit balance; null when it cannot be read. Free. */
-export async function fetchBalance(): Promise<number | null> {
+/**
+ * Serper's current credit balance; null when it cannot be read. Free.
+ *
+ * Asked with node:https and not fetch, on purpose. Next instruments fetch:
+ * an uncached fetch during the render of a page that revalidates on a
+ * timer turns the page dynamic and fails the render ("Page changed from
+ * static to dynamic at runtime", every comparison page, in production for
+ * five minutes on 2026-11-13), and a cached one would shorten the page's
+ * own revalidation window to the balance's. This read belongs to neither.
+ */
+export function fetchBalance(): Promise<number | null> {
   const apiKey = process.env.SERPER_API_KEY;
-  if (!apiKey) return null;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), BALANCE_TIMEOUT_MS);
-  try {
-    const response = await fetch('https://google.serper.dev/account', {
-      headers: { 'X-API-KEY': apiKey },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { balance?: unknown };
-    return typeof data.balance === 'number' && Number.isFinite(data.balance) ? data.balance : null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
+  // No network from the test suite, whatever key it stubs; tests pass their
+  // own reader to resetSearchBudget.
+  if (!apiKey || process.env.NODE_ENV === 'test') return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (value: number | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+    try {
+      const request = httpsRequest(
+        'https://google.serper.dev/account',
+        { method: 'GET', headers: { 'X-API-KEY': apiKey }, timeout: BALANCE_TIMEOUT_MS },
+        (response) => {
+          let body = '';
+          response.setEncoding('utf8');
+          response.on('data', (chunk: string) => {
+            if (body.length < 10_000) body += chunk;
+          });
+          response.on('error', () => done(null));
+          response.on('end', () => {
+            if (response.statusCode !== 200) return done(null);
+            try {
+              const data = JSON.parse(body) as { balance?: unknown };
+              done(typeof data.balance === 'number' && Number.isFinite(data.balance) ? data.balance : null);
+            } catch {
+              done(null);
+            }
+          });
+        }
+      );
+      request.on('timeout', () => request.destroy());
+      request.on('error', () => done(null));
+      request.end();
+    } catch {
+      done(null);
+    }
+  });
 }
+
+let readBalance: () => Promise<number | null> = fetchBalance;
 
 async function currentBalance(now: number): Promise<number | null> {
   if (state.balance && now - state.balance.at < BALANCE_TTL_MS) return state.balance.value;
   // One read at a time per instance, however many searches are waiting.
-  state.pending ??= fetchBalance().finally(() => {
+  state.pending ??= readBalance().finally(() => {
     state.pending = null;
   });
   const value = await state.pending;
@@ -141,12 +175,14 @@ function withFixedKeyText<F extends (...args: never[]) => unknown>(name: string,
 // on a failed read keeps a null out of the cache.
 const sharedDayStart = unstable_cache(
   withFixedKeyText('pick-search-budget-day-start', async (day: string): Promise<number> => {
-    const balance = await fetchBalance();
+    const balance = await readBalance();
     if (balance === null) throw new Error(`Could not read the search balance for ${day}`);
     return balance;
   }),
   ['pick-search-budget-day-start', 'v1'],
-  { revalidate: 2 * 24 * 60 * 60 }
+  // Entries are keyed by day, so their age never matters; a week keeps this
+  // from shortening the revalidation window of any page that reads it.
+  { revalidate: 7 * 24 * 60 * 60 }
 );
 
 function logOnce(reason: PauseReason | null, balance: number | null, dayStart: number | null): void {
@@ -202,10 +238,11 @@ export const BUDGET_PAUSED_ERROR = 'Search budget paused';
 export const BUDGET_PAUSED_MESSAGE =
   'Live search is paused for now: Pick has reached its search limit for today. Try again later, or search the stores directly below.';
 
-/** Test hook. */
-export function resetSearchBudget(): void {
+/** Test hook: forget everything, and optionally read the balance from `reader` instead of Serper. */
+export function resetSearchBudget(reader: () => Promise<number | null> = fetchBalance): void {
   state.balance = null;
   state.dayStart = null;
   state.pending = null;
   state.lastLogged = null;
+  readBalance = reader;
 }

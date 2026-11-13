@@ -76,17 +76,13 @@ describe('the guard against the live balance', () => {
   const NOON = new Date('2026-11-13T12:00:00Z');
 
   beforeEach(() => {
-    resetSearchBudget();
     balance = 46000;
     paidCalls = 0;
+    resetSearchBudget(async () => balance);
     vi.stubEnv('SERPER_API_KEY', 'test-key');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string) => {
-        if (String(url).endsWith('/account')) {
-          if (balance === null) throw new Error('network');
-          return new Response(JSON.stringify({ balance, rateLimit: 50 }), { status: 200 });
-        }
+      vi.fn(async () => {
         paidCalls += 1;
         return new Response(JSON.stringify({ shopping: [] }), { status: 200 });
       })
@@ -94,6 +90,7 @@ describe('the guard against the live balance', () => {
   });
 
   afterEach(() => {
+    resetSearchBudget();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
     vi.useRealTimers();
