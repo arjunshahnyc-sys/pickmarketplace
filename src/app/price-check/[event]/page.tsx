@@ -17,7 +17,7 @@ import { performLiveSearch } from '@/lib/searchService';
 //
 // Cost model. Each product is one paid search (2 Serper credits) plus one
 // to three offer-list lookups (2 each, lib/exactOffers.ts): about 100 to
-// 200 credits for the 26 products. So, like the comparison pages, the route
+// 200 credits for the 27 products. So, like the comparison pages, the route
 // is a dynamic segment with no static params (`next build` renders nothing
 // and costs nothing), it renders on its first visit and is then served
 // from the cache for a day, and links to it never prefetch. Unknown events
@@ -25,7 +25,7 @@ import { performLiveSearch } from '@/lib/searchService';
 const REVALIDATE_HOURS = 24;
 // Must be a literal (statically analyzable): one day, see REVALIDATE_HOURS.
 export const revalidate = 86400;
-// 26 products, each waiting on a search and up to three lookups.
+// 27 products, each waiting on a search and up to three lookups.
 export const maxDuration = 120;
 
 export function generateStaticParams(): Array<{ event: string }> {
@@ -80,7 +80,7 @@ async function loadRows(products: ComparisonEntry[], now: Date): Promise<{ rows:
 export default async function PriceCheckPage({ params }: { params: Promise<{ event: string }> }) {
   const { event: slug } = await params;
   const event = getPriceCheckEvent(slug);
-  // Before any paid search: an unknown event is a 404, not 26 queries.
+  // Before any paid search: an unknown event is a 404, not 27 queries.
   if (!event) notFound();
 
   const products = priceCheckProducts();

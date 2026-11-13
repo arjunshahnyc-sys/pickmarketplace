@@ -155,6 +155,8 @@ export const SPEC_RULES: ReadonlyArray<SpecRule> = [
   { kind: 'phrase', key: 'leakproof', label: 'Leakproof', pattern: /leak-?\s?(?:proof|resistant)|spill-?\s?proof/i },
   { kind: 'phrase', key: 'dishwasher', label: 'Dishwasher safe', pattern: /dishwasher[\s-]safe/i },
   { kind: 'phrase', key: 'bpa-free', label: 'BPA free', pattern: /bpa[\s-]free/i },
+  { kind: 'phrase', key: 'straw', label: 'Straw', pattern: /\bstraws?\b/i },
+  { kind: 'phrase', key: 'handle', label: 'Handle', pattern: /\bhandle\b/i },
 
   // Skincare
   { kind: 'figure', key: 'spf', read: firstFigure(/\bspf\s*-?\s*(\d{2,3})\b/i), share: 'exact', format: (n) => `SPF ${n}` },
@@ -183,6 +185,24 @@ export const SPEC_RULES: ReadonlyArray<SpecRule> = [
   { kind: 'phrase', key: 'upright', label: 'Upright', pattern: /\bupright\b/i },
   { kind: 'phrase', key: 'cordless', label: 'Cordless', pattern: /\bcordless\b/i },
   { kind: 'phrase', key: 'nonstick', label: 'Nonstick', pattern: /non-?\s?stick/i },
+
+  // Makeup and hair. Claims a title makes about form and finish; the kind
+  // of product (a blush, a mascara) is the twin search's business, not a spec.
+  { kind: 'phrase', key: 'liquid', label: 'Liquid', pattern: /\bliquid\b/i },
+  // Not "powder coated", which is a tumbler's paint.
+  { kind: 'phrase', key: 'powder', label: 'Powder', pattern: /\bpowder\b(?![\s-]*coat)/i },
+  // Not "Matte Black": a colour name on headphones and coffee makers.
+  { kind: 'phrase', key: 'matte', label: 'Matte', pattern: /\bmatte\b(?!\s+(?:black|white|blue|red|silver|gr[ae]y|green|pink|gold|navy|linen|stone|plum|sand)\b)/i },
+  { kind: 'phrase', key: 'glow', label: 'Glow finish', pattern: /\bglow\w*|\bradian(?:t|ce)\b|\bluminous\b|\bdewy\b/i },
+  { kind: 'phrase', key: 'volumizing', label: 'Volumizing', pattern: /\bvolumi[sz]ing\b|\bvoluminous\b|\bvolum'?\s+express\b|\bfull\s+volume\b/i },
+  { kind: 'phrase', key: 'long-wear', label: 'Long wear', pattern: /long[\s-]?wear(?:ing)?\b|\b\d{1,2}\s*-?\s*(?:h|hr|hour)s?\s+(?:wear|hold|stay)\b/i },
+  { kind: 'phrase', key: 'full-coverage', label: 'Full coverage', pattern: /full[\s-]coverage/i },
+  { kind: 'phrase', key: 'complexion-filter', label: 'Complexion filter', pattern: /\b(?:glow|liquid|complexion|flawless)\s+filter\b/i },
+  { kind: 'phrase', key: 'setting-spray', label: 'Setting spray', pattern: /setting\s+spray/i },
+  { kind: 'phrase', key: 'lip-mask', label: 'Lip mask', pattern: /\blip\s+(?:sleeping\s+)?mask\b/i },
+  { kind: 'phrase', key: 'overnight', label: 'Overnight', pattern: /\bovernight\b|\bsleeping\b/i },
+  { kind: 'phrase', key: 'repair', label: 'Repairing', pattern: /\b(?:bond[\s-])?repair(?:ing)?\b/i },
+  { kind: 'phrase', key: 'styler-dryer', label: 'Styler and dryer in one', pattern: /multi-?\s?styler|air\s+styling|styling\s*(?:&|and)\s*drying/i },
 
   // Apparel
   { kind: 'phrase', key: 'high-rise', label: 'High rise', pattern: /high[\s-](?:rise|waist(?:ed)?)\b/i },

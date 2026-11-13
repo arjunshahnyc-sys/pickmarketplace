@@ -28,9 +28,9 @@ import { performLiveSearch } from '@/lib/searchService';
 // nothing, so `next build` renders no comparison page and costs no
 // credits; a page renders on its first visit and is then served from the
 // cache until REVALIDATE_DAYS have passed, when the next visit serves the
-// cached page and regenerates it in the background. Fifty pages visited
-// constantly cost at most about 130 credits a day; pages nobody visits cost
-// nothing. Unknown slugs 404 before any search runs, so a crawler probing
+// cached page and regenerates it in the background. Sixty-five pages
+// visited constantly cost at most about 200 credits a day; pages nobody
+// visits cost nothing. Unknown slugs 404 before any search runs, so a crawler probing
 // URLs costs nothing.
 const REVALIDATE_DAYS = 3;
 // Must be a literal (statically analyzable): 3 days, see REVALIDATE_DAYS.

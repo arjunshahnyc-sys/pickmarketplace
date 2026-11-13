@@ -790,6 +790,23 @@ export interface AlternativeOptions extends GroupingOptions {
    * (a body cream for the face gel, the 8 quart fryer for the 5 quart).
    */
   brand?: string;
+  /** The twin must state the same capacity (oz) as the searched item. */
+  sameSize?: boolean;
+  /** Stated specs the twin must share with the item; MIN_SHARED_SPECS unless set. */
+  minSharedSpecs?: number;
+  /**
+   * Whether a listing is the searched item itself, when the caller can say
+   * so exactly (a comparison page with an exact-item rule). It replaces the
+   * name-overlap guesses below, which misfire on short names: with "V8"
+   * too short to count as a word, "Dyson V8 Cordless Vacuum" minus its
+   * brand is "cordless vacuum", and every cordless vacuum contained it.
+   */
+  isSearchedItem?: (product: Product) => boolean;
+  /**
+   * Accessory words that are part of this kind of product, not something
+   * sold for it: a tumbler "with Straw Lid" is a tumbler.
+   */
+  partOf?: string[];
 }
 
 /**
@@ -865,20 +882,24 @@ export function findAlternatives(
   const isVerified = (p: Product) => sellerClass(p) === 'verified';
   const kind = new Set(options.kind);
   const not = new Set(options.not ?? []);
+  const partOf = new Set(options.partOf ?? []);
+  const anchorAccessories = accessoryWords(anchor.name);
 
   const picks: Array<{ product: EnhancedProduct; shared: number }> = [];
   const groups = groupProducts(candidates.filter(p => !p.isFallback));
 
   groups.forEach((group, groupIndex) => {
     // The searched item's own listings are not alternatives to it.
-    if (isSameItem(group[0].name, anchor.name)) return;
+    if (options.isSearchedItem ? options.isSearchedItem(group[0]) : isSameItem(group[0].name, anchor.name)) return;
     const groupSpecs = specsOfNames(group.map(p => p.name));
     // On-ear is not over-ear: a product that states a different form
     // factor or fit than the searched item is not its twin.
     if (hasConflictingSpecs(anchor.specs, groupSpecs)) return;
     const shared = sharedSpecs(anchor.specs, groupSpecs);
     const sharedCount = shared.filter(spec => !spec.isPackageSize).length;
-    if (sharedCount < MIN_SHARED_SPECS) return;
+    if (sharedCount < (options.minSharedSpecs ?? MIN_SHARED_SPECS)) return;
+    // A drinking vessel of another capacity is another product.
+    if (options.sameSize && !shared.some(spec => spec.key === 'oz')) return;
     const sharedLabels = shared.map(spec => spec.label);
 
     // Like every price statistic here: possible-scam listings and other
@@ -896,9 +917,14 @@ export function findAlternatives(
       if ([...not].some(word => words.has(word))) return false;
       if (!sameTier(product.name, anchor.name)) return false;
       if (!sameGender(product.name, anchor.name)) return false;
-      if (isAccessoryOf(product.name, anchor.name)) return false;
-      if (isSameItem(product.name, anchor.name)) return false;
-      if (isSameItemByContainment(product.name, withoutLeadingWord(anchor.name))) return false;
+      const extras = [...accessoryWords(product.name)].filter(word => !partOf.has(word) && !anchorAccessories.has(word));
+      if (extras.length > 0) return false;
+      if (options.isSearchedItem) {
+        if (options.isSearchedItem(product)) return false;
+      } else {
+        if (isSameItem(product.name, anchor.name)) return false;
+        if (isSameItemByContainment(product.name, withoutLeadingWord(anchor.name))) return false;
+      }
       if (product.price > anchor.price * MAX_ALTERNATIVE_PRICE_SHARE) return false;
       if (product.price < anchor.price * MIN_ALTERNATIVE_PRICE_SHARE) return false;
       if (!product.rating || product.rating < 4.0) return false;

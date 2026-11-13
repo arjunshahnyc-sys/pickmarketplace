@@ -102,9 +102,11 @@ describe('priceCheckRow', () => {
 });
 
 describe('the price check catalog', () => {
-  it('covers exactly the categories priced from exact-item evidence', () => {
-    expect([...PRICE_CHECK_CATEGORIES].sort()).toEqual([...EXACT_ITEM_CATEGORIES].sort());
-    expect(priceCheckProducts()).toHaveLength(26);
+  it('covers only categories priced from exact-item evidence', () => {
+    expect(PRICE_CHECK_CATEGORIES.every((c) => EXACT_ITEM_CATEGORIES.includes(c))).toBe(true);
+    expect([...PRICE_CHECK_CATEGORIES]).toEqual(['headphones', 'earbuds', 'dorm appliances']);
+    // 9 earbuds, 8 headphones, 10 dorm appliances (the Dyson V8 joined 2026-11-13).
+    expect(priceCheckProducts()).toHaveLength(27);
     expect(priceCheckProducts().every((p) => PRICE_CHECK_CATEGORIES.includes(p.category))).toBe(true);
   });
 

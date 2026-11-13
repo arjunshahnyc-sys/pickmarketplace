@@ -12,6 +12,7 @@ import { orderByLandedCost, withLandedCosts } from './landedCost/enrich';
 import type { AlternativeSearch } from './comparisons';
 import { enhanceProductsWithGroupInfo, findAlternatives, pickAnchor, type EnhancedProduct } from './productGrouping';
 import { getRetailerTrust, hasUnverifiedSeller, type TrustLevel } from './retailerTrust';
+import { settledSpecsOfNames } from './sharedSpecs';
 import type { LiveSearchData } from './searchService';
 import { orderForTrust } from './trustOrder';
 import type { Product } from './types';
@@ -156,6 +157,11 @@ export interface AlternativesInput {
 export interface ExactItemInput {
   /** Whether a search listing's own title says it is the exact product, one unit. */
   isExactListing: (product: Product) => boolean;
+  /**
+   * Whether a search listing's title names the product, for reading its
+   * reviews and specs; defaults to isExactListing.
+   */
+  namesProduct?: (product: Product) => boolean;
   /** New-unit offers from Google's offer list for the product, as listings. */
   offers: Product[];
   /** Google's title for the product; null when no offer list was confirmed. */
@@ -166,6 +172,8 @@ export interface ExactItemInput {
 
 /** A typical price needs this many verified stores: fewer is one store's price, or the midpoint of two. */
 export const MIN_STORES_FOR_TYPICAL = 3;
+/** What unknown shipping is allowed to cost before a cheaper listing stops being the cheaper one: $20. */
+const UNKNOWN_SHIPPING_ALLOWANCE_MINOR = 2000;
 /** An unverified seller under this share of the verified median is left out as bait (as on results pages). */
 const FAR_BELOW_VERIFIED = 0.6;
 
@@ -225,8 +233,17 @@ export function buildComparison(
   // The reference a twin is compared with (specs, rating) comes from the
   // exact-titled search rows when they form one, since offer-list rows
   // carry no review counts.
+  // Its specs are read from every confirmed listing's title: store titles
+  // in an offer list state what the search titles leave out (the 24 oz of
+  // an Owala, the "Cordless" of a Dyson V8), and the grouping's cluster may
+  // hold other models.
+  const exactAnchor = exact
+    ? (pickAnchor(results.filter(exact.namesProduct ?? exact.isExactListing), { query }) ?? groupingAnchor)
+    : undefined;
   const anchor = exact
-    ? pickAnchor(results.filter(exact.isExactListing), { query }) ?? groupingAnchor
+    ? exactAnchor && listings.length > 0
+      ? { ...exactAnchor, specs: settledSpecsOfNames(listings.map((p) => p.name)) }
+      : exactAnchor
     : groupingAnchor;
 
   const baitCeiling = verifiedPrices.length > 0 ? medianOf(verifiedPrices) * FAR_BELOW_VERIFIED : null;
@@ -241,7 +258,19 @@ export function buildComparison(
   // With exact-item evidence the price on top is a verified store's new
   // unit or nothing: a marketplace or resale listing is still shown in the
   // table, but "$25 at eBay" is not the product's lowest real price.
-  const topProduct = shown.find(isVerifiedNew) ?? (exact ? null : (shown[0] ?? null));
+  const firstVerifiedNew = shown.find(isVerifiedNew) ?? null;
+  // Pick's order puts listings it can total first, so a verified store
+  // whose shipping it does not know can sit below a dearer one: Dyson's own
+  // store at $519.99 under Bloomingdale's at $649.99 (2026-11-13). When
+  // such a listing is cheaper by more than any ordinary shipping charge, it
+  // is the lower price whatever the shipping turns out to be.
+  const undercutsWhateverShipping = (p: EnhancedProduct) => {
+    if (!exact || !firstVerifiedNew || !isVerifiedNew(p) || rowOf(p).preTaxMinor !== null) return false;
+    const best = rowOf(firstVerifiedNew).preTaxMinor ?? firstVerifiedNew.price * 100;
+    return p.price * 100 + UNKNOWN_SHIPPING_ALLOWANCE_MINOR < best;
+  };
+  const cheaperUnknown = shown.filter(undercutsWhateverShipping).sort((a, b) => a.price - b.price)[0];
+  const topProduct = cheaperUnknown ?? firstVerifiedNew ?? (exact ? null : (shown[0] ?? null));
   const tableProducts = (topProduct ? [topProduct, ...shown.filter((p) => p !== topProduct)] : exact ? shown : []).slice(
     0,
     MAX_ITEM_ROWS
@@ -286,6 +315,11 @@ export function buildComparison(
             query,
             kind: alternatives.search.kind,
             not: alternatives.search.not,
+            sameSize: alternatives.search.sameSize,
+            minSharedSpecs: alternatives.search.minSharedSpecs,
+            partOf: alternatives.search.partOf,
+            // With an exact rule, "is this the item itself" is a fact, not a guess.
+            isSearchedItem: exact ? (exact.namesProduct ?? exact.isExactListing) : undefined,
             brand: alternatives.brand,
           }).filter(cheaperDelivered)
         : [];

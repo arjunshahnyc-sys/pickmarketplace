@@ -1135,6 +1135,348 @@
         "notes": ""
       },
       "acceptableTwins": null
+    },
+    {
+      "id": "drinkware-stanley-quencher-40oz",
+      "category": "drinkware",
+      "query": "stanley quencher h2.0 40 oz tumbler",
+      "exactItem": {
+        "description": "Stanley Quencher H2.0 FlowState tumbler, 40 oz, any color. New, one unit. Not the ProTour flip-straw model or a brand collaboration edition.",
+        "match": {
+          "all": [["stanley"], ["quencher"]],
+          "variant": ["40 oz", "40 fl oz", "40 ounce"],
+          "none": ["protour", "pro tour", "flip straw", "luxe", "mini", "loveshackfancy", "barbie", "lid", "lids", "straw cover", "straw covers", "boot", "boots", "sleeve", "for stanley", "accessory", "accessories", "replacement", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "drinkware-owala-freesip-24oz",
+      "category": "drinkware",
+      "query": "owala freesip 24 oz",
+      "exactItem": {
+        "description": "Owala FreeSip stainless steel water bottle, 24 oz, any color. New, one unit. Not the FreeSip Twist, Sway or Clear (plastic) models.",
+        "match": {
+          "all": [["owala"], ["freesip"]],
+          "variant": ["24 oz", "24 fl oz", "24 ounce"],
+          "none": ["twist", "sway", "clear", "tritan", "kids", "tumbler", "smoothsip", "boot", "sleeve", "lid", "lids", "sticker", "stickers", "for owala", "accessory", "accessories", "replacement", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "drinkware-hydro-flask-32oz-wide-mouth",
+      "category": "drinkware",
+      "query": "hydro flask 32 oz wide mouth",
+      "exactItem": {
+        "description": "Hydro Flask Wide Mouth insulated bottle, 32 oz, any color and either cap. New, one unit. Not the Lightweight Trail Series.",
+        "match": {
+          "all": [["hydro flask"], ["wide mouth", "wide"]],
+          "variant": ["32 oz", "32 fl oz", "32 ounce"],
+          "none": ["lightweight", "trail", "travel", "kids", "tumbler", "cooler", "boot", "sling", "lid only", "cap only", "standard mouth", "for hydro flask", "accessory", "accessories", "replacement", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "drinkware-yeti-rambler-20oz",
+      "category": "drinkware",
+      "query": "yeti rambler 20 oz tumbler",
+      "exactItem": {
+        "description": "YETI Rambler tumbler with MagSlider lid, 20 oz, any color. New, one unit. Not the travel mug, the stackable cup or a custom-printed one.",
+        "match": {
+          "all": [["yeti"], ["rambler"], ["tumbler"]],
+          "variant": ["20 oz", "20 fl oz", "20 ounce"],
+          "none": ["mug", "stackable", "straw", "lowball", "colster", "bottle", "jug", "wine", "pint", "lid only", "for yeti", "accessory", "accessories", "replacement", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-dyson-airwrap-id",
+      "category": "beauty",
+      "query": "dyson airwrap multi-styler",
+      "exactItem": {
+        "description": "Dyson Airwrap i.d. multi-styler and dryer, either hair-type set, any color. New, one unit. Not the Airwrap Origin, the Co-anda 2x, or an attachment.",
+        "match": {
+          "all": [["airwrap"], ["i.d", "id"]],
+          "none": ["refurbished", "renewed", "origin", "co anda", "coanda", "coanda2x", "flyaway", "smoother", "attachment", "attachments", "barrel", "barrels", "brush only", "case", "storage", "stand", "for dyson", "accessory", "accessories", "replacement", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-ct-flawless-filter",
+      "category": "beauty",
+      "query": "charlotte tilbury hollywood flawless filter",
+      "exactItem": {
+        "description": "Charlotte Tilbury Hollywood Flawless Filter, full size, any shade. New, one unit.",
+        "match": {
+          "all": [["charlotte tilbury"], ["flawless filter"]],
+          "variant": ["30 ml", "1 oz", "1 fl oz"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "powder", "concealer", "primer", "setting spray", "brush", "sponge"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-rare-beauty-soft-pinch-blush",
+      "category": "beauty",
+      "query": "rare beauty soft pinch liquid blush",
+      "exactItem": {
+        "description": "Rare Beauty Soft Pinch Liquid Blush, full size, any shade. New, one unit.",
+        "match": {
+          "all": [["rare beauty"], ["soft pinch"], ["liquid blush", "liquid"]],
+          "variant": ["0.25 oz", ".25 oz", "7.5 ml"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "powder", "lip", "tinted", "matte bouncy"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-ct-setting-spray",
+      "category": "beauty",
+      "query": "charlotte tilbury airbrush flawless setting spray",
+      "exactItem": {
+        "description": "Charlotte Tilbury Airbrush Flawless Setting Spray, the original, full size (100 ml). New, one unit. Not the matte version, a mini or a refill.",
+        "match": {
+          "all": [["charlotte tilbury"], ["airbrush flawless"], ["setting spray"]],
+          "variant": ["100 ml", "3.4 oz", "3.4 fl oz", "3.3 oz", "3.3 fl oz"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "matte", "jumbo", "refill"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-laneige-lip-sleeping-mask",
+      "category": "beauty",
+      "query": "laneige lip sleeping mask",
+      "exactItem": {
+        "description": "Laneige Lip Sleeping Mask, full size (20 g / 0.7 oz), any flavor. New, one unit.",
+        "match": {
+          "all": [["laneige"], ["lip sleeping mask"]],
+          "variant": ["20 g", "0.7 oz", ".7 oz"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "balm", "holiday", "collection"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-olaplex-no-3",
+      "category": "beauty",
+      "query": "olaplex no 3 hair perfector",
+      "exactItem": {
+        "description": "Olaplex No. 3 Hair Perfector, standard size (100 ml / 3.3 oz). New, one unit. Not No. 3 Plus or a jumbo size.",
+        "match": {
+          "all": [["olaplex"], ["no 3", "number 3"], ["perfector"]],
+          "variant": ["3.3 oz", "3.3 fl oz", "100 ml"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "plus", "jumbo", "liter", "litre"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-too-faced-bts-mascara",
+      "category": "beauty",
+      "query": "too faced better than sex mascara",
+      "exactItem": {
+        "description": "Too Faced Better Than Sex mascara, the original, full size. New, one unit. Not the waterproof or Naturally Better Than Sex versions.",
+        "match": {
+          "all": [["too faced"], ["better than sex"], ["mascara"]],
+          "variant": ["0.27 oz", ".27 oz", "8 ml", "standard size", "size standard"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "waterproof", "naturally", "deluxe", "primer", "foreplay", "doll", "chocolate", "value"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-benefit-hoola-bronzer",
+      "category": "beauty",
+      "query": "benefit hoola matte bronzer",
+      "exactItem": {
+        "description": "Benefit Hoola matte powder bronzer, the original shade, full size. New, one unit. Not Hoola Lite, Caramel or Toasted, or the jumbo size.",
+        "match": {
+          "all": [["benefit"], ["hoola"], ["bronzer", "bronzing"]],
+          "variant": ["0.28 oz", ".28 oz", "8 g"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "jumbo", "lite", "light", "caramel", "toasted", "brush", "quickie", "contour", "stick", "liquid", "palette"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-supergoop-glowscreen",
+      "category": "beauty",
+      "query": "supergoop glowscreen spf 40",
+      "exactItem": {
+        "description": "Supergoop Glowscreen SPF 40, full size (1.7 oz), any shade. New, one unit. Not Glowscreen Body or the stick.",
+        "match": {
+          "all": [["supergoop"], ["glowscreen"]],
+          "variant": ["1.7 oz", "1.7 fl oz", "50 ml"],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "body", "stick", "jumbo"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "beauty-beautyblender-original",
+      "category": "beauty",
+      "query": "beautyblender original makeup sponge",
+      "exactItem": {
+        "description": "Beautyblender Original makeup sponge (the pink one). New, one sponge.",
+        "match": {
+          "all": [["beautyblender", "beauty blender"], ["original"]],
+          "none": ["mini", "travel", "set", "kit", "duo", "trio", "sample", "gift", "bubble", "papaya", "nude", "pro", "micro", "cleanser", "blendercleanser", "case", "stand", "holder", "wave", "electric", "zodiac"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
+    },
+    {
+      "id": "dorm-dyson-v8",
+      "category": "dorm appliances",
+      "query": "dyson v8 cordless vacuum",
+      "exactItem": {
+        "description": "Dyson V8 cordless stick vacuum, the base model. New, one unit. Not the V8 Plus, Extra, Cyclone, Absolute or Animal.",
+        "match": {
+          "all": [["dyson"], ["v8"]],
+          "none": ["plus", "extra", "cyclone", "absolute", "animal", "origin", "motorhead", "fluffy", "slim", "refurbished", "renewed", "battery", "batteries", "filter", "filters", "charger", "attachment", "attachments", "wall mount", "dock", "kit", "for dyson", "accessory", "accessories", "replacement", "compatible with"]
+        }
+      },
+      "benchmark": {
+        "totalPrice": null,
+        "itemPrice": null,
+        "shipping": null,
+        "store": "",
+        "url": "",
+        "checkedOn": "",
+        "notes": ""
+      },
+      "acceptableTwins": null
     }
   ]
 }

@@ -25,7 +25,9 @@ export type ComparisonCategory =
   | 'skincare'
   | 'dorm appliances'
   | 'textbooks'
-  | 'clothing';
+  | 'clothing'
+  | 'drinkware'
+  | 'beauty';
 
 export const COMPARISON_CATEGORY_LABELS: Record<ComparisonCategory, string> = {
   earbuds: 'Earbuds',
@@ -34,6 +36,8 @@ export const COMPARISON_CATEGORY_LABELS: Record<ComparisonCategory, string> = {
   'dorm appliances': 'Dorm appliances',
   textbooks: 'Textbooks',
   clothing: 'Clothing',
+  drinkware: 'Tumblers and bottles',
+  beauty: 'Makeup and hair',
 };
 
 export const COMPARISONS: ComparisonEntry[] = [
@@ -76,6 +80,7 @@ export const COMPARISONS: ComparisonEntry[] = [
   { slug: 'brita-everyday-10-cup-pitcher', evalId: 'dorm-brita-everyday-10-cup', query: 'brita 10 cup everyday water filter pitcher', name: 'Brita Everyday 10-Cup Water Filter Pitcher', category: 'dorm appliances' },
   { slug: 'nutribullet-pro-900', evalId: 'dorm-nutribullet-pro-900', query: 'nutribullet pro 900 blender', name: 'NutriBullet Pro 900', category: 'dorm appliances' },
   { slug: 'levoit-core-300', evalId: 'dorm-levoit-core-300', query: 'levoit core 300 air purifier', name: 'Levoit Core 300 Air Purifier', category: 'dorm appliances' },
+  { slug: 'dyson-v8', evalId: 'dorm-dyson-v8', query: 'dyson v8 cordless vacuum', name: 'Dyson V8 Cordless Vacuum', category: 'dorm appliances' },
   // Textbooks
   { slug: 'campbell-biology-12th-edition', evalId: 'textbooks-campbell-biology-12e', query: 'campbell biology 12th edition', name: 'Campbell Biology, 12th Edition', category: 'textbooks' },
   { slug: 'stewart-calculus-early-transcendentals-9th-edition', evalId: 'textbooks-stewart-calculus-et-9e', query: 'stewart calculus early transcendentals 9th edition', name: 'Stewart Calculus: Early Transcendentals, 9th Edition', category: 'textbooks' },
@@ -93,6 +98,22 @@ export const COMPARISONS: ComparisonEntry[] = [
   { slug: 'converse-chuck-taylor-all-star-high-top', evalId: 'clothing-converse-chuck-taylor-hi', query: 'converse chuck taylor all star high top', name: 'Converse Chuck Taylor All Star High Top', category: 'clothing' },
   { slug: 'adidas-samba-og', evalId: 'clothing-adidas-samba-og', query: 'adidas samba og', name: 'adidas Samba OG', category: 'clothing' },
   { slug: 'patagonia-better-sweater-jacket', evalId: 'clothing-patagonia-better-sweater', query: 'patagonia better sweater jacket', name: 'Patagonia Better Sweater Fleece Jacket', category: 'clothing' },
+  // Tumblers and bottles (dupe pages, 2026-11-12)
+  { slug: 'stanley-quencher-40-oz', evalId: 'drinkware-stanley-quencher-40oz', query: 'stanley quencher h2.0 40 oz tumbler', name: 'Stanley Quencher H2.0 FlowState Tumbler, 40 oz', category: 'drinkware' },
+  { slug: 'owala-freesip-24-oz', evalId: 'drinkware-owala-freesip-24oz', query: 'owala freesip 24 oz', name: 'Owala FreeSip Water Bottle, 24 oz', category: 'drinkware' },
+  { slug: 'hydro-flask-32-oz-wide-mouth', evalId: 'drinkware-hydro-flask-32oz-wide-mouth', query: 'hydro flask 32 oz wide mouth', name: 'Hydro Flask Wide Mouth Bottle, 32 oz', category: 'drinkware' },
+  { slug: 'yeti-rambler-20-oz-tumbler', evalId: 'drinkware-yeti-rambler-20oz', query: 'yeti rambler 20 oz tumbler', name: 'YETI Rambler Tumbler, 20 oz', category: 'drinkware' },
+  // Makeup and hair (dupe pages, 2026-11-12)
+  { slug: 'dyson-airwrap-id', evalId: 'beauty-dyson-airwrap-id', query: 'dyson airwrap multi-styler', name: 'Dyson Airwrap i.d. Multi-Styler and Dryer', category: 'beauty' },
+  { slug: 'charlotte-tilbury-hollywood-flawless-filter', evalId: 'beauty-ct-flawless-filter', query: 'charlotte tilbury hollywood flawless filter', name: 'Charlotte Tilbury Hollywood Flawless Filter', category: 'beauty' },
+  { slug: 'rare-beauty-soft-pinch-liquid-blush', evalId: 'beauty-rare-beauty-soft-pinch-blush', query: 'rare beauty soft pinch liquid blush', name: 'Rare Beauty Soft Pinch Liquid Blush', category: 'beauty' },
+  { slug: 'charlotte-tilbury-airbrush-flawless-setting-spray', evalId: 'beauty-ct-setting-spray', query: 'charlotte tilbury airbrush flawless setting spray', name: 'Charlotte Tilbury Airbrush Flawless Setting Spray', category: 'beauty' },
+  { slug: 'laneige-lip-sleeping-mask', evalId: 'beauty-laneige-lip-sleeping-mask', query: 'laneige lip sleeping mask', name: 'Laneige Lip Sleeping Mask', category: 'beauty' },
+  { slug: 'olaplex-no-3-hair-perfector', evalId: 'beauty-olaplex-no-3', query: 'olaplex no 3 hair perfector', name: 'Olaplex No. 3 Hair Perfector', category: 'beauty' },
+  { slug: 'too-faced-better-than-sex-mascara', evalId: 'beauty-too-faced-bts-mascara', query: 'too faced better than sex mascara', name: 'Too Faced Better Than Sex Mascara', category: 'beauty' },
+  { slug: 'benefit-hoola-bronzer', evalId: 'beauty-benefit-hoola-bronzer', query: 'benefit hoola matte bronzer', name: 'Benefit Hoola Matte Bronzer', category: 'beauty' },
+  { slug: 'supergoop-glowscreen-spf-40', evalId: 'beauty-supergoop-glowscreen', query: 'supergoop glowscreen spf 40', name: 'Supergoop Glowscreen SPF 40', category: 'beauty' },
+  { slug: 'beautyblender-original', evalId: 'beauty-beautyblender-original', query: 'beautyblender original makeup sponge', name: 'Beautyblender Original Makeup Sponge', category: 'beauty' },
 ];
 
 // ─── Where each page looks for a cheaper twin ─────────────────────────────
@@ -118,6 +139,23 @@ export interface AlternativeSearch {
   kind: string[];
   /** A twin's name carries none of these. */
   not?: string[];
+  /**
+   * The twin must state the same capacity as the item. A 20 oz bottle is
+   * not a dupe for a 24 oz one, however alike the two are otherwise.
+   */
+  sameSize?: boolean;
+  /**
+   * How many stated specs the twin must share with the item; 1 unless set.
+   * Zero only where the kind word names the whole product (a mascara, a
+   * bronzer, a makeup sponge): those titles rarely state anything a spec
+   * rule could read, and the kind, the reviews and the price are the test.
+   */
+  minSharedSpecs?: number;
+  /**
+   * Words that usually mark an accessory but are part of this kind of
+   * product: a tumbler's lid and straw.
+   */
+  partOf?: string[];
 }
 
 const EARBUDS = { kind: ['earbuds', 'earbud', 'buds'], not: ['speaker', 'speakers', 'headset'] };
@@ -128,6 +166,9 @@ const ANC_HEADPHONES: AlternativeSearch = {
   not: ['earbuds', 'earbud', 'buds', 'speaker', 'speakers'],
 };
 const SNEAKERS = ['sneakers', 'sneaker', 'shoes', 'shoe'];
+const DRINKWARE_PARTS = ['lid', 'lids', 'straw', 'straws'];
+// "e.l.f. SKIN" is a product line and "skin" a word in half of makeup's names, not a phone skin.
+const BEAUTY_PARTS = ['skin', 'skins'];
 
 export const COMPARISON_ALTERNATIVES: Record<string, AlternativeSearch> = {
   // Earbuds
@@ -169,6 +210,7 @@ export const COMPARISON_ALTERNATIVES: Record<string, AlternativeSearch> = {
   'brita-everyday-10-cup-pitcher': { query: '10 cup water filter pitcher', kind: ['pitcher'] },
   'nutribullet-pro-900': { query: 'personal blender', kind: ['blender'] },
   'levoit-core-300': { query: 'hepa air purifier', kind: ['purifier'] },
+  'dyson-v8': { query: 'cordless stick vacuum', kind: ['vacuum'] },
   // Clothing
   'levis-501-original-fit-jeans': { query: "men's straight fit jeans", kind: ['jeans'] },
   'nike-club-fleece-hoodie': { query: "men's fleece pullover hoodie", kind: ['hoodie', 'sweatshirt'] },
@@ -178,6 +220,22 @@ export const COMPARISON_ALTERNATIVES: Record<string, AlternativeSearch> = {
   'converse-chuck-taylor-all-star-high-top': { query: 'canvas high top sneakers', kind: SNEAKERS },
   'adidas-samba-og': { query: 'leather low top sneakers gum sole', kind: SNEAKERS },
   'patagonia-better-sweater-jacket': { query: 'fleece full zip jacket', kind: ['jacket', 'fleece'] },
+  // Tumblers and bottles
+  'stanley-quencher-40-oz': { query: '40 oz insulated tumbler with handle and straw', kind: ['tumbler'], sameSize: true, partOf: DRINKWARE_PARTS },
+  'owala-freesip-24-oz': { query: '24 oz insulated stainless steel water bottle with straw', kind: ['bottle'], not: ['kids'], sameSize: true, partOf: DRINKWARE_PARTS },
+  'hydro-flask-32-oz-wide-mouth': { query: '32 oz insulated stainless steel water bottle', kind: ['bottle'], not: ['kids'], sameSize: true, partOf: DRINKWARE_PARTS },
+  'yeti-rambler-20-oz-tumbler': { query: '20 oz insulated stainless steel tumbler', kind: ['tumbler'], sameSize: true, partOf: DRINKWARE_PARTS },
+  // Makeup and hair
+  'dyson-airwrap-id': { query: 'air styling and drying system multi-styler', kind: ['styler', 'styling', 'multistyler'], not: ['brush', 'attachment', 'build'], partOf: BEAUTY_PARTS },
+  'charlotte-tilbury-hollywood-flawless-filter': { query: 'liquid glow filter complexion booster', kind: ['filter'], partOf: BEAUTY_PARTS },
+  'rare-beauty-soft-pinch-liquid-blush': { query: 'liquid blush', kind: ['blush'], not: ['powder', 'stick'], partOf: BEAUTY_PARTS },
+  'charlotte-tilbury-airbrush-flawless-setting-spray': { query: 'makeup setting spray', kind: ['spray'], not: ['mini', 'travel'], minSharedSpecs: 0, partOf: BEAUTY_PARTS },
+  'laneige-lip-sleeping-mask': { query: 'overnight lip mask', kind: ['mask'], not: ['face', 'sheet', 'hair', 'eye'], partOf: BEAUTY_PARTS },
+  'olaplex-no-3-hair-perfector': { query: 'bond repair hair treatment', kind: ['treatment'], not: ['conditioner', 'serum', 'oil'], partOf: BEAUTY_PARTS },
+  'too-faced-better-than-sex-mascara': { query: 'volumizing mascara', kind: ['mascara'], not: ['primer', 'duo', 'set', 'mini'], minSharedSpecs: 0, partOf: BEAUTY_PARTS },
+  'benefit-hoola-bronzer': { query: 'matte powder bronzer', kind: ['bronzer'], not: ['stick', 'liquid', 'drops'], minSharedSpecs: 0, partOf: BEAUTY_PARTS },
+  'supergoop-glowscreen-spf-40': { query: 'glow sunscreen primer spf', kind: ['spf', 'sunscreen', 'primer'], not: ['body', 'stick'], partOf: BEAUTY_PARTS },
+  'beautyblender-original': { query: 'makeup blending sponge', kind: ['sponge'], not: ['set', 'cleanser'], minSharedSpecs: 0, partOf: BEAUTY_PARTS },
 };
 
 export function getAlternativeSearch(slug: string): AlternativeSearch | undefined {
@@ -213,7 +271,7 @@ export function brandWord(entry: ComparisonEntry): string {
 // at all, because Pick does not look for one (see COMPARISON_ALTERNATIVES).
 
 /** Categories whose shoppers call a cheaper equivalent a "dupe". */
-const DUPE_CATEGORIES: ReadonlySet<ComparisonCategory> = new Set<ComparisonCategory>(['skincare', 'clothing']);
+const DUPE_CATEGORIES: ReadonlySet<ComparisonCategory> = new Set<ComparisonCategory>(['skincare', 'clothing', 'drinkware', 'beauty']);
 
 export interface ComparisonCopy {
   /** The <title>, site suffix included. */

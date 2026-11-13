@@ -46,13 +46,22 @@ import type { Product } from './types';
 
 /**
  * The categories whose pages are priced from exact-item evidence: products
- * sold as one model, where a title or a store can confirm which model it
- * is. Checked page by page on the 2026-11-12 capture. Skincare titles
- * rarely state the size, clothing prices vary by colour and cut, and
- * textbook listings mix new, used, rental and digital copies; those pages
- * stay on the general grouping until their rules are checked the same way.
+ * sold as one model, where a title or a store can confirm which one it is.
+ * Electronics and appliances were checked page by page on the 2026-11-12
+ * capture; tumblers and bottles (one size pinned each) and makeup and hair
+ * (full size pinned, minis and sets excluded) on the 2026-11-13 one. The
+ * older skincare pages (titles rarely state the size), clothing (prices
+ * vary by colour and cut) and textbooks (new, used, rental and digital
+ * copies mixed) stay on the general grouping until their rules are checked
+ * the same way.
  */
-export const EXACT_ITEM_CATEGORIES: ReadonlyArray<ComparisonCategory> = ['earbuds', 'headphones', 'dorm appliances'];
+export const EXACT_ITEM_CATEGORIES: ReadonlyArray<ComparisonCategory> = [
+  'earbuds',
+  'headphones',
+  'dorm appliances',
+  'drinkware',
+  'beauty',
+];
 
 const RULES = new Map<string, MatchRule>(
   (testset.queries as Array<{ id: string; exactItem: { match: MatchRule } }>).map((q) => [q.id, q.exactItem.match])
@@ -305,5 +314,33 @@ export function offersAsListings(list: OfferList, rule: MatchRule, market = 'US'
         sourceMarket: market,
       } as Product,
     ];
+  });
+}
+
+// A store page with a size picker ("..., Size: 1.7 FL Oz, Dawn") is listed
+// by Google under the selected size's title with, sometimes, the cheapest
+// size's price: Kohl's showed the full-size Supergoop Glowscreen at $19 and
+// the full-size Charlotte Tilbury setting spray at $25 on 2026-11-13, the
+// prices of their minis, while Sephora and Ulta charged $38 and $39.
+const SIZE_PICKER_TITLE = /,\s*size:\s/i;
+/** A size-picker offer under this share of the other stores' median is taken for another size's price. */
+const SIZE_PICKER_FLOOR = 0.7;
+
+/**
+ * Offers minus the size-picker listings whose price belongs to another
+ * size. Only for products that pin a size, only for a title with a size
+ * picker, only without a crossed-out price (a marked sale explains a low
+ * price), and only against at least two other verified stores.
+ */
+export function withoutOtherSizePrices(offers: Product[], rule: MatchRule): Product[] {
+  if (!rule.variant || rule.variant.length === 0) return offers;
+  const verified = offers.filter(isVerifiedNew);
+  return offers.filter((offer) => {
+    if (!SIZE_PICKER_TITLE.test(offer.name) || offer.originalPrice !== undefined) return true;
+    const others = verified.filter((o) => o !== offer).map((o) => o.price).sort((a, b) => a - b);
+    if (others.length < 2) return true;
+    const mid = Math.floor(others.length / 2);
+    const median = others.length % 2 === 1 ? others[mid] : (others[mid - 1] + others[mid]) / 2;
+    return offer.price >= median * SIZE_PICKER_FLOOR;
   });
 }

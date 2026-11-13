@@ -48,7 +48,7 @@ describe('the comparison catalog', () => {
   it('groups by category in catalog order without losing an entry', () => {
     const groups = comparisonsByCategory();
     expect(groups.map((g) => g.category)).toEqual([
-      'earbuds', 'headphones', 'skincare', 'dorm appliances', 'textbooks', 'clothing',
+      'earbuds', 'headphones', 'skincare', 'dorm appliances', 'textbooks', 'clothing', 'drinkware', 'beauty',
     ]);
     expect(groups.flatMap((g) => g.entries)).toEqual(COMPARISONS);
   });

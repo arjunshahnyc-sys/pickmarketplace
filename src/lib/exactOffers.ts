@@ -32,6 +32,8 @@ import {
   offersAsListings,
   parseOfferList,
   possibleCandidates,
+  titleMismatch,
+  withoutOtherSizePrices,
 } from './exactItem';
 import { listingCondition } from './condition';
 import { enhanceProductsWithGroupInfo } from './productGrouping';
@@ -82,6 +84,12 @@ export interface ExactItem {
    * did not ("Renewed").
    */
   isExactListing: (product: Product) => boolean;
+  /**
+   * Whether a search listing's title names the product at all, replaced or
+   * not and with or without a pinned size. Not for pricing: for reading what
+   * the product is (its reviews, its specs) when looking for a twin.
+   */
+  namesProduct: (product: Product) => boolean;
   /**
    * Offers from Google's offer lists for the product, as listings titled
    * and linked by the store. Empty when no list could be confirmed.
@@ -178,16 +186,19 @@ export async function resolveExactItem(
   // for that row had no Best Buy offer and verified stores from $161.99.
   // So once any verified store is confirmed by a list, a verified store's
   // search row that undercuts it does not count unless a list confirmed it.
-  const floor = cheapestConfirmed();
+  const kept = withoutOtherSizePrices(offers, rule);
+  const keptPrices = kept.filter(isVerifiedNew).map((o) => o.price);
+  const floor = keptPrices.length > 0 ? Math.min(...keptPrices) : null;
   const countsOnTitle = (p: Product) =>
     namesProduct(p) && !(floor !== null && isVerifiedNew(p) && p.price < floor);
 
   return {
     isExactListing: countsOnTitle,
+    namesProduct: (p) => titleMismatch(p.name, p.retailer, rule, true) === null,
     // Offer links are the stores' own pages, so they are commission-tagged
     // here the way search results are in searchService (and not at all for
     // the excluded retailers).
-    offers: offers.map((offer) => ({
+    offers: kept.map((offer) => ({
       ...offer,
       url: toAffiliateUrl(offer.url, { retailer: offer.retailer, market: offer.sourceMarket }),
     })),
