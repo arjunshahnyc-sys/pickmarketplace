@@ -42,7 +42,8 @@ export async function generateMetadata({ params }: { params: Promise<{ event: st
     title,
     description,
     alternates: { canonical: `/price-check/${event.slug}` },
-    openGraph: { title, description, type: 'article', siteName: 'Pick Marketplace', images: ['/og-image.png'] },
+    // The share image is this route's own opengraph-image.tsx.
+    openGraph: { title, description, type: 'article', siteName: 'Pick Marketplace' },
   };
 }
 

@@ -5,13 +5,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import UnverifiedSellerNote from '@/components/UnverifiedSellerNote';
 import { isAffiliateUrl } from '@/lib/affiliate';
-import { buildComparison, formatCheckedDate, type ComparisonRow, type ComparisonTwin } from '@/lib/comparisonPage';
-import { brandWord, COMPARISON_CATEGORY_LABELS, COMPARISONS, comparisonCopy, getAlternativeSearch, getComparison } from '@/lib/comparisons';
+import { loadComparison } from '@/lib/comparisonData';
+import { formatCheckedDate, type ComparisonRow, type ComparisonTwin } from '@/lib/comparisonPage';
+import { COMPARISON_CATEGORY_LABELS, COMPARISONS, comparisonCopy, getComparison } from '@/lib/comparisons';
 import { formatMinorUnits } from '@/lib/landedCost/money';
 import { currencySymbol, formatPrice, formatRating } from '@/lib/formatters';
-import { EXACT_ITEM_CATEGORIES } from '@/lib/exactItem';
-import { resolveExactItem } from '@/lib/exactOffers';
-import { performLiveSearch } from '@/lib/searchService';
 
 // Static cheaper-twin comparison pages, one per eval test set item
 // (lib/comparisons.ts): the real price of the item on top, every listing
@@ -22,8 +20,10 @@ import { performLiveSearch } from '@/lib/searchService';
 // (2 Serper credits), one or two lookups of Google's offer list for exactly
 // that product (2 credits each, see lib/exactOffers.ts) and, on pages that
 // look for a twin, one brand-free search for products of its kind (2 more;
-// pages that share a search, like the earbuds, share its 30-minute cache):
-// 6 to 8 credits. So the page is cached and
+// pages that share a search, like the earbuds, share it): 6 to 10 credits.
+// The searches and offer lists are kept in Next's data cache for the same
+// three days (lib/comparisonData.ts), where the page's share image and any
+// redeploy find them without paying again. So the page is cached and
 // regenerated on a schedule, not per visit: generateStaticParams returns
 // nothing, so `next build` renders no comparison page and costs no
 // credits; a page renders on its first visit and is then served from the
@@ -58,7 +58,8 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: `/compare/${entry.slug}` },
-    openGraph: { title, description, type: 'article', siteName: 'Pick Marketplace', images: ['/og-image.png'] },
+    // The share image is this route's own opengraph-image.tsx.
+    openGraph: { title, description, type: 'article', siteName: 'Pick Marketplace' },
   };
 }
 
@@ -158,42 +159,11 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   // Before any paid search: an unknown slug is a 404, not a query.
   if (!entry) notFound();
 
-  // A cheaper twin is a different product, so it is looked for in a second,
-  // brand-free search (lib/comparisons.ts). Textbooks have none.
-  const alternativeSearch = getAlternativeSearch(entry.slug);
-  const [data, alternativeData] = await Promise.all([
-    performLiveSearch(entry.query),
-    alternativeSearch ? performLiveSearch(alternativeSearch.query) : Promise.resolve(null),
-  ]);
-  // The scrapers never throw: an outage returns [] and would otherwise
-  // render an empty page into the cache for REVALIDATE_DAYS. Throwing
-  // keeps the last good page (or, on a first render, retries next visit).
-  if (data.results.length === 0) {
-    throw new Error(`No live results for "${entry.query}", keeping last good page`);
-  }
-  // Same for the twin search: "no twin passed the bar" must mean Pick
-  // looked, not that the search was down.
-  if (alternativeSearch && (!alternativeData || alternativeData.allSourcesFailed)) {
-    throw new Error(`No live results for "${alternativeSearch.query}", keeping last good page`);
-  }
-
-  // Which listings are exactly this product: the titles that name it, and
-  // the stores Google lists under it. Without this the page priced whatever
-  // Pick's grouping filed near the product (the Pixel Buds 2a on the Pixel
-  // Buds Pro 2 page). A failed lookup leaves no offers and the page falls
-  // back to the exact-titled search rows alone, never to the grouping.
-  // Only for the categories this has been checked on (EXACT_ITEM_CATEGORIES).
-  const exactItem = EXACT_ITEM_CATEGORIES.includes(entry.category) ? await resolveExactItem(entry, data) : undefined;
-
-  const comparison = buildComparison(
-    data,
-    entry.query,
-    new Date(),
-    alternativeSearch && alternativeData
-      ? { data: alternativeData, search: alternativeSearch, brand: brandWord(entry) }
-      : undefined,
-    exactItem
-  );
+  // The searches, the offer lists and what the page concludes from them
+  // (lib/comparisonData.ts). It throws when a search came back empty, which
+  // keeps the last good page (or, on a first render, retries next visit)
+  // instead of caching an empty one for REVALIDATE_DAYS.
+  const comparison = await loadComparison(entry);
   const { item, twin } = comparison;
   const checked = formatCheckedDate(comparison.checkedAt);
   const categoryLabel = COMPARISON_CATEGORY_LABELS[entry.category];

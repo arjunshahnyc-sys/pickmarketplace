@@ -49,9 +49,15 @@ const LOOKUP_TIMEOUT_MS = 8000;
 /** Fetches the raw /product response for a search row's product id; null on any failure. */
 export type OfferListFetcher = (productId: string) => Promise<unknown | null>;
 
-export const fetchOfferListJson: OfferListFetcher = async (productId) => {
+/**
+ * One /product call. Resolves to the response, or to null when Google has
+ * no list for the id (a 404: a row's product id can stop resolving within
+ * hours). Throws when the call itself fails, so a caller that caches
+ * results can tell "there is none" from "could not ask".
+ */
+export async function requestOfferList(productId: string): Promise<unknown | null> {
   const apiKey = process.env.SERPER_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) throw new Error('SERPER_API_KEY is not set');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
   try {
@@ -61,17 +67,20 @@ export const fetchOfferListJson: OfferListFetcher = async (productId) => {
       body: JSON.stringify({ productId, gl: 'us', hl: 'en' }),
       signal: controller.signal,
     });
-    // A 404 is routine: a row's product id can stop resolving within hours.
-    if (!response.ok) {
-      if (response.status !== 404) console.error(`[Serper] offer list lookup returned ${response.status}`);
-      return null;
-    }
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`offer list lookup returned ${response.status}`);
     return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export const fetchOfferListJson: OfferListFetcher = async (productId) => {
+  try {
+    return await requestOfferList(productId);
   } catch (error) {
     console.error('[Serper] offer list lookup failed:', error instanceof Error ? error.message : String(error));
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 };
 
