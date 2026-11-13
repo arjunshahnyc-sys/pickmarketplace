@@ -7,7 +7,7 @@
 // it into the shape the page renders. Pure and clock-injected, so it is
 // unit-tested on captured fixtures and renders the same on every host.
 
-import { CONDITION_LABELS, listingCondition } from './condition';
+import { CONDITION_LABELS, listingCondition, type ListingCondition } from './condition';
 import { orderByLandedCost, withLandedCosts } from './landedCost/enrich';
 import type { AlternativeSearch } from './comparisons';
 import { enhanceProductsWithGroupInfo, findAlternatives, pickAnchor, type EnhancedProduct } from './productGrouping';
@@ -72,6 +72,12 @@ export interface Comparison {
     rows: ComparisonRow[];
     /** Listings of the item Pick left out of the table: priced far below verified stores, or a flagged seller. */
     leftOut: number;
+    /**
+     * Google's own "typically $X to $Y" for the product, low and high, when
+     * the page has exact-item evidence and Google gives one. Google's
+     * figure, not Pick's; the page says so.
+     */
+    googleTypicalRange: [number, number] | null;
   };
   /** The best cheaper twin, or null when none passed Pick's bar. */
   twin: ComparisonTwin | null;
@@ -141,43 +147,120 @@ export interface AlternativesInput {
   brand: string;
 }
 
+/**
+ * Evidence about which listings are exactly the page's product (see
+ * exactItem.ts and exactOffers.ts). With it, the page prices that product
+ * and nothing filed near it: Pick's general grouping put the Pixel Buds 2a
+ * on top of the Pixel Buds Pro 2 page (2026-11-12).
+ */
+export interface ExactItemInput {
+  /** Whether a search listing's own title says it is the exact product, one unit. */
+  isExactListing: (product: Product) => boolean;
+  /** New-unit offers from Google's offer list for the product, as listings. */
+  offers: Product[];
+  /** Google's title for the product; null when no offer list was confirmed. */
+  listTitle: string | null;
+  /** Google's typical price range for the product, when it gives one. */
+  typicalRange?: [number, number] | null;
+}
+
+/** A typical price needs this many verified stores: fewer is one store's price, or the midpoint of two. */
+export const MIN_STORES_FOR_TYPICAL = 3;
+/** An unverified seller under this share of the verified median is left out as bait (as on results pages). */
+const FAR_BELOW_VERIFIED = 0.6;
+
+const medianOf = (values: number[]): number => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[mid] : Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 100) / 100;
+};
+
+const trustOf = (p: Product) => getRetailerTrust(p.retailer, { market: p.sourceMarket, url: p.url }).level;
+
+/**
+ * The listings of exactly the product: every offer in Google's list, then
+ * the search rows whose own titles name it, one per store and condition
+ * (a store's refurbished unit is a different row from its new one). The
+ * offer wins a tie, because its link is the store's own product page.
+ */
+function exactListings(results: Product[], exact: ExactItemInput): Product[] {
+  const kept = new Map<string, Product>();
+  for (const p of [...exact.offers, ...results.filter(exact.isExactListing)]) {
+    const condition: ListingCondition = listingCondition(p, trustOf(p));
+    const key = `${p.retailer}|${condition}`;
+    const held = kept.get(key);
+    if (!held || p.price < held.price) kept.set(key, p);
+  }
+  return Array.from(kept.values());
+}
+
 export function buildComparison(
   data: LiveSearchData,
   query: string,
   now: Date,
-  alternatives?: AlternativesInput
+  alternatives?: AlternativesInput,
+  exact?: ExactItemInput
 ): Comparison {
   const results: Product[] = data.results.filter((p) => !p.isFallback);
+  // With exact-item evidence the page is built from those listings alone;
+  // without it, from the search results and Pick's grouping.
+  const listings = exact ? exactListings(results, exact) : results;
 
   // The homepage pipeline, default settings, no delivery state.
-  const enriched = withLandedCosts([...results], { country: 'US', currency: 'USD' }, now);
+  const enriched = withLandedCosts([...listings], { country: 'US', currency: 'USD' }, now);
   const ordered = orderByLandedCost(enriched).products;
-  const ranked = orderForTrust(enhanceProductsWithGroupInfo(ordered, results, { query }), 'total-cost');
-  const anchor = pickAnchor(results, { query });
+  const ranked = orderForTrust(enhanceProductsWithGroupInfo(ordered, listings, { query }), 'total-cost');
 
-  const isVerifiedNew = (p: EnhancedProduct) => {
-    const level = getRetailerTrust(p.retailer, { market: p.sourceMarket, url: p.url }).level;
+  const isVerifiedNew = (p: Product) => {
+    const level = trustOf(p);
     return level === 'verified' && listingCondition(p, level) === 'new';
   };
-  const isFlagged = (p: EnhancedProduct) =>
-    !!p.priceFlag || getRetailerTrust(p.retailer, { market: p.sourceMarket, url: p.url }).level === 'flagged';
 
-  const ofItem = ranked.filter((p) => p.inSearchedItem);
+  // What verified stores typically charge. From the grouping it is the
+  // cluster's own statistic; from exact listings it is the median across
+  // verified stores' new units, and only with enough stores to mean it.
+  const groupingAnchor = pickAnchor(results, { query });
+  const verifiedPrices = exact ? listings.filter(isVerifiedNew).map((p) => p.price) : [];
+  const exactTypical = verifiedPrices.length >= MIN_STORES_FOR_TYPICAL ? medianOf(verifiedPrices) : null;
+  // The reference a twin is compared with (specs, rating) comes from the
+  // exact-titled search rows when they form one, since offer-list rows
+  // carry no review counts.
+  const anchor = exact
+    ? pickAnchor(results.filter(exact.isExactListing), { query }) ?? groupingAnchor
+    : groupingAnchor;
+
+  const baitCeiling = verifiedPrices.length > 0 ? medianOf(verifiedPrices) * FAR_BELOW_VERIFIED : null;
+  const isFlagged = (p: EnhancedProduct) => {
+    const level = trustOf(p);
+    if (p.priceFlag || level === 'flagged') return true;
+    return exact !== undefined && baitCeiling !== null && level !== 'verified' && p.price < baitCeiling;
+  };
+
+  const ofItem = exact ? ranked : ranked.filter((p) => p.inSearchedItem);
   const shown = ofItem.filter((p) => !isFlagged(p));
-  const topProduct = shown.find(isVerifiedNew) ?? shown[0] ?? null;
-  const tableProducts = topProduct
-    ? [topProduct, ...shown.filter((p) => p !== topProduct)].slice(0, MAX_ITEM_ROWS)
-    : [];
+  // With exact-item evidence the price on top is a verified store's new
+  // unit or nothing: a marketplace or resale listing is still shown in the
+  // table, but "$25 at eBay" is not the product's lowest real price.
+  const topProduct = shown.find(isVerifiedNew) ?? (exact ? null : (shown[0] ?? null));
+  const tableProducts = (topProduct ? [topProduct, ...shown.filter((p) => p !== topProduct)] : exact ? shown : []).slice(
+    0,
+    MAX_ITEM_ROWS
+  );
 
   // A twin's savings are measured against the price the page puts on top
   // when that is a verified store's new unit and lower than the typical
   // price: a twin that is "54% less" than a typical $329 but only 24% under
   // today's $198 at Best Buy would be a claim the page itself contradicts.
-  const twinReferencePrice = anchor
-    ? topProduct && isVerifiedNew(topProduct)
-      ? Math.min(anchor.price, topProduct.price)
-      : anchor.price
-    : null;
+  const typicalPrice = exact ? exactTypical : (groupingAnchor?.price ?? null);
+  const topVerifiedNew = topProduct && isVerifiedNew(topProduct) ? topProduct.price : null;
+  const twinReferencePrice = exact
+    ? // Exactly the product: its lowest verified price, else its typical one.
+      (topVerifiedNew ?? exactTypical)
+    : groupingAnchor
+      ? topVerifiedNew !== null
+        ? Math.min(groupingAnchor.price, topVerifiedNew)
+        : groupingAnchor.price
+      : null;
 
   let similar: EnhancedProduct[];
   if (alternatives) {
@@ -206,6 +289,10 @@ export function buildComparison(
             brand: alternatives.brand,
           }).filter(cheaperDelivered)
         : [];
+  } else if (exact) {
+    // Exact listings are all the product itself; a twin only ever comes
+    // from the second search.
+    similar = [];
   } else {
     similar = ranked.filter((p) => p.matchType === 'similar' && !isFlagged(p));
   }
@@ -227,13 +314,14 @@ export function buildComparison(
     listingCount: results.length,
     storeCount: new Set(results.map((p) => p.retailer)).size,
     item: {
-      anchorName: anchor?.name ?? null,
-      referencePrice: anchor?.price ?? null,
-      priceBasis: anchor?.priceBasis ?? null,
+      anchorName: exact ? (exact.listTitle ?? topProduct?.name ?? null) : (groupingAnchor?.name ?? null),
+      referencePrice: typicalPrice,
+      priceBasis: exact ? (exactTypical !== null ? 'verified' : null) : (groupingAnchor?.priceBasis ?? null),
       top: topProduct ? rowOf(topProduct) : null,
       topIsVerifiedNew: !!topProduct && isVerifiedNew(topProduct),
       rows: tableProducts.map(rowOf),
       leftOut: ofItem.length - shown.length,
+      googleTypicalRange: exact?.typicalRange ?? null,
     },
     twin: twinProduct ? twinOf(twinProduct) : null,
     twinSearch: alternatives ? alternatives.search.query : null,

@@ -288,7 +288,7 @@
         "description": "Apple AirPods Max with USB-C (2024 model), any color. New, one unit. Lightning-port listings are the older model.",
         "match": {
           "all": [["airpods max"]],
-          "none": ["lightning", "for airpods", "case for", "cover for", "smart case for", "skin", "headband", "matte", "glossy", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
+          "none": ["lightning", "airpods max 2", "max ii", "max 2nd", "for airpods", "case for", "cover for", "smart case for", "skin", "headband", "matte", "glossy", "custom", "customized", "personalized", "engraved", "swarovski", "painted", "ear pads", "earpads", "ear cushions", "cushion", "cushions", "replacement", "case for", "protective case", "hard case for", "compatible with", "headband cover", "stand", "cable only"]
         }
       },
       "benchmark": {
@@ -628,7 +628,7 @@
         "description": "Keurig K-Mini single serve coffee maker (not the K-Mini Plus), any color. New, one unit.",
         "match": {
           "all": [["k mini", "kmini"]],
-          "none": ["k mini plus", "kmini plus", "pod holder", "reusable", "descaling", "water reservoir", "replacement", "carafe", "for keurig"]
+          "none": ["k mini plus", "kmini plus", "mini mate", "mini go", "pod holder", "reusable", "descaling", "water reservoir", "replacement", "carafe", "for keurig"]
         }
       },
       "benchmark": {
@@ -717,7 +717,7 @@
         "description": "Vornado 533 compact air circulator fan (not the 533DC). New, one unit.",
         "match": {
           "all": [["vornado"], ["533"]],
-          "none": ["533dc", "533 dc", "replacement", "parts", "for vornado"]
+          "none": ["533dc", "533 dc", "533xt", "533 xt", "replacement", "parts", "for vornado"]
         }
       },
       "benchmark": {

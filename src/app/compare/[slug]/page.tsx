@@ -9,6 +9,8 @@ import { buildComparison, formatCheckedDate, type ComparisonRow, type Comparison
 import { brandWord, COMPARISON_CATEGORY_LABELS, COMPARISONS, comparisonCopy, getAlternativeSearch, getComparison } from '@/lib/comparisons';
 import { formatMinorUnits } from '@/lib/landedCost/money';
 import { currencySymbol, formatPrice, formatRating } from '@/lib/formatters';
+import { EXACT_ITEM_CATEGORIES } from '@/lib/exactItem';
+import { resolveExactItem } from '@/lib/exactOffers';
 import { performLiveSearch } from '@/lib/searchService';
 
 // Static cheaper-twin comparison pages, one per eval test set item
@@ -17,20 +19,24 @@ import { performLiveSearch } from '@/lib/searchService';
 // picked, with a stamp saying when the prices were checked.
 //
 // Cost model. Each render is one paid Google Shopping search for the item
-// (2 Serper credits) plus, on pages that look for a twin, one brand-free
-// search for products of its kind (2 more; pages that share a search, like
-// the earbuds, share its 30-minute cache). So the page is cached and
+// (2 Serper credits), one or two lookups of Google's offer list for exactly
+// that product (2 credits each, see lib/exactOffers.ts) and, on pages that
+// look for a twin, one brand-free search for products of its kind (2 more;
+// pages that share a search, like the earbuds, share its 30-minute cache):
+// 6 to 8 credits. So the page is cached and
 // regenerated on a schedule, not per visit: generateStaticParams returns
 // nothing, so `next build` renders no comparison page and costs no
 // credits; a page renders on its first visit and is then served from the
 // cache until REVALIDATE_DAYS have passed, when the next visit serves the
 // cached page and regenerates it in the background. Fifty pages visited
-// constantly cost at most about 62 credits a day; pages nobody visits cost
+// constantly cost at most about 130 credits a day; pages nobody visits cost
 // nothing. Unknown slugs 404 before any search runs, so a crawler probing
 // URLs costs nothing.
 const REVALIDATE_DAYS = 3;
 // Must be a literal (statically analyzable): 3 days, see REVALIDATE_DAYS.
 export const revalidate = 259200;
+// A render waits on up to two searches and two offer-list lookups.
+export const maxDuration = 60;
 
 export function generateStaticParams(): Array<{ slug: string }> {
   return [];
@@ -171,13 +177,22 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
     throw new Error(`No live results for "${alternativeSearch.query}", keeping last good page`);
   }
 
+  // Which listings are exactly this product: the titles that name it, and
+  // the stores Google lists under it. Without this the page priced whatever
+  // Pick's grouping filed near the product (the Pixel Buds 2a on the Pixel
+  // Buds Pro 2 page). A failed lookup leaves no offers and the page falls
+  // back to the exact-titled search rows alone, never to the grouping.
+  // Only for the categories this has been checked on (EXACT_ITEM_CATEGORIES).
+  const exactItem = EXACT_ITEM_CATEGORIES.includes(entry.category) ? await resolveExactItem(entry, data) : undefined;
+
   const comparison = buildComparison(
     data,
     entry.query,
     new Date(),
     alternativeSearch && alternativeData
       ? { data: alternativeData, search: alternativeSearch, brand: brandWord(entry) }
-      : undefined
+      : undefined,
+    exactItem
   );
   const { item, twin } = comparison;
   const checked = formatCheckedDate(comparison.checkedAt);
@@ -258,6 +273,13 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                 <Reviews row={item.top} />
               </p>
               <p className="mt-2 text-sm text-neutral-700">{item.top.name}</p>
+              {item.top.originalPrice !== null && item.top.originalPrice > item.top.price && (
+                <p className="mt-2 text-xs text-neutral-500">
+                  {item.top.store} shows this as marked down from {currencySymbol(item.top.currency)}
+                  {formatPrice(item.top.originalPrice, item.top.currency)}. That is the store&apos;s own crossed-out
+                  price; Pick has not checked it.
+                </p>
+              )}
               {!item.topIsVerifiedNew && (
                 <p className="mt-2 text-xs text-amber-700">
                   No verified store listed a new unit on {checked}; this is the first listing of the item in Pick&apos;s order.
@@ -267,6 +289,13 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                 <p className="mt-2 text-xs text-neutral-500">
                   {item.priceBasis === 'verified' ? 'Verified stores typically charge' : 'Listings typically ask'}{' '}
                   {currencySymbol(item.top.currency)}{formatPrice(item.referencePrice, item.top.currency)} for it.
+                </p>
+              )}
+              {item.googleTypicalRange && (
+                <p className="mt-1 text-xs text-neutral-500">
+                  Google lists its typical price as {currencySymbol(item.top.currency)}
+                  {formatPrice(item.googleTypicalRange[0], item.top.currency)} to {currencySymbol(item.top.currency)}
+                  {formatPrice(item.googleTypicalRange[1], item.top.currency)}. That is Google&apos;s figure, not Pick&apos;s.
                 </p>
               )}
               <OutboundLink
@@ -279,21 +308,24 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
             </div>
           ) : (
             <p className="text-neutral-600">
-              Pick could not tell which of the {comparison.listingCount} listings were the {entry.name} itself on {checked}.
-              {' '}The live search shows everything it found.
+              Pick could not confirm a new {entry.name} at a verified store among the {comparison.listingCount}{' '}
+              listings it found on {checked}. It counts a listing only when a title names this exact product or Google
+              lists the store under it, so a similar model, a bundle or a refurbished unit is never priced as this
+              one. The live search shows everything it found.
             </p>
           )}
         </section>
 
         {/* Every listing of the item */}
-        {item.rows.length > 1 && (
+        {item.rows.length > (item.top ? 1 : 0) && (
           <section aria-labelledby="all-listings" className="mb-10">
             <h2 id="all-listings" className="text-xl font-semibold text-neutral-900 mb-1">
-              Where else it is sold
+              {item.top ? 'Where else it is sold' : 'Other listings of it'}
             </h2>
             <p className="text-xs text-neutral-500 mb-3">
-              In Pick&apos;s order: item plus shipping, before sales tax, for delivery in the US. Shipping comes from each
-              store&apos;s published policy or a carrier estimate where Pick has one.
+              Only listings Pick could confirm as exactly this product: stores Google lists under it, and listings
+              whose titles name it. In Pick&apos;s order: item plus shipping, before sales tax, for delivery in the US.
+              Shipping comes from each store&apos;s published policy or a carrier estimate where Pick has one.
               {item.leftOut > 0 &&
                 ` ${item.leftOut} ${item.leftOut === 1 ? 'listing' : 'listings'} left out: priced far below verified stores, or from a seller with scam reports.`}
             </p>
