@@ -37,8 +37,22 @@ export const COMPARISON_DATA_SECONDS = 259200;
 const DATA_VERSION = 'v1';
 const KEY = [DATA_VERSION, process.env.NEXT_PUBLIC_AFFILIATE_LINK_WRAPPER ?? 'untagged'];
 
+// unstable_cache builds its key from the text of the function it is given
+// (cb.toString()), followed by the key parts and the arguments. A production
+// build compiles this module once per route and names the imports
+// differently in each copy, so the page and its share image were asking for
+// the same search under two different keys: the image paid for a search of
+// its own (4 to 8 credits, seen live 2026-11-13) and, search results being
+// noisy, could state a different price from its page or none at all. Giving
+// each function a fixed text makes the key depend only on the name below,
+// the key parts and the arguments, in every route and across deployments.
+function withFixedKeyText<F extends (...args: never[]) => unknown>(name: string, fn: F): F {
+  Object.defineProperty(fn, 'toString', { value: () => name });
+  return fn;
+}
+
 const cachedSearch = unstable_cache(
-  async (query: string): Promise<LiveSearchData> => {
+  withFixedKeyText('pick-comparison-search', async (query: string): Promise<LiveSearchData> => {
     const data = await performLiveSearch(query);
     // The scrapers never throw: an outage returns []. Throwing here keeps an
     // outage out of the cache, and the page then keeps its last good render.
@@ -46,7 +60,7 @@ const cachedSearch = unstable_cache(
       throw new Error(`No live results for "${query}"`);
     }
     return data;
-  },
+  }),
   ['pick-comparison-search', ...KEY],
   { revalidate: COMPARISON_DATA_SECONDS }
 );
@@ -55,7 +69,7 @@ const cachedSearch = unstable_cache(
 // call throws inside the cache scope, is not cached, and reads as null to
 // the resolver, which then simply has one list fewer this render.
 const cachedOfferList = unstable_cache(
-  async (productId: string): Promise<unknown | null> => requestOfferList(productId),
+  withFixedKeyText('pick-comparison-offers', async (productId: string): Promise<unknown | null> => requestOfferList(productId)),
   ['pick-comparison-offers', ...KEY],
   { revalidate: COMPARISON_DATA_SECONDS }
 );
