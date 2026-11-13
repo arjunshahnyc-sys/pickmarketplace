@@ -43,6 +43,12 @@ export default function Footer() {
                   Cheaper Twins
                 </Link>
               </li>
+              <li>
+                {/* No prefetch: rendering this page runs paid searches (see the page's cost model). */}
+                <Link href="/price-check/black-friday" prefetch={false} className="text-white/70 hover:text-white transition-colors">
+                  Black Friday Price Check
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -25,6 +25,12 @@ export default function CompareIndexPage() {
           showing, and its cheaper twin, a different product with the same key specs for much less, when Pick&apos;s
           engine found one. Each page says when its prices were checked.
         </p>
+        <p className="-mt-6 mb-10 text-sm">
+          {/* No prefetch: rendering that page runs paid searches. */}
+          <Link href="/price-check/black-friday" prefetch={false} className="font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
+            Black Friday price check: are the deals actually lower?
+          </Link>
+        </p>
         {comparisonsByCategory().map((group) => (
           <section key={group.category} aria-labelledby={`cat-${group.category.replace(/\s+/g, '-')}`} className="mb-10">
             <h2 id={`cat-${group.category.replace(/\s+/g, '-')}`} className="text-xl font-semibold text-neutral-900 mb-3">

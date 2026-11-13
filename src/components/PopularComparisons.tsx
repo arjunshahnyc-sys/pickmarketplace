@@ -51,9 +51,13 @@ export function PopularComparisons() {
           </div>
         ))}
       </div>
-      <p className="mt-8 text-sm">
+      <p className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
         <Link href="/compare" className="font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
           See all {COMPARISONS.length} comparisons
+        </Link>
+        {/* No prefetch: rendering that page runs paid searches. */}
+        <Link href="/price-check/black-friday" prefetch={false} className="font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
+          Black Friday price check: are the deals actually lower?
         </Link>
       </p>
     </motion.section>

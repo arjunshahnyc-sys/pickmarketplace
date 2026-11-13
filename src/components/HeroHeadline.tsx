@@ -55,9 +55,23 @@ const px = (v: number) => `${v}px`;
 interface HeroHeadlineProps {
   children: ReactNode;
   className?: string;
+  /**
+   * The headline's color and the light's two tints. The defaults are the
+   * landing page's: deep teal ink on white. On a dark band the ink is white
+   * and the light is colored, since white cannot get brighter.
+   */
+  ink?: string;
+  lightEdge?: string;
+  lightCore?: string;
 }
 
-export function HeroHeadline({ children, className = '' }: HeroHeadlineProps) {
+export function HeroHeadline({
+  children,
+  className = '',
+  ink = INK,
+  lightEdge = LIGHT_EDGE,
+  lightCore = LIGHT_CORE,
+}: HeroHeadlineProps) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLHeadingElement>(null);
   const sweeping = useRef<AnimationPlaybackControls | null>(null);
@@ -139,7 +153,7 @@ export function HeroHeadline({ children, className = '' }: HeroHeadlineProps) {
         // headline's ink with the travelling band in it.
         backgroundImage: [
           `radial-gradient(circle at var(--pool-x, 0px) var(--pool-y, 0px), rgb(141 235 221 / var(--pool, 0)), rgb(42 157 143 / calc(var(--pool, 0) * 0.6)) ${POOL_RADIUS * 0.45}px, transparent ${POOL_RADIUS}px)`,
-          `linear-gradient(${BAND_ANGLE_DEG}deg, ${INK} ${at(-BAND_REACH)}, ${LIGHT_EDGE} ${at(-BAND_TINT)}, ${LIGHT_CORE} var(--band, ${-BAND_REACH}px), ${LIGHT_EDGE} ${at(BAND_TINT)}, ${INK} ${at(BAND_REACH)})`,
+          `linear-gradient(${BAND_ANGLE_DEG}deg, ${ink} ${at(-BAND_REACH)}, ${lightEdge} ${at(-BAND_TINT)}, ${lightCore} var(--band, ${-BAND_REACH}px), ${lightEdge} ${at(BAND_TINT)}, ${ink} ${at(BAND_REACH)})`,
         ].join(', '),
       }}
       onClick={handleClick}

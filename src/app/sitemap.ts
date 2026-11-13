@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { SEARCH_CATEGORIES } from '@/lib/searchCategories';
 import { COMPARISONS } from '@/lib/comparisons';
+import { PRICE_CHECK_EVENTS } from '@/lib/priceCheck';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://pickmarketplace.app';
@@ -51,5 +52,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
-  return [...staticPages, ...popularCategories, ...comparisons];
+  // Sale-event price checks at /price-check/[event], regenerated daily at most.
+  const priceChecks = PRICE_CHECK_EVENTS.map((event) => ({
+    url: `${baseUrl}/price-check/${event.slug}`,
+    lastModified: currentDate,
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...popularCategories, ...comparisons, ...priceChecks];
 }
