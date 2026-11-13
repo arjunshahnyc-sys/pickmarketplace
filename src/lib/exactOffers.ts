@@ -38,6 +38,7 @@ import {
 import { listingCondition } from './condition';
 import { enhanceProductsWithGroupInfo } from './productGrouping';
 import { getRetailerTrust } from './retailerTrust';
+import { BUDGET_PAUSED_ERROR, spendingPaused } from './searchBudget';
 import type { LiveSearchData } from './searchService';
 import type { Product } from './types';
 
@@ -58,6 +59,8 @@ export type OfferListFetcher = (productId: string) => Promise<unknown | null>;
 export async function requestOfferList(productId: string): Promise<unknown | null> {
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) throw new Error('SERPER_API_KEY is not set');
+  // Paused by the spending guard: "could not ask", so nothing is cached.
+  if (await spendingPaused()) throw new Error(BUDGET_PAUSED_ERROR);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
   try {

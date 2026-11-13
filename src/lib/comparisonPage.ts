@@ -71,7 +71,7 @@ export interface Comparison {
     topIsVerifiedNew: boolean;
     /** Listings of the searched item in Pick's order, the top one first; bait and flagged sellers left out. */
     rows: ComparisonRow[];
-    /** Listings of the item Pick left out of the table: priced far below verified stores, or a flagged seller. */
+    /** Listings of the item Pick left out of the table: priced far below or far above verified stores, or a flagged seller. */
     leftOut: number;
     /**
      * Google's own "typically $X to $Y" for the product, low and high, when
@@ -176,6 +176,14 @@ export const MIN_STORES_FOR_TYPICAL = 3;
 const UNKNOWN_SHIPPING_ALLOWANCE_MINOR = 2000;
 /** An unverified seller under this share of the verified median is left out as bait (as on results pages). */
 const FAR_BELOW_VERIFIED = 0.6;
+/**
+ * A listing from anyone but a verified store at more than this many times
+ * what verified stores charge is not an offer of the product a shopper
+ * would weigh: a bulk or custom-print order, a collector's resale, a
+ * mispriced feed row (moo.com at $1,566.96 in a $27 tumbler's table,
+ * 2026-11-13).
+ */
+export const FAR_ABOVE_VERIFIED = 3;
 
 const medianOf = (values: number[]): number => {
   const sorted = [...values].sort((a, b) => a - b);
@@ -247,10 +255,16 @@ export function buildComparison(
     : groupingAnchor;
 
   const baitCeiling = verifiedPrices.length > 0 ? medianOf(verifiedPrices) * FAR_BELOW_VERIFIED : null;
+  // The far end: measured from the verified median, or from the top of
+  // Google's typical range when no verified store is listed.
+  const usualPrice = verifiedPrices.length > 0 ? medianOf(verifiedPrices) : (exact?.typicalRange?.[1] ?? null);
+  const absurdFloor = usualPrice !== null ? usualPrice * FAR_ABOVE_VERIFIED : null;
   const isFlagged = (p: EnhancedProduct) => {
     const level = trustOf(p);
     if (p.priceFlag || level === 'flagged') return true;
-    return exact !== undefined && baitCeiling !== null && level !== 'verified' && p.price < baitCeiling;
+    if (exact === undefined || level === 'verified') return false;
+    if (baitCeiling !== null && p.price < baitCeiling) return true;
+    return absurdFloor !== null && p.price > absurdFloor;
   };
 
   const ofItem = exact ? ranked : ranked.filter((p) => p.inSearchedItem);

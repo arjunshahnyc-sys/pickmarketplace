@@ -7,6 +7,7 @@ import type { ComparisonEntry } from '@/lib/comparisons';
 import { resolveExactItem } from '@/lib/exactOffers';
 import { PriceCheckView } from '@/components/PriceCheckView';
 import { getPriceCheckEvent, priceCheckProducts, priceCheckRow, summarize, type PriceCheckRow } from '@/lib/priceCheck';
+import { refreshSearchBudget } from '@/lib/searchBudget';
 import { performLiveSearch } from '@/lib/searchService';
 
 // A price check for a sale event (/price-check/black-friday): for each
@@ -51,6 +52,7 @@ const CONCURRENCY = 5;
 
 /** Each product's row, a few at a time; a product whose search fails gets a row with no price. */
 async function loadRows(products: ComparisonEntry[], now: Date): Promise<{ rows: PriceCheckRow[]; failed: number }> {
+  await refreshSearchBudget();
   const rows: PriceCheckRow[] = new Array(products.length);
   let failed = 0;
   let next = 0;

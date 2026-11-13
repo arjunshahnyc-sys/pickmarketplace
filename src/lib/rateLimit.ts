@@ -29,8 +29,10 @@ export const RATE_LIMITS = {
   contact: { name: 'contact', limit: 5, windowMs: 15 * 60 * 1000 },
   // Anti-scraper guard, not a product limit: generous enough that no human
   // hits it, tight enough to stop bots hammering the paid Serper pipeline.
-  // /api/search-live is the only route that hits that pipeline.
-  search: { name: 'search', limit: 60, windowMs: 60 * 1000 },
+  // /api/search-live is the only route that hits that pipeline. 20 a minute
+  // is a search every three seconds, sustained; the total across all
+  // visitors is capped separately (lib/searchBudget.ts).
+  search: { name: 'search', limit: 20, windowMs: 60 * 1000 },
   // Outbound click redirect (/api/out): each uncached click can spend a paid
   // product lookup. Over the limit the click still redirects, just without
   // the lookup, so this never blocks a shopper.

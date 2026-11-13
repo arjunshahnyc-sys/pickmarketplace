@@ -24,6 +24,7 @@ import { buildComparison, type Comparison } from './comparisonPage';
 import { brandWord, getAlternativeSearch, type ComparisonEntry } from './comparisons';
 import { EXACT_ITEM_CATEGORIES } from './exactItem';
 import { requestOfferList, resolveExactItem } from './exactOffers';
+import { refreshSearchBudget } from './searchBudget';
 import { performLiveSearch, type LiveSearchData } from './searchService';
 
 /** How long a search or an offer list is reused: the page's own revalidation window, 3 days. */
@@ -93,6 +94,9 @@ export async function loadComparison(entry: ComparisonEntry, now: Date = new Dat
   // A cheaper twin is a different product, so it is looked for in a second,
   // brand-free search (comparisons.ts). Textbooks have none.
   const alternativeSearch = getAlternativeSearch(entry.slug);
+  // The spending guard reads the day's starting balance here, outside the
+  // cached scopes below, where that read is safe (lib/searchBudget.ts).
+  await refreshSearchBudget();
   const [data, alternativeData] = await Promise.all([
     cachedSearch(entry.query),
     alternativeSearch ? cachedSearch(alternativeSearch.query) : Promise.resolve(null),

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CategoryResults from '@/components/CategoryResults';
+import { refreshSearchBudget } from '@/lib/searchBudget';
 import { performLiveSearch } from '@/lib/searchService';
 import { enhanceProductsWithGroupInfo } from '@/lib/productGrouping';
 import { orderForTrust } from '@/lib/trustOrder';
@@ -50,6 +51,7 @@ export default async function CategorySearchPage({
     label: query,
   };
 
+  await refreshSearchBudget();
   const data = await performLiveSearch(category.query);
   // Relevance order, with the trust rules applied (lib/trustOrder.ts).
   const products = orderForTrust(

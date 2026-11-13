@@ -77,7 +77,9 @@ describe('performLiveSearch', () => {
 
   it('asks Google Shopping only: no request goes to a retailer site', async () => {
     await performLiveSearch('cerave moisturizing cream');
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toBe('https://google.serper.dev/shopping');
+    // The spending guard may read the (free) balance first; lib/searchBudget.ts.
+    const paid = calls.filter((url) => url !== 'https://google.serper.dev/account');
+    expect(paid).toEqual(['https://google.serper.dev/shopping']);
+    expect(calls.every((url) => url.startsWith('https://google.serper.dev/'))).toBe(true);
   });
 });

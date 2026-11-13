@@ -3,6 +3,7 @@ import { buildRetailerDeepLinks, type FeedMarket } from "@/lib/scrapers";
 import { performLiveSearch } from "@/lib/searchService";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 import { landedCostEnabled } from "@/lib/flags";
+import { BUDGET_PAUSED_MESSAGE, refreshSearchBudget } from "@/lib/searchBudget";
 
 // Destination countries whose local shopping feed joins the US one when the
 // landed-cost flag is on. All six destinations active (price formats probed
@@ -57,7 +58,18 @@ export async function GET(req: NextRequest) {
     // the legacy US-only search, byte-identical.
     const dest = landedCostEnabled() ? req.nextUrl.searchParams.get("dest") : null;
     const extraMarket = dest ? MARKET_BY_DEST[dest.toUpperCase()] : undefined;
+    // The spending guard's view of today's budget, before the paid search.
+    await refreshSearchBudget();
     const data = await performLiveSearch(q, extraMarket ? [extraMarket] : []);
+
+    // Paid searches are paused (daily cap or low balance): say so, with the
+    // stores' own search links, instead of the generic outage message.
+    if (data.budgetPaused) {
+      return NextResponse.json(
+        { ...data, error: BUDGET_PAUSED_MESSAGE },
+        { status: 503, headers: { "Retry-After": "3600" } }
+      );
+    }
 
     // Every price source failed: report an outage instead of a 200 that
     // renders as "no results found" for a query that may match plenty.

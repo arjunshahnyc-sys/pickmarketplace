@@ -387,6 +387,23 @@ describe('buildComparison with exact-item evidence', () => {
     expect(stores).toContain('Swappa');
   });
 
+  it('leaves out a listing priced far above what verified stores charge', () => {
+    // 2026-11-13: moo.com at $1,566.96 sat in the Stanley Quencher table under $27 stores.
+    const withAbsurd = search([
+      ...data.results,
+      listing({ name: 'Google Pixel Buds Pro 2 - Porcelain', price: 4800, retailer: 'moo.com' }),
+      listing({ name: 'Google Pixel Buds Pro 2 Peony', price: 260, retailer: 'Some Gadget Shop' }),
+    ]);
+    const before = buildComparison(data, 'google pixel buds pro 2', NOW, undefined, exact);
+    const c = buildComparison(withAbsurd, 'google pixel buds pro 2', NOW, undefined, exact);
+    const stores = c.item.rows.map((r) => r.store);
+    expect(stores).not.toContain('moo.com');
+    // Dearer than the verified stores but in the range of the product: stays.
+    expect(stores).toContain('Some Gadget Shop');
+    expect(c.item.leftOut).toBe(before.item.leftOut + 1);
+    expect(c.item.top).toMatchObject({ store: 'Best Buy', price: 209.99 });
+  });
+
   it('shows no price when nothing is confirmed, instead of falling back to the grouping', () => {
     const none = search([listing({ name: 'Google Pixel Buds 2a', price: 129 })]);
     const c = buildComparison(none, 'google pixel buds pro 2', NOW, undefined, { ...exact, offers: [], listTitle: null });

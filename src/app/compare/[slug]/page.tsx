@@ -297,7 +297,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
               whose titles name it. In Pick&apos;s order: item plus shipping, before sales tax, for delivery in the US.
               Shipping comes from each store&apos;s published policy or a carrier estimate where Pick has one.
               {item.leftOut > 0 &&
-                ` ${item.leftOut} ${item.leftOut === 1 ? 'listing' : 'listings'} left out: priced far below verified stores, or from a seller with scam reports.`}
+                ` ${item.leftOut} ${item.leftOut === 1 ? 'listing' : 'listings'} left out: priced far below or far above verified stores, or from a seller with scam reports.`}
             </p>
             <div className="overflow-x-auto rounded-2xl border border-black/10 bg-white">
               <table className="w-full text-sm">

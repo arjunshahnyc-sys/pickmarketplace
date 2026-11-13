@@ -7,6 +7,7 @@ import { searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from
 import { toAffiliateUrl } from './affiliate';
 import { buildClickUrl } from './outbound';
 import { deriveFacets, type FacetGroup } from './facets/deriveFacets';
+import { BUDGET_PAUSED_MESSAGE, spendingPaused } from './searchBudget';
 import type { Product, RetailerSearchLink } from './types';
 
 export interface LiveSearchData {
@@ -19,6 +20,8 @@ export interface LiveSearchData {
   checkedAt: string;
   /** Set when every price source failed — an outage, not a genuine zero-match. */
   allSourcesFailed?: boolean;
+  /** Set when the search was not run because paid searches are paused (lib/searchBudget.ts). */
+  budgetPaused?: boolean;
 }
 
 // Anchored on globalThis because Next bundles each route with its own copy
@@ -58,6 +61,22 @@ export async function performLiveSearch(
   const cached = cache.get(key);
   if (cached && Date.now() - cached.ts < (cached.data.results.length > 0 ? TTL : TTL_EMPTY)) {
     return cached.data;
+  }
+
+  // Paid from here on. When the spending guard has paused paid searches the
+  // answer is an outage with a reason, never cached, so callers that keep a
+  // last good page on an outage (the ISR pages) keep it.
+  if (await spendingPaused()) {
+    return {
+      results: [],
+      retailerSearchLinks: buildRetailerDeepLinks(q),
+      message: BUDGET_PAUSED_MESSAGE,
+      retailersFound: [],
+      facets: [],
+      checkedAt: new Date().toISOString(),
+      allSourcesFailed: true,
+      budgetPaused: true,
+    };
   }
 
   // Search every market's feed in parallel (the US feed first).
