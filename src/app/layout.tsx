@@ -7,6 +7,7 @@ import { SavedListProvider } from "@/contexts/SavedListContext";
 import { DestinationProvider } from "@/contexts/DestinationContext";
 import SavedListDrawer from "@/components/SavedListDrawer";
 import { SkipToContent } from "@/components/SkipToContent";
+import { HolidayTheme } from "@/components/HolidayTheme";
 import { OrganizationSchema, WebsiteSchema } from "@/components/StructuredData";
 
 const dmSans = DM_Sans({
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${dmSans.variable} ${ibmPlex.variable}`}>
       <body className="min-h-screen bg-pick-bg">
+        <HolidayTheme />
         <SkipToContent />
         <OrganizationSchema
           name={SITE_NAME}

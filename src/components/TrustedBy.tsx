@@ -13,7 +13,7 @@ import { extendedRetailerLogos } from './RetailerLogos';
 export function TrustedBy() {
   const reveal = useReveal();
   return (
-    <motion.section {...reveal()} className="py-8 border-y border-black/10 bg-white/50">
+    <motion.section {...reveal()} className="py-8">
       {/* Sentence case, not the old all-caps eyebrow: this is the page's one
           sourcing disclaimer and it has to be readable. */}
       <p className="text-center text-sm text-neutral-600 mb-6 px-6 max-w-2xl mx-auto">
@@ -24,7 +24,7 @@ export function TrustedBy() {
         pauseOnHover
         gradient
         gradientWidth={100}
-        gradientColor="#FAFAF8"
+        gradientColor="#FFFFFF"
         autoFill
       >
         {extendedRetailerLogos.map((retailer) => (

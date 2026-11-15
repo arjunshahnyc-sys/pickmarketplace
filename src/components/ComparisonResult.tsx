@@ -174,12 +174,12 @@ function OfferPanel({
             {logo ? (
               <span
                 title={offer.retailer}
-                className="inline-flex items-center justify-center w-[72px] h-5 shrink-0 rounded-full bg-gray-100"
+                className="inline-flex items-center h-5 shrink-0"
               >
-                <img src={logo.src} alt={offer.retailer} className="w-14 h-3.5 object-contain" />
+                <img src={logo.src} alt={offer.retailer} className="w-14 h-3.5 object-contain object-left" />
               </span>
             ) : (
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-neutral-600">
+              <span className="text-[11px] font-medium text-neutral-600">
                 {offer.retailer}
               </span>
             )}
@@ -210,9 +210,11 @@ function OfferPanel({
     </>
   );
 
-  const panelClass = `block rounded-xl p-3 transition duration-200 ${
-    emphasized ? 'bg-white border-2 border-[#14524B]/25' : 'bg-white border border-black/10'
-  }`;
+  // No box of its own: the two offers sit directly on the card, told apart
+  // by their labels and the arrow between them. (Each used to carry a
+  // border, which put boxes inside a box; removed 2026-11-15.)
+  const panelClass = 'block rounded-xl p-1 transition duration-200';
+  const linkedPanelClass = `${panelClass} hover:bg-gray-50`;
 
   // Filler never links anywhere: a placeholder URL is not a product page.
   if (placeholder || !offer.url) {
@@ -225,7 +227,7 @@ function OfferPanel({
       <a
         href={offer.url}
         aria-label={`Search Pick for ${offer.name}`}
-        className={`${panelClass} hover:border-[#2A9D8F] hover:shadow-md hover:-translate-y-0.5`}
+        className={linkedPanelClass}
       >
         {body}
       </a>
@@ -237,7 +239,7 @@ function OfferPanel({
       target="_blank"
       rel={isAffiliateUrl(offer.url) ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
       aria-label={`View ${offer.name} on ${offer.retailer}, ${price}`}
-      className={`${panelClass} hover:border-[#2A9D8F] hover:shadow-md hover:-translate-y-0.5`}
+      className={linkedPanelClass}
     >
       {body}
     </a>
@@ -314,7 +316,7 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
 
         {data.intro && <p className="mb-4 text-sm leading-snug text-neutral-700">{data.intro}</p>}
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
           <OfferPanel
             offer={data.input}
             label={t.inputLabel}
@@ -361,18 +363,12 @@ export default function ComparisonResult({ data, labels }: ComparisonResultProps
           {(data.sharedSpecs.length > 0 || payoff) && (
             <div className="md:text-right">
               {data.sharedSpecs.length > 0 && (
-                <p className="flex flex-wrap items-center gap-1 md:justify-end">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#14524B] mr-1">
+                <p className="text-xs leading-relaxed text-[#14524B]">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide mr-1.5">
                     {t.whyLabel}
                   </span>
-                  {data.sharedSpecs.map((spec, i) => (
-                    <span
-                      key={`${spec}-${i}`}
-                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#14524B]/5 text-[#14524B]"
-                    >
-                      {spec}
-                    </span>
-                  ))}
+                  {/* Plain text, not a chip per spec. */}
+                  {data.sharedSpecs.join(' \u00b7 ')}
                 </p>
               )}
               {/* The payoff sits directly under the chips in both layouts. */}

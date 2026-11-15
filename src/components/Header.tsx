@@ -211,7 +211,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-200">
+    <header className="holiday-wrap sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-[72px]">
           {/* Logo. When already on the homepage a client-side Link to "/"
@@ -333,6 +333,8 @@ export default function Header() {
           </div>
         )}
       </div>
+      {/* Holiday string of lights; shown only in season (see lib/season.ts). */}
+      <div aria-hidden="true" className="holiday-only holiday-lights" />
     </header>
   );
 }

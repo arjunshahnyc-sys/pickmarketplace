@@ -25,6 +25,7 @@ import type { SearchResponse, Product } from '@/lib/types';
 import Header from '@/components/Header';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HeroHeadline } from '@/components/HeroHeadline';
+import { HolidayGiftLine, HolidaySnow } from '@/components/HolidayTheme';
 import { PopularComparisons } from '@/components/PopularComparisons';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
@@ -368,6 +369,7 @@ export default function Home() {
     <div className="relative z-10 texture-bg min-h-screen">
       {/* Header */}
       <Header />
+      <HolidaySnow />
 
       <main id="main-content">
         {/* Hero: the pitch on the left, the proof on the right. The whole
@@ -382,6 +384,7 @@ export default function Home() {
               className={hasSearched ? 'max-w-2xl' : 'lg:col-span-6'}
             >
               {/* Hero Text First on Mobile, Search Second */}
+              {!hasSearched && <HolidayGiftLine />}
               <HeroHeadline className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
                 Find a cheaper product.
               </HeroHeadline>
@@ -436,7 +439,7 @@ export default function Home() {
 
         {/* How Pick makes money: one prominent line, wording tied to
             affiliateLinksEnabled() so it can't drift from what links do */}
-        <div className="border-y border-black/5 bg-[#2A9D8F]/[0.06]">
+        <div>
           <p className="max-w-5xl mx-auto px-6 py-3 text-sm text-neutral-700">
             <span className="font-semibold text-[#14524B]">Pick is free to use.</span>{' '}
             {affiliateLinksEnabled()

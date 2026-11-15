@@ -103,6 +103,7 @@ export default function Footer() {
         <div className="mt-6 pt-6 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="font-heading font-bold text-white text-lg">Don&apos;t waste your money.</p>
+            <p className="holiday-only text-xs text-white/70">Happy holidays from Pick.</p>
             <p className="text-xs text-white/50">
               © {currentYear} Pick Marketplace. All rights reserved.
             </p>
