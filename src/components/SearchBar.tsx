@@ -52,7 +52,11 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
         <input
+          id="pick-search"
           type="text"
+          enterKeyHint="search"
+          autoCapitalize="none"
+          autoCorrect="off"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}

@@ -399,7 +399,7 @@ export default function LandedCostPanel({
           <InfoTip
             label="What this total includes"
             content={tip}
-            triggerClassName="relative z-[1] -my-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 hover:text-pick-teal"
+            triggerClassName="tap-grow relative z-[1] -my-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-500 hover:text-pick-teal"
           >
             <Info className="h-3.5 w-3.5" aria-hidden="true" />
           </InfoTip>

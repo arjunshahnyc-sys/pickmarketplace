@@ -6,7 +6,7 @@ import { useSavedList } from '@/contexts/SavedListContext';
 import { useDestination, type PostalCodeOutcome } from '@/contexts/DestinationContext';
 import { landedCostEnabled } from '@/lib/flags';
 import Link from 'next/link';
-import { Globe, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { Globe, Search, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { PickLogo } from './PickLogo';
 import InfoTip from './InfoTip';
 import { normalizeZip } from '@/lib/landedCost/usZip';
@@ -33,8 +33,12 @@ const ZIP_MESSAGES: Record<Exclude<PostalCodeOutcome, 'set' | 'cleared'>, string
   unsupported: 'Pick estimates delivery to the 50 states and DC only.',
 };
 
-const PICKER_SELECT_CLASS =
-  'h-8 rounded-full bg-gray-100 px-2 text-xs font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20';
+const PICKER_SELECT_BASE =
+  'rounded-full bg-gray-100 font-medium text-neutral-700 hover:bg-gray-200 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20';
+// The compact picker is the one in the phone menu: finger-height controls.
+// (Their text is 16px there; see the phone rules at the end of globals.css.)
+const PICKER_SELECT_CLASS = `h-8 px-2 text-xs ${PICKER_SELECT_BASE}`;
+const PICKER_SELECT_CLASS_COMPACT = `h-11 px-3 text-base ${PICKER_SELECT_BASE}`;
 
 function DestinationPicker({ compact = false }: { compact?: boolean }) {
   const {
@@ -47,6 +51,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
     subdivisions,
   } = useDestination();
   const suffix = compact ? '-m' : '';
+  const selectClass = compact ? PICKER_SELECT_CLASS_COMPACT : PICKER_SELECT_CLASS;
   const zipNoteId = useId();
   const zipStatusId = useId();
 
@@ -79,7 +84,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
         value={destination.country}
         title="Delivery country for cost estimates. Starts at your approximate location; your choice here always wins and is remembered."
         onChange={(e) => setCountry(e.target.value)}
-        className={PICKER_SELECT_CLASS}
+        className={selectClass}
       >
         {countries.map((c) => (
           <option key={c} value={c}>
@@ -92,7 +97,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
           <InfoTip
             label="How your ZIP code is used"
             content={<span id={zipNoteId}>{ZIP_PRIVACY_NOTE}</span>}
-            triggerClassName="inline-flex h-6 w-6 items-center justify-center rounded-full text-pick-muted hover:text-pick-teal transition-colors"
+            triggerClassName="tap-grow relative inline-flex h-6 w-6 items-center justify-center rounded-full text-pick-muted hover:text-pick-teal transition-colors"
           >
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
           </InfoTip>
@@ -132,7 +137,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
             aria-describedby={zipMessage ? `${zipNoteId} ${zipStatusId}` : zipNoteId}
             aria-invalid={zipMessage ? true : undefined}
             title="Delivery ZIP code. Sets the state for the tax and shipping estimates. Stays on this device and is never sent to Pick."
-            className="h-8 w-[4.25rem] rounded-full bg-gray-100 px-2.5 text-xs font-medium text-neutral-700 placeholder:text-neutral-400 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20"
+            className={`${compact ? 'h-11 w-24 px-3.5 text-base' : 'h-8 w-[4.25rem] px-2.5 text-xs'} rounded-full bg-gray-100 font-medium text-neutral-700 placeholder:text-neutral-400 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20`}
           />
           <label className="sr-only" htmlFor={`dest-state${suffix}`}>
             Delivery state for the sales tax and shipping estimates
@@ -142,7 +147,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
             value={destination.subdivision ?? ''}
             title="Delivery state. Used on this device to estimate sales tax and to apply stores' published shipping terms. Without it the total shows tax as unresolved."
             onChange={(e) => setSubdivision(e.target.value)}
-            className={PICKER_SELECT_CLASS}
+            className={selectClass}
           >
             <option value="">State…</option>
             {subdivisions.map((s) => (
@@ -160,7 +165,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
         id={`dest-currency${suffix}`}
         value={destination.currency}
         onChange={(e) => setCurrency(e.target.value)}
-        className={PICKER_SELECT_CLASS}
+        className={selectClass}
       >
         {CURRENCY_OPTIONS.map((c) => (
           <option key={c} value={c}>
@@ -186,7 +191,7 @@ function SavedListButton() {
   return (
     <button
       onClick={openDrawer}
-      className="relative flex items-center gap-2 text-pick-muted hover:text-pick-teal transition-colors p-2"
+      className="relative flex items-center gap-2 text-pick-muted hover:text-pick-teal transition-colors p-3 md:p-2"
       aria-label={`Saved items (${items.length})`}
     >
       <span className="relative">
@@ -277,12 +282,32 @@ export default function Header() {
           {/* Mobile: saved list + menu button. The menu only exists when it
               has something to hold (the destination picker behind the
               landed-cost flag, or the logged-in links). */}
-          <div className="md:hidden flex items-center gap-1">
+          <div className="md:hidden flex items-center">
+          {/* Search from anywhere on a phone: on a page with the search box
+              (the homepage, results included) this scrolls up and puts the
+              cursor in it; elsewhere it goes to the homepage. */}
+          <button
+            type="button"
+            onClick={() => {
+              const box = document.getElementById('pick-search');
+              if (box instanceof HTMLInputElement) {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                box.focus();
+                box.select();
+              } else {
+                window.location.assign('/');
+              }
+            }}
+            className="text-pick-muted hover:text-pick-teal transition-colors p-3"
+            aria-label="Search"
+          >
+            <Search className="w-5 h-5" aria-hidden="true" />
+          </button>
           <SavedListButton />
           {(landedCostEnabled() || isAuthenticated) && (
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-pick-muted hover:text-pick-teal transition-colors p-2"
+            className="text-pick-muted hover:text-pick-teal transition-colors p-2.5"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
           >

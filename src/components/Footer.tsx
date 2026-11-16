@@ -22,7 +22,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">Company</h3>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-0.5 md:space-y-2 text-sm [&_a]:inline-block [&_a]:py-2 md:[&_a]:inline md:[&_a]:py-0">
               <li>
                 <a href="/about" className="text-white/70 hover:text-white transition-colors">
                   About Us
@@ -54,7 +54,7 @@ export default function Footer() {
 
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">Support</h3>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-0.5 md:space-y-2 text-sm [&_a]:inline-block [&_a]:py-2 md:[&_a]:inline md:[&_a]:py-0">
               <li>
                 <a href="/help" className="text-white/70 hover:text-white transition-colors">
                   Help Center
@@ -75,7 +75,7 @@ export default function Footer() {
 
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">Legal</h3>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-0.5 md:space-y-2 text-sm [&_a]:inline-block [&_a]:py-2 md:[&_a]:inline md:[&_a]:py-0">
               <li>
                 <a href="/privacy" className="text-white/70 hover:text-white transition-colors">
                   Privacy Policy

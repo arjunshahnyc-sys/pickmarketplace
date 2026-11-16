@@ -375,7 +375,10 @@ export default function Home() {
         {/* Hero: the pitch on the left, the proof on the right. The whole
             first fold is about cheaper equivalents; exact-item matching gets
             one supporting line under How it works and nowhere else. */}
-        <section className="max-w-5xl mx-auto px-6 pt-12 md:pt-16 pb-10">
+        {/* On phones, once a search has run, the pitch (headline and
+            paragraph) steps aside so the search box and the results are what
+            fills the screen; from md up it stays. */}
+        <section className={`max-w-5xl mx-auto px-6 pb-10 ${hasSearched ? 'pt-5 md:pt-16' : 'pt-12 md:pt-16'}`}>
           <div className={hasSearched ? '' : 'grid gap-10 lg:grid-cols-12 lg:items-center'}>
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -385,10 +388,10 @@ export default function Home() {
             >
               {/* Hero Text First on Mobile, Search Second */}
               {!hasSearched && <HolidayGiftLine />}
-              <HeroHeadline className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch]">
+              <HeroHeadline className={`text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch] ${hasSearched ? 'hidden md:block' : ''}`}>
                 Find a cheaper product.
               </HeroHeadline>
-              <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6">
+              <p className={`text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6 ${hasSearched ? 'hidden md:block' : ''}`}>
                 Type in what you were about to buy. Pick looks for its cheaper twin:{' '}
                 <strong className="font-semibold text-neutral-800">
                   a different product with the same key specs, reviews about as good, and a
@@ -398,7 +401,7 @@ export default function Home() {
               </p>
 
               {/* Search Bar */}
-              <div className="mt-8">
+              <div className={hasSearched ? 'md:mt-8' : 'mt-8'}>
                 <SearchBar onSearch={handleSearch} isLoading={isLoading} />
               </div>
 
@@ -411,7 +414,7 @@ export default function Home() {
                       <button
                         key={term}
                         onClick={() => handleSearch(term)}
-                        className="rounded-full bg-gray-100 px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 active:scale-[0.97] transition-[background-color,scale] duration-200"
+                        className="min-h-11 md:min-h-0 rounded-full bg-gray-100 px-4 md:px-3.5 py-1.5 text-sm text-neutral-700 hover:bg-gray-200 active:scale-[0.97] transition-[background-color,scale] duration-200"
                       >
                         {term}
                       </button>
@@ -732,7 +735,7 @@ export default function Home() {
                       <button
                         key={term}
                         onClick={() => handleSearch(term)}
-                        className="px-4 py-2 rounded-xl border border-black/10 text-sm text-black/60 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
+                        className="min-h-11 md:min-h-0 px-4 py-2 rounded-xl border border-black/10 text-sm text-black/60 hover:border-[#2A9D8F] hover:text-[#2A9D8F] transition"
                       >
                         {term}
                       </button>

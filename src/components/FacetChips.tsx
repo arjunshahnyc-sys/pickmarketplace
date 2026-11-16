@@ -57,7 +57,7 @@ export default function FacetChips({
                 onClick={() => {
                   if (!empty) onToggle(group.key, v.value);
                 }}
-                className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition ${
+                className={`tap-grow relative shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px] md:px-3 md:py-1.5 md:text-xs transition ${
                   on
                     ? 'border-[#2A9D8F] bg-teal-50 text-[#1F7A6F]'
                     : empty

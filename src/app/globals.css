@@ -571,3 +571,34 @@ html[data-season="holiday"] .holiday-wrap {
   from { transform: translate3d(0, 0, 0) rotate(0deg); }
   to { transform: translate3d(var(--drift, 0px), 600px, 0) rotate(160deg); }
 }
+
+/* Phones (2026-11-15 pass).
+
+   1. iOS Safari zooms the whole page when a focused field's text is under
+      16px, and does not zoom back. Every text field and dropdown is 16px
+      below the md breakpoint so tapping the ZIP box or the sort menu never
+      jolts the page. Unlayered, so it wins over text-xs / text-sm utilities.
+
+   2. .tap-grow widens what a finger can hit without changing what the eye
+      sees: an invisible pad around small controls (save, compare, seller
+      badge, info dots, filter chips) on touch screens only. The element
+      must already be positioned (relative or absolute). */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input:not([type]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+@media (pointer: coarse) {
+  .tap-grow::after {
+    content: '';
+    position: absolute;
+    inset: -8px -5px;
+  }
+}

@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useReveal } from '@/lib/motion/useReveal';
 import { COMPARISONS, comparisonsByCategory } from '@/lib/comparisons';
@@ -16,8 +18,15 @@ import { COMPARISONS, comparisonsByCategory } from '@/lib/comparisons';
 // app/compare/[slug]/page.tsx), and a default <Link> prefetches its target
 // as soon as it scrolls into view: fifty links here would have every
 // homepage visitor regenerating every expired page.
+//
+// Phones (2026-11-15): 65 links in one column made the homepage about nine
+// screens long with rows too close together to tap. Below md each category
+// is a row that opens on tap, one at a time, and its links are finger
+// height. The links stay in the HTML when a category is closed (hidden with
+// CSS, not removed), so crawlers still find all of them from the homepage.
 export function PopularComparisons() {
   const reveal = useReveal();
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
   return (
     <motion.section
       {...reveal()}
@@ -31,17 +40,39 @@ export function PopularComparisons() {
         One page per product: its lowest real price across verified stores, and a different product with the same
         key specs for less when one passes Pick&apos;s bar. Each page says when its prices were checked.
       </p>
-      <div className="mt-8 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-        {comparisonsByCategory().map((group) => (
-          <div key={group.category}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-[#1F7A6F]">{group.label}</h3>
-            <ul className="mt-3 space-y-2">
+      <div className="mt-8 grid gap-x-8 md:gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        {comparisonsByCategory().map((group) => {
+          const open = openCategory === group.category;
+          const listId = `comparisons-${group.category}`;
+          return (
+          <div key={group.category} className="border-b border-black/10 md:border-0">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[#1F7A6F]">
+              <span className="hidden md:inline">{group.label}</span>
+              <button
+                type="button"
+                data-no-lift=""
+                aria-expanded={open}
+                aria-controls={listId}
+                onClick={() => setOpenCategory(open ? null : group.category)}
+                className="md:hidden flex min-h-12 w-full items-center justify-between gap-3 text-left text-xs font-semibold uppercase tracking-wide"
+              >
+                <span>
+                  {group.label}{' '}
+                  <span className="font-normal text-neutral-500">({group.entries.length})</span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${open ? 'rotate-180' : ''}`}
+                  aria-hidden="true"
+                />
+              </button>
+            </h3>
+            <ul id={listId} className={`${open ? 'block pb-3' : 'hidden'} md:block md:mt-3 md:space-y-2 md:pb-0`}>
               {group.entries.map((entry) => (
                 <li key={entry.slug}>
                   <Link
                     href={`/compare/${entry.slug}`}
                     prefetch={false}
-                    className="text-sm text-neutral-700 underline decoration-black/15 underline-offset-4 transition-colors hover:text-[#2A9D8F] hover:decoration-[#2A9D8F]"
+                    className="block py-2.5 md:inline md:py-0 text-sm text-neutral-700 underline decoration-black/15 underline-offset-4 transition-colors hover:text-[#2A9D8F] hover:decoration-[#2A9D8F]"
                   >
                     {entry.name}
                   </Link>
@@ -49,9 +80,10 @@ export function PopularComparisons() {
               ))}
             </ul>
           </div>
-        ))}
+          );
+        })}
       </div>
-      <p className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+      <p className="mt-8 flex flex-col md:flex-row md:flex-wrap gap-x-6 md:gap-y-2 text-sm [&_a]:py-2.5 md:[&_a]:py-0">
         <Link href="/compare" className="font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
           See all {COMPARISONS.length} comparisons
         </Link>

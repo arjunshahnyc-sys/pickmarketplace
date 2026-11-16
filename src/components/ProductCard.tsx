@@ -228,7 +228,7 @@ function ProductCard({
           onClick={handleSave}
           aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name}`}
           title={saved ? 'Remove from saved items' : 'Save to your list'}
-          className={`absolute top-2 right-2 z-[1] w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
+          className={`tap-grow absolute top-2 right-2 z-[1] w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all ${
             saved
               ? 'bg-pick-teal text-white'
               : 'bg-white/90 text-black/50 hover:text-pick-teal hover:bg-white'
@@ -277,7 +277,7 @@ function ProductCard({
               <p className="mt-1 text-neutral-500">{trust.explanation.advice}</p>
             </>
           }
-          triggerClassName={`relative z-[1] inline-flex cursor-help items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${trustMeta.className}`}
+          triggerClassName={`tap-grow relative z-[1] inline-flex cursor-help items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${trustMeta.className}`}
         >
           <TrustIcon className="w-3 h-3" aria-hidden="true" />
           <span className="underline decoration-dotted underline-offset-2">{trustMeta.label}</span>
@@ -411,7 +411,7 @@ function ProductCard({
                 toggles it, its state is announced, and the whole pill is
                 the tap target. A sibling of the link, above its overlay. */}
             {showCompare && (
-              <label className="relative z-[1] ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-200/70 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-700 transition-colors hover:border-pick-teal has-[:checked]:border-pick-teal has-[:checked]:bg-teal-50 has-[:checked]:text-[#1F7A6F]">
+              <label className="tap-grow relative z-[1] ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-200/70 bg-white px-2.5 py-1.5 md:px-2 md:py-0.5 text-xs md:text-[11px] font-medium text-neutral-700 transition-colors hover:border-pick-teal has-[:checked]:border-pick-teal has-[:checked]:bg-teal-50 has-[:checked]:text-[#1F7A6F]">
                 <input
                   type="checkbox"
                   className="h-3.5 w-3.5 cursor-pointer accent-pick-teal"
