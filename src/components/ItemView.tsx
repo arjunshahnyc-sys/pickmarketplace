@@ -102,9 +102,11 @@ export default function ItemView({ base, detailsUrl, backQuery }: ItemViewProps)
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         {backQuery ? 'Back to results' : 'Back to search'}
       </a>
-      <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-        {/* Photos */}
-        <div>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
+        {/* Photos. min-w-0 on both columns: a grid column is otherwise as
+            wide as its widest content, and the thumbnail row (8 photos) made
+            the whole page wider than a phone screen. */}
+        <div className="min-w-0">
           <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-50">
             {mainImage ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -135,12 +137,12 @@ export default function ItemView({ base, detailsUrl, backQuery }: ItemViewProps)
         </div>
 
         {/* The listing */}
-        <div>
+        <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
             Sold by <span className="font-semibold text-neutral-900">{base.retailer}</span>
             <TrustTag level={base.trust} />
           </p>
-          <h1 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight leading-tight text-neutral-900">
+          <h1 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight leading-tight text-neutral-900 break-words">
             {title}
           </h1>
 
