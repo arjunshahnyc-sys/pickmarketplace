@@ -12,6 +12,8 @@ interface SizeCheckButtonProps {
   url: string;
   size: string;
   retailer: string;
+  /** An answer already in hand (the page checks a size search's first cards itself). */
+  initial?: SizeCheckResult;
 }
 
 type State = { phase: 'idle' } | { phase: 'loading' } | { phase: 'done'; result: SizeCheckResult };
@@ -33,8 +35,9 @@ export function sizeCheckMessage(result: SizeCheckResult, size: string, retailer
   }
 }
 
-export default function SizeCheckButton({ url, size, retailer }: SizeCheckButtonProps) {
-  const [state, setState] = useState<State>({ phase: 'idle' });
+export default function SizeCheckButton({ url, size, retailer, initial }: SizeCheckButtonProps) {
+  const [own, setState] = useState<State>({ phase: 'idle' });
+  const state: State = own.phase !== 'done' && initial ? { phase: 'done', result: initial } : own;
 
   const check = async () => {
     setState({ phase: 'loading' });

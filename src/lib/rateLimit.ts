@@ -37,9 +37,10 @@ export const RATE_LIMITS = {
   // product lookup. Over the limit the click still redirects, just without
   // the lookup, so this never blocks a shopper.
   out: { name: 'out', limit: 30, windowMs: 60 * 1000 },
-  // "Check my size" on a result card (/api/size-check): the same paid
-  // lookup as a click, asked for on purpose, so a lower ceiling.
-  sizeCheck: { name: 'sizeCheck', limit: 12, windowMs: 60 * 1000 },
+  // Size checks (/api/size-check): the same paid lookup as a click. A size
+  // search checks its first 8 cards by itself, so the ceiling leaves room
+  // for three size searches a minute plus a few taps.
+  sizeCheck: { name: 'sizeCheck', limit: 30, windowMs: 60 * 1000 },
   // Pick's own product page (/api/item): one paid lookup per product
   // opened. Over the limit the page still shows what the card knew and
   // the button to the store.

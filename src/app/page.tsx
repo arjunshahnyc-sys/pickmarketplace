@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import Footer from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
@@ -41,12 +41,22 @@ import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { addSearch } from '@/lib/searchHistory';
 import SizePicker from '@/components/SizePicker';
-import { lastSearchKey, readLastSearch, readScroll, saveLastSearch, saveScroll } from '@/lib/lastSearch';
+import {
+  lastSearchKey,
+  readLastSearch,
+  readScroll,
+  readSizeVerdicts,
+  saveLastSearch,
+  saveScroll,
+  saveSizeVerdicts,
+} from '@/lib/lastSearch';
 import {
   getStoredSize,
   setStoredSize,
   sizeKindForQuery,
   sizeKindForResults,
+  AUTO_SIZE_CHECKS,
+  type SizeCheckResult,
   type SizeKind,
 } from '@/lib/sizeSearch';
 
@@ -165,6 +175,13 @@ export default function Home() {
   // if any, and the size it was run for.
   const [sizeKind, setSizeKind] = useState<SizeKind | null>(null);
   const [activeSize, setActiveSize] = useState<string | null>(null);
+  // A size search is answered loosely by the price source (XL listings in
+  // a size L search), so the first few cards are checked without being
+  // asked: answers by product id, wrong sizes dropped from the grid.
+  // `autoCheck` is the search the answers belong to and where the check is.
+  const [sizeVerdicts, setSizeVerdicts] = useState<Record<string, SizeCheckResult>>({});
+  const [autoCheck, setAutoCheck] = useState<{ key: string; phase: 'pending' | 'checking' | 'done' } | null>(null);
+  const autoCheckKey = useRef<string | null>(null);
 
   // Compare selection: no mode, every card carries a checkbox; the hook
   // owns the picks, the drawer's announcement, the modal, and Escape.
@@ -221,6 +238,9 @@ export default function Home() {
     const size = sized ? sized.size : queryKind ? getStoredSize(queryKind) : null;
     setSizeKind(kind);
     setActiveSize(size);
+    setSizeVerdicts({});
+    setAutoCheck(null);
+    autoCheckKey.current = null;
     setIsLoading(true);
     // A new result set: picks from the previous one must not linger in
     // the drawer, and its chips do not apply to the new results.
@@ -268,6 +288,14 @@ export default function Home() {
         }
       }
       setResults(data.results || []);
+      // A size search with results: reuse this tab's earlier answers for it
+      // (coming back from a product page), or queue the automatic check.
+      if (kind && size && response.ok && Array.isArray(data.results) && data.results.length > 0) {
+        const earlier = readSizeVerdicts<SizeCheckResult>(searchKey);
+        autoCheckKey.current = searchKey;
+        if (earlier) setSizeVerdicts(earlier);
+        setAutoCheck({ key: searchKey, phase: earlier ? 'done' : 'pending' });
+      }
       // The search words did not say clothing, but the listings do: offer
       // the picker (a remembered size is not applied on this guess).
       if (!kind && Array.isArray(data.results)) {
@@ -357,7 +385,9 @@ export default function Home() {
   // pass doesn't rerun — and the grid doesn't get new object identities —
   // on unrelated re-renders like compare-mode selection.
   const filteredResults = useMemo(() => {
-    let filtered = [...results];
+    // Listings the automatic size check found to be another size are gone
+    // before anything else looks at the set.
+    let filtered = results.filter((p: Product) => sizeVerdicts[p.id ?? '']?.status !== 'other-size');
 
     // Apply "On Sale Only" filter
     if (showOnSaleOnly) {
@@ -408,7 +438,58 @@ export default function Home() {
     // never lead, new units come before units that are not new, and a
     // verified store's listing of the searched item takes the top slot.
     return orderForTrust(enhanceProductsWithGroupInfo(filtered, results, { query }), sortBy);
-  }, [results, query, sortBy, showOnSaleOnly, showVerifiedOnly, selectedFacets, destination, fxProvider]);
+  }, [results, query, sortBy, showOnSaleOnly, showVerifiedOnly, selectedFacets, destination, fxProvider, sizeVerdicts]);
+
+  // The automatic size check: once per size search, the first cards as the
+  // shopper sees them (default order), in parallel. Answers the lookup
+  // could not give ("unknown") are not kept, so those cards keep their
+  // Check size button.
+  useEffect(() => {
+    if (autoCheck?.phase !== 'pending' || isLoading || filteredResults.length === 0) return;
+    const key = autoCheck.key;
+    const targets = filteredResults.filter((p) => p.sizeCheck).slice(0, AUTO_SIZE_CHECKS);
+    setAutoCheck({ key, phase: 'checking' });
+    Promise.all(
+      targets.map(async (p): Promise<[string, SizeCheckResult] | null> => {
+        try {
+          const response = await fetch(p.sizeCheck!.url);
+          if (!response.ok) return null;
+          const result = (await response.json()) as SizeCheckResult;
+          return result.status === 'unknown' || !p.id ? null : [p.id, result];
+        } catch {
+          return null;
+        }
+      })
+    ).then((answers) => {
+      // A newer search started meanwhile: these answers are not its.
+      if (autoCheckKey.current !== key) return;
+      const verdicts = Object.fromEntries(answers.filter((a): a is [string, SizeCheckResult] => a !== null));
+      setSizeVerdicts(verdicts);
+      saveSizeVerdicts(key, verdicts);
+      setAutoCheck({ key, phase: 'done' });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCheck, isLoading, filteredResults]);
+
+  const wrongSizeCount = useMemo(
+    () => results.filter((p: Product) => sizeVerdicts[p.id ?? '']?.status === 'other-size').length,
+    [results, sizeVerdicts]
+  );
+  const sizeNote = !activeSize || !autoCheck
+    ? undefined
+    : autoCheck.phase !== 'done'
+      ? `Checking the first results for size ${activeSize}.`
+      : (() => {
+          const checked = Object.keys(sizeVerdicts).length;
+          if (checked === 0) return undefined;
+          const removed =
+            wrongSizeCount === 0
+              ? ''
+              : wrongSizeCount === 1
+                ? ' 1 was another size and was removed.'
+                : ` ${wrongSizeCount} were another size and were removed.`;
+          return `Checked the first ${checked} for size ${activeSize}.${removed} The rest may be another size, so tap Check size or confirm at the store.`;
+        })();
 
   // Each toggle's count is computed against the OTHER active filters, so
   // the number on the button always matches what clicking it would show.
@@ -568,7 +649,7 @@ export default function Home() {
                   <h2 className="text-3xl font-bold tracking-tight mb-2 text-neutral-900">
                     Results for &quot;{query}&quot;{activeSize ? ` in size ${activeSize}` : ''}{' '}
                     <span className="text-lg font-normal text-neutral-500">
-                      ({results.length})
+                      ({results.length - wrongSizeCount})
                     </span>
                   </h2>
                   <p className="text-sm text-neutral-500 mb-4">
@@ -591,7 +672,7 @@ export default function Home() {
                 </div>
 
                 {sizeKind && (
-                  <SizePicker kind={sizeKind} size={activeSize} onChange={handleSizeChange} className="mb-5" />
+                  <SizePicker kind={sizeKind} size={activeSize} onChange={handleSizeChange} className="mb-5" note={sizeNote} />
                 )}
 
                 {/* Search Section with Filters */}
@@ -659,6 +740,7 @@ export default function Home() {
                           onSelect={compare.toggle}
                           fxPending={fxStatus === 'loading'}
                           destinationCountry={destination.country}
+                          sizeResult={sizeVerdicts[product.id ?? '']}
                         />
                       </motion.div>
                     ))}

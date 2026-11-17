@@ -70,3 +70,27 @@ export function readScroll(): number {
     return 0;
   }
 }
+
+// The automatic size checks that ran for a size search (the first few
+// cards, see page.tsx), kept with it so coming back from a product page
+// does not pay for them again.
+
+const VERDICTS_KEY = 'pick-last-search-size-checks';
+
+export function saveSizeVerdicts(key: string, verdicts: Record<string, unknown>) {
+  try {
+    window.sessionStorage.setItem(VERDICTS_KEY, JSON.stringify({ key, verdicts }));
+  } catch {
+    // Coming back just checks again
+  }
+}
+
+export function readSizeVerdicts<T>(key: string): Record<string, T> | null {
+  try {
+    const v = JSON.parse(window.sessionStorage.getItem(VERDICTS_KEY) ?? 'null') as { key?: unknown; verdicts?: unknown } | null;
+    if (!v || v.key !== key || !v.verdicts || typeof v.verdicts !== 'object') return null;
+    return v.verdicts as Record<string, T>;
+  } catch {
+    return null;
+  }
+}

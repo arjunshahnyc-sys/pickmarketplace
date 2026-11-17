@@ -14,9 +14,11 @@ interface SizePickerProps {
   size: string | null;
   onChange: (size: string | null) => void;
   className?: string;
+  /** What the automatic check of the first cards found, in place of the standing note. */
+  note?: string;
 }
 
-export default function SizePicker({ kind, size, onChange, className = '' }: SizePickerProps) {
+export default function SizePicker({ kind, size, onChange, className = '', note }: SizePickerProps) {
   const label = SIZE_LABELS[kind];
   const options = SIZE_OPTIONS[kind];
 
@@ -77,7 +79,8 @@ export default function SizePicker({ kind, size, onChange, className = '' }: Siz
       </div>
       {size && (
         <p className="mt-2 text-xs text-neutral-500">
-          Searched for size {size}. Some listings may be another size, so tap Check size on a card or confirm at the store.
+          {note ??
+            `Searched for size ${size}. Some listings may be another size, so tap Check size on a card or confirm at the store.`}
         </p>
       )}
     </div>

@@ -12,6 +12,7 @@ import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
 import LandedCostPanel from "./LandedCostPanel";
 import SizeCheckButton from "./SizeCheckButton";
+import type { SizeCheckResult } from "@/lib/sizeSearch";
 import { overlaysFor } from "@/lib/cardOverlays";
 import { IMAGE_BOX_CLASS } from "@/lib/cardLayout";
 import type { Product } from "@/lib/types";
@@ -52,6 +53,8 @@ interface ProductCardProps {
   fxPending?: boolean;
   /** Destination country the landed-cost estimate is for, e.g. 'GB'. */
   destinationCountry?: string;
+  /** The size check's answer when the page already ran it for this card. */
+  sizeResult?: SizeCheckResult;
 }
 
 function ProductCard({
@@ -65,6 +68,7 @@ function ProductCard({
   groupSize,
   fxPending = false,
   destinationCountry,
+  sizeResult,
 }: ProductCardProps) {
   // Use props first, fallback to product properties
   const showLowestPrice = isLowestInGroup ?? product.isLowestInGroup;
@@ -416,6 +420,7 @@ function ProductCard({
             url={product.sizeCheck.url}
             size={product.sizeCheck.size}
             retailer={product.retailer}
+            initial={sizeResult}
           />
         )}
         {(showVerified || showCompare) && (

@@ -183,6 +183,9 @@ export function setStoredSize(kind: SizeKind, size: string | null) {
 // repeats what those two say.
 // ---------------------------------------------------------------------------
 
+/** How many of a size search's first cards are checked without being asked. */
+export const AUTO_SIZE_CHECKS = 8;
+
 export type SizeCheckStatus =
   /** The store's listing names this size and Google says it is in stock. */
   | 'in-stock'
