@@ -4,6 +4,7 @@ import { performLiveSearch } from "@/lib/searchService";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 import { landedCostEnabled } from "@/lib/flags";
 import { BUDGET_PAUSED_MESSAGE, refreshSearchBudget } from "@/lib/searchBudget";
+import { isSizeKind, isValidSize } from "@/lib/sizeSearch";
 
 // Destination countries whose local shopping feed joins the US one when the
 // landed-cost flag is on. All six destinations active (price formats probed
@@ -60,7 +61,16 @@ export async function GET(req: NextRequest) {
     const extraMarket = dest ? MARKET_BY_DEST[dest.toUpperCase()] : undefined;
     // The spending guard's view of today's budget, before the paid search.
     await refreshSearchBudget();
-    const data = await performLiveSearch(q, extraMarket ? [extraMarket] : []);
+    // Optional clothing or shoe size. Only sizes the picker offers are
+    // accepted, so the parameter cannot be used to mint endless cache keys
+    // (each one a paid search); anything else is a plain search.
+    const sizeKind = req.nextUrl.searchParams.get("sizeKind");
+    const sizeParam = req.nextUrl.searchParams.get("size");
+    const size =
+      isSizeKind(sizeKind) && isValidSize(sizeKind, sizeParam)
+        ? { kind: sizeKind, size: sizeParam }
+        : undefined;
+    const data = await performLiveSearch(q, extraMarket ? [extraMarket] : [], size);
 
     // Paid searches are paused (daily cap or low balance): say so, with the
     // stores' own search links, instead of the generic outage message.

@@ -98,9 +98,6 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           autoComplete="off"
           aria-controls={showRecent ? 'pick-recent-searches' : undefined}
           placeholder={placeholder}
-          // Inline so the global :focus-visible rule (2px corners) cannot
-          // square off the pill while the cursor is in it.
-          style={{ borderRadius: 9999 }}
           className="h-14 md:h-16 w-full rounded-full bg-white pl-12 pr-16 text-base text-neutral-900 placeholder:text-transparent border border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-2 focus:ring-[#2A9D8F] transition-shadow"
           disabled={isLoading}
         />

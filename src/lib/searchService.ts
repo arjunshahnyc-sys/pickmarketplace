@@ -5,9 +5,10 @@
 
 import { searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
 import { toAffiliateUrl } from './affiliate';
-import { buildClickUrl } from './outbound';
+import { buildClickUrl, buildItemUrl, buildSizeCheckUrl } from './outbound';
 import { deriveFacets, type FacetGroup } from './facets/deriveFacets';
 import { BUDGET_PAUSED_MESSAGE, spendingPaused } from './searchBudget';
+import { namesAnotherSize, withSize, type SizeKind } from './sizeSearch';
 import type { Product, RetailerSearchLink } from './types';
 
 export interface LiveSearchData {
@@ -22,6 +23,13 @@ export interface LiveSearchData {
   allSourcesFailed?: boolean;
   /** Set when the search was not run because paid searches are paused (lib/searchBudget.ts). */
   budgetPaused?: boolean;
+  /** The size this search was run for (lib/sizeSearch.ts); absent on a plain search. */
+  size?: SizeChoice;
+}
+
+export interface SizeChoice {
+  kind: SizeKind;
+  size: string;
 }
 
 // Anchored on globalThis because Next bundles each route with its own copy
@@ -47,16 +55,24 @@ const CACHE_EVICTION_COUNT = 20;
  * landed-cost flow passes the shopper's market so local offers compete with
  * US imports). Empty = the legacy US-only search, byte-identical, on the
  * legacy cache key.
+ *
+ * `size` runs the search for one clothing or shoe size (lib/sizeSearch.ts):
+ * still one paid search per market, with the size added to the text sent,
+ * cached under its own key. Everything else (relevance, chips, store links)
+ * keeps working from the shopper's own words.
  */
 export async function performLiveSearch(
   q: string,
-  extraMarkets: FeedMarket[] = []
+  extraMarkets: FeedMarket[] = [],
+  size?: SizeChoice
 ): Promise<LiveSearchData> {
   const markets = Array.from(new Set(extraMarkets)).sort();
-  const key =
+  const baseKey =
     markets.length === 0
       ? q.toLowerCase().trim()
       : `${q.toLowerCase().trim()}|${markets.join(',')}`;
+  const key = size ? `${baseKey}|size:${size.kind}:${size.size}` : baseKey;
+  const sentQuery = size ? withSize(q, size.size) : q;
 
   const cached = cache.get(key);
   if (cached && Date.now() - cached.ts < (cached.data.results.length > 0 ? TTL : TTL_EMPTY)) {
@@ -76,13 +92,14 @@ export async function performLiveSearch(
       checkedAt: new Date().toISOString(),
       allSourcesFailed: true,
       budgetPaused: true,
+      size,
     };
   }
 
   // Search every market's feed in parallel (the US feed first).
   const [googleSearch, ...extraSearches] = await Promise.all([
-    searchGoogleShoppingAPI(q),
-    ...markets.map((m) => searchGoogleShoppingAPI(q, m)),
+    searchGoogleShoppingAPI(q, 'us', sentQuery),
+    ...markets.map((m) => searchGoogleShoppingAPI(q, m, sentQuery)),
   ]);
   const allSourcesFailed = Boolean(
     googleSearch.sourceError && extraSearches.every((s) => s.sourceError)
@@ -97,6 +114,9 @@ export async function performLiveSearch(
   // markets is two offers in two currencies.
   const seen = new Set<string>();
   const uniqueResults = allResults
+    // A size search drops the few listings whose title commits to some
+    // other size ("Size 11" when 10.5 was asked for).
+    .filter((product) => !size || !namesAnotherSize(product.name, size.kind, size.size))
     .filter((product) => {
       const dedupKey = `${product.sourceMarket ?? 'US'}|${product.retailer.toLowerCase().trim()}|${product.name.toLowerCase().trim()}`;
       if (seen.has(dedupKey)) {
@@ -110,14 +130,19 @@ export async function performLiveSearch(
     // Identity is passed through because some merchants (Amazon) are barred
     // from tagging entirely; see isCommissionExcluded.
     // clickUrl is built from the raw link (its fallback), before wrapping.
-    .map((product) => ({
+    .map((product) => {
+      const sizeCheckUrl = size ? buildSizeCheckUrl(product, size.kind, size.size) : undefined;
+      return {
       ...product,
+      ...(size && sizeCheckUrl ? { sizeCheck: { url: sizeCheckUrl, size: size.size } } : {}),
+      itemUrl: buildItemUrl(product, size, q),
       clickUrl: buildClickUrl(product),
       url: toAffiliateUrl(product.url, {
         retailer: product.retailer,
         market: product.sourceMarket,
       }),
-    }));
+      };
+    });
 
   // Filter chips come from the result set itself, computed once here so
   // the API response, the cache entry, and the ISR category page share
@@ -157,6 +182,7 @@ export async function performLiveSearch(
     facets,
     checkedAt: new Date().toISOString(), // preserved in cache so the UI can show real freshness
     allSourcesFailed,
+    size,
   };
 
   // A total outage is not a result — caching it would serve the failure to

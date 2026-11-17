@@ -40,6 +40,15 @@ import { getRetailerTrust, hasUnverifiedSeller, isRecognizedSeller } from '@/lib
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { addSearch } from '@/lib/searchHistory';
+import SizePicker from '@/components/SizePicker';
+import { lastSearchKey, readLastSearch, readScroll, saveLastSearch, saveScroll } from '@/lib/lastSearch';
+import {
+  getStoredSize,
+  setStoredSize,
+  sizeKindForQuery,
+  sizeKindForResults,
+  type SizeKind,
+} from '@/lib/sizeSearch';
 
 // ============================================================================
 // HERO COMPARISON DATA: AN ILLUSTRATIVE EXAMPLE, NOT A CAPTURED LIVE RESULT.
@@ -152,6 +161,10 @@ export default function Home() {
   const [searchResponse, setSearchResponse] = useState<any>(null);
   const [searchError, setSearchError] = useState(false);
   const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(null);
+  // Size search (lib/sizeSearch.ts): which picker the current search gets,
+  // if any, and the size it was run for.
+  const [sizeKind, setSizeKind] = useState<SizeKind | null>(null);
+  const [activeSize, setActiveSize] = useState<string | null>(null);
 
   // Compare selection: no mode, every card carries a checkbox; the hook
   // owns the picks, the drawer's announcement, the modal, and Escape.
@@ -197,7 +210,17 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  const handleSearch = async (searchQuery: string) => {
+  // `sized` is passed only by the size picker. Without it, a search whose
+  // words say clothing or shoes runs for the size remembered on this device.
+  const handleSearch = async (
+    searchQuery: string,
+    sized?: { kind: SizeKind; size: string | null }
+  ) => {
+    const queryKind = sizeKindForQuery(searchQuery);
+    const kind = sized?.kind ?? queryKind;
+    const size = sized ? sized.size : queryKind ? getStoredSize(queryKind) : null;
+    setSizeKind(kind);
+    setActiveSize(size);
     setIsLoading(true);
     // A new result set: picks from the previous one must not linger in
     // the drawer, and its chips do not apply to the new results.
@@ -210,18 +233,46 @@ export default function Home() {
     setSearchErrorMessage(null);
     // Remember it on this device for the search box's recent list.
     addSearch(searchQuery);
+    // The address follows the search, so Back from a product page (/item)
+    // lands on these results and not on the empty homepage.
+    try {
+      window.history.replaceState(null, '', `/?q=${encodeURIComponent(searchQuery)}`);
+    } catch {
+      // Not worth failing a search over
+    }
 
     try {
       // The shopper's destination adds their local market feed server-side
       // (flag-gated there too); without the flag the param is never sent.
-      const destParam = landedCostEnabled()
-        ? `&dest=${encodeURIComponent(destination.country)}`
-        : '';
-      const response = await fetch(
-        `/api/search-live?q=${encodeURIComponent(searchQuery)}${destParam}`
-      );
-      const data: any = await response.json();
+      const dest = landedCostEnabled() ? destination.country : '';
+      const destParam = dest ? `&dest=${encodeURIComponent(dest)}` : '';
+      const sizeParam =
+        kind && size ? `&sizeKind=${kind}&size=${encodeURIComponent(size)}` : '';
+      // The same search, run in this tab within the last half hour (coming
+      // back from a product page): reuse it instead of asking again.
+      const searchKey = lastSearchKey(searchQuery, kind, size, dest);
+      const kept = readLastSearch();
+      let response: { ok: boolean };
+      let data: any;
+      if (kept && kept.key === searchKey) {
+        response = { ok: true };
+        data = kept.data;
+      } else {
+        const fetched = await fetch(
+          `/api/search-live?q=${encodeURIComponent(searchQuery)}${destParam}${sizeParam}`
+        );
+        response = fetched;
+        data = await fetched.json();
+        if (response.ok && !data.error && Array.isArray(data.results) && data.results.length > 0) {
+          saveLastSearch({ key: searchKey, q: searchQuery, kind, size, data });
+        }
+      }
       setResults(data.results || []);
+      // The search words did not say clothing, but the listings do: offer
+      // the picker (a remembered size is not applied on this guess).
+      if (!kind && Array.isArray(data.results)) {
+        setSizeKind(sizeKindForResults(searchQuery, data.results.map((p: { name?: unknown }) => String(p.name ?? ''))));
+      }
       // Even error responses carry retailerSearchLinks we can offer as a fallback
       setSearchResponse(data);
       if (!response.ok || data.error) {
@@ -242,6 +293,12 @@ export default function Home() {
     }
   };
 
+  const handleSizeChange = (size: string | null) => {
+    if (!sizeKind) return;
+    setStoredSize(sizeKind, size);
+    handleSearch(query, { kind: sizeKind, size });
+  };
+
   // Re-run the active search when the destination changes: the destination
   // decides which market feeds the server queries (flag-on only), so a
   // shopper switching to GB gets UK offers into the running results. Also
@@ -249,7 +306,7 @@ export default function Home() {
   const destCountry = destination.country;
   useEffect(() => {
     if (!landedCostEnabled() || !hasSearched || !query) return;
-    handleSearch(query);
+    handleSearch(query, sizeKind ? { kind: sizeKind, size: activeSize } : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destCountry]);
 
@@ -259,8 +316,35 @@ export default function Home() {
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get('q');
     if (queryParam) {
-      handleSearch(queryParam);
+      // Coming back to a search this tab just ran: same size, same place
+      // on the page.
+      const kept = readLastSearch();
+      const returning = kept && kept.q === queryParam ? kept : null;
+      const scrollTo = returning ? readScroll() : 0;
+      handleSearch(
+        queryParam,
+        returning?.kind ? { kind: returning.kind, size: returning.size } : undefined
+      ).then(() => {
+        if (scrollTo <= 0) return;
+        // The grid lands a moment after the data; wait until the page is
+        // tall enough, then go back to where they were (give up after 1s).
+        let tries = 0;
+        const restore = () => {
+          const tallEnough = document.documentElement.scrollHeight >= scrollTo + window.innerHeight;
+          if (tallEnough || tries >= 20) {
+            window.scrollTo({ top: scrollTo, behavior: 'instant' });
+          } else {
+            tries += 1;
+            setTimeout(restore, 50);
+          }
+        };
+        setTimeout(restore, 0);
+      });
     }
+    // Where the shopper was when they left for a product page.
+    const onLeave = () => saveScroll(window.scrollY);
+    window.addEventListener('pagehide', onLeave);
+    return () => window.removeEventListener('pagehide', onLeave);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -482,7 +566,7 @@ export default function Home() {
                 {/* Results header */}
                 <div className="mb-6">
                   <h2 className="text-3xl font-bold tracking-tight mb-2 text-neutral-900">
-                    Results for &quot;{query}&quot;{' '}
+                    Results for &quot;{query}&quot;{activeSize ? ` in size ${activeSize}` : ''}{' '}
                     <span className="text-lg font-normal text-neutral-500">
                       ({results.length})
                     </span>
@@ -505,6 +589,10 @@ export default function Home() {
                     )}
                   </p>
                 </div>
+
+                {sizeKind && (
+                  <SizePicker kind={sizeKind} size={activeSize} onChange={handleSizeChange} className="mb-5" />
+                )}
 
                 {/* Search Section with Filters */}
                 <SearchSection
@@ -623,7 +711,7 @@ export default function Home() {
                 <h3 className="text-lg font-medium text-black mb-2">
                   {searchError
                     ? 'Something went wrong on our end'
-                    : <>No results found for &quot;{query}&quot;</>}
+                    : <>No results found for &quot;{query}&quot;{activeSize ? ` in size ${activeSize}` : ''}</>}
                 </h3>
                 <p className="text-black/60 mb-6">
                   {searchError
@@ -631,9 +719,17 @@ export default function Home() {
                         'Our price check failed, and it’s not you. Try again, or search the stores directly below.')
                     : 'Try a different search term, browse popular categories, or search the stores directly below.'}
                 </p>
+                {!searchError && sizeKind && activeSize && (
+                  <SizePicker
+                    kind={sizeKind}
+                    size={activeSize}
+                    onChange={handleSizeChange}
+                    className="mb-8 flex flex-col items-center"
+                  />
+                )}
                 {searchError && (
                   <button
-                    onClick={() => handleSearch(query)}
+                    onClick={() => handleSearch(query, sizeKind ? { kind: sizeKind, size: activeSize } : undefined)}
                     className="mb-8 px-6 py-2.5 rounded-xl bg-[#2A9D8F] text-white text-sm font-medium hover:bg-[#238B7E] transition"
                   >
                     Try again

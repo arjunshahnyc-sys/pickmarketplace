@@ -198,7 +198,11 @@ export type FeedMarket = keyof typeof FEED_MARKETS;
 
 export async function searchGoogleShoppingAPI(
   query: string,
-  market: FeedMarket = 'us'
+  market: FeedMarket = 'us',
+  // The text actually sent, when it differs from the shopper's query: a
+  // size search sends "hoodie size XL" (lib/sizeSearch.ts) while relevance
+  // and fallback links keep judging by "hoodie".
+  sentQuery: string = query
 ): Promise<ScraperResult> {
   const products: Product[] = [];
   const apiKey = process.env.SERPER_API_KEY;
@@ -218,7 +222,7 @@ export async function searchGoogleShoppingAPI(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          q: query,
+          q: sentQuery,
           gl: marketInfo.gl,
           hl: 'en',
           num: 30, // Increased from 20 to get more results before filtering

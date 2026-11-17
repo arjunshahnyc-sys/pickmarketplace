@@ -24,6 +24,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { isCommissionExcluded } from './affiliate';
 import { collapse, registrableDomain, splitSellerSuffix } from './trust/identity';
 import { resolveMerchant } from './trust/registry';
+import { isSizeKind, isValidSize, type SizeKind } from './sizeSearch';
 import type { Product } from './types';
 
 // ─── Signed click URLs ─────────────────────────────────────────────────────
@@ -114,6 +115,155 @@ export function verifyClickParams(search: URLSearchParams): ClickParams | null {
   return p;
 }
 
+// ─── Signed size-check URLs ────────────────────────────────────────────────
+//
+// /api/size-check spends the same paid product lookup as a click, so its
+// links are signed the same way: only for a product Pick showed, in a size
+// search, for the size that search was run for. Unlike click links these
+// are issued for every merchant (nothing is tagged or redirected, so the
+// commission-excluded stores can be checked too).
+
+export interface SizeCheckParams {
+  pid: string;
+  retailer: string;
+  market: string;
+  kind: SizeKind;
+  size: string;
+}
+
+function signSizeCheck(p: SizeCheckParams, secret: string): string {
+  return createHmac('sha256', secret)
+    .update(['size-check', p.pid, p.retailer, p.market, p.kind, p.size].join('\n'))
+    .digest('base64url')
+    .slice(0, 22);
+}
+
+/** The /api/size-check link for a product in a size search; undefined when it has no product id or nothing can sign. */
+export function buildSizeCheckUrl(product: Product, kind: SizeKind, size: string): string | undefined {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret || !product.googleProductId) return undefined;
+  const p: SizeCheckParams = {
+    pid: product.googleProductId,
+    retailer: product.retailer,
+    market: product.sourceMarket ?? 'US',
+    kind,
+    size,
+  };
+  const qs = new URLSearchParams({ pid: p.pid, r: p.retailer, m: p.market, k: p.kind, z: p.size, s: signSizeCheck(p, secret) });
+  return `/api/size-check?${qs.toString()}`;
+}
+
+/** Parses and verifies an /api/size-check query. Null on anything missing or tampered. */
+export function verifySizeCheckParams(search: URLSearchParams): SizeCheckParams | null {
+  const secret = process.env.AUTH_SECRET;
+  const pid = search.get('pid');
+  const retailer = search.get('r');
+  const market = search.get('m');
+  const kind = search.get('k');
+  const size = search.get('z');
+  const sig = search.get('s');
+  if (!secret || !pid || !retailer || !market || !sig) return null;
+  if (!isSizeKind(kind) || !isValidSize(kind, size)) return null;
+  const p: SizeCheckParams = { pid, retailer, market, kind, size };
+  const expected = Buffer.from(signSizeCheck(p, secret));
+  const given = Buffer.from(sig);
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+  return p;
+}
+
+// ─── Signed product-page URLs ──────────────────────────────────────────────
+//
+// /item is Pick's own page for one result: photos, the store's price and
+// stock, the size when the search had one, other stores, then a button to
+// the store. Its details come from the same paid lookup (via /api/item), so
+// its links are signed like the others. Everything the page may show before
+// or without the lookup (title, price, image) rides in the signed link, so
+// nobody can craft a Pick URL that displays a made-up price.
+
+export interface ItemParams {
+  pid: string;
+  retailer: string;
+  market: string;
+  /** The raw store link the card would otherwise carry. */
+  fallback: string;
+  title: string;
+  /** The search row's price, as a plain number string, and its currency. */
+  price: string;
+  currency: string;
+  image: string;
+  kind?: SizeKind;
+  size?: string;
+}
+
+function signItem(p: ItemParams, secret: string): string {
+  return createHmac('sha256', secret)
+    .update(['item', p.pid, p.retailer, p.market, p.fallback, p.title, p.price, p.currency, p.image, p.kind ?? '', p.size ?? ''].join('\n'))
+    .digest('base64url')
+    .slice(0, 22);
+}
+
+/** The /item link for a search result; undefined when it has no product id or nothing can sign. */
+export function buildItemUrl(
+  product: Product,
+  size?: { kind: SizeKind; size: string },
+  // The shopper's search, for the page's Back to results link. Not signed:
+  // it only ever becomes a link to Pick's own search.
+  query?: string
+): string | undefined {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret || !product.googleProductId || !product.name) return undefined;
+  if (!/^https?:\/\//i.test(product.url)) return undefined;
+  const p: ItemParams = {
+    pid: product.googleProductId,
+    retailer: product.retailer,
+    market: product.sourceMarket ?? 'US',
+    fallback: product.url,
+    title: product.name,
+    price: String(product.price),
+    currency: product.currency ?? 'USD',
+    image: /^https:\/\//i.test(product.image ?? '') ? product.image : '',
+    ...(size ? { kind: size.kind, size: size.size } : {}),
+  };
+  const qs = new URLSearchParams({
+    pid: p.pid,
+    r: p.retailer,
+    m: p.market,
+    u: p.fallback,
+    t: p.title,
+    p: p.price,
+    c: p.currency,
+    i: p.image,
+    ...(p.kind && p.size ? { k: p.kind, z: p.size } : {}),
+    s: signItem(p, secret),
+    ...(query ? { q: query } : {}),
+  });
+  return `/item?${qs.toString()}`;
+}
+
+/** Parses and verifies an /item (or /api/item) query. Null on anything missing or tampered. */
+export function verifyItemParams(search: URLSearchParams): ItemParams | null {
+  const secret = process.env.AUTH_SECRET;
+  const pid = search.get('pid');
+  const retailer = search.get('r');
+  const market = search.get('m');
+  const fallback = search.get('u');
+  const title = search.get('t');
+  const price = search.get('p');
+  const currency = search.get('c');
+  const image = search.get('i') ?? '';
+  const kind = search.get('k');
+  const size = search.get('z');
+  const sig = search.get('s');
+  if (!secret || !pid || !retailer || !market || !fallback || !title || !price || !currency || !sig) return null;
+  const sized = isSizeKind(kind) && isValidSize(kind, size) ? { kind, size } : {};
+  const p: ItemParams = { pid, retailer, market, fallback, title, price, currency, image, ...sized };
+  const expected = Buffer.from(signItem(p, secret));
+  const given = Buffer.from(sig);
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+  if (!/^https?:\/\//i.test(fallback)) return null;
+  return p;
+}
+
 // ─── Merchant link cleanup ─────────────────────────────────────────────────
 
 // Google's own click attribution, which the lookup's links carry. They
@@ -138,9 +288,28 @@ export function stripTrackingParams(url: string): string {
 
 // ─── Offer lookup ──────────────────────────────────────────────────────────
 
-interface MerchantOffer {
+export interface MerchantOffer {
   source: string;
   link: string;
+  /** The store's own title for the offer, which may name a size. */
+  title?: string;
+  /** Google's notes on the offer ("In stock online", delivery, returns). */
+  details?: string[];
+  /** The store's price and crossed-out price, as Google prints them ("$31.46"). */
+  price?: string;
+  originalPrice?: string;
+}
+
+/** What the lookup says about the product itself. */
+export interface ProductInfo {
+  title: string;
+  description: string;
+  images: string[];
+}
+
+export interface ProductLookup {
+  offers: MerchantOffer[];
+  info: ProductInfo | null;
 }
 
 const TTL_OK = 6 * 60 * 60 * 1000;
@@ -155,7 +324,7 @@ const SITE_SEARCH_TIMEOUT_MS = 4000;
 
 // Anchored on globalThis for the same reason as the rate limiter: Next
 // bundles each route with its own copy of a module-level Map.
-type OfferCache = Map<string, { offers: MerchantOffer[] | null; ts: number }>;
+type OfferCache = Map<string, { offers: MerchantOffer[] | null; info?: ProductInfo | null; ts: number }>;
 /** `failed` = the search itself errored (retry soon); url null = searched, no match. */
 type SiteCache = Map<string, { url: string | null; failed: boolean; ts: number }>;
 const globalStore = globalThis as unknown as {
@@ -179,7 +348,7 @@ export function clearOfferCache(): void {
   siteCache.clear();
 }
 
-async function fetchOffers(pid: string, market: string): Promise<MerchantOffer[] | null> {
+async function fetchOffers(pid: string, market: string): Promise<ProductLookup | null> {
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) return null;
 
@@ -198,12 +367,42 @@ async function fetchOffers(pid: string, market: string): Promise<MerchantOffer[]
     }
     const data = await response.json();
     const offers: unknown[] = Array.isArray(data?.offers) ? data.offers : [];
-    return offers.flatMap((o) => {
-      const { source, link } = (o ?? {}) as { source?: unknown; link?: unknown };
+    const product = (data?.product ?? {}) as { title?: unknown; description?: unknown; images?: unknown };
+    const info: ProductInfo | null =
+      typeof product.title === 'string' && product.title.trim()
+        ? {
+            title: product.title.trim(),
+            description: typeof product.description === 'string' ? product.description.trim() : '',
+            images: Array.isArray(product.images)
+              ? product.images.filter((i): i is string => typeof i === 'string' && /^https:\/\//i.test(i)).slice(0, 8)
+              : [],
+          }
+        : null;
+    const parsed = offers.flatMap((o) => {
+      const { source, link, title, details, price, originalPrice } = (o ?? {}) as {
+        source?: unknown;
+        link?: unknown;
+        title?: unknown;
+        details?: unknown;
+        price?: unknown;
+        originalPrice?: unknown;
+      };
       return typeof source === 'string' && typeof link === 'string' && /^https?:\/\//i.test(link)
-        ? [{ source, link }]
+        ? [
+            {
+              source,
+              link,
+              ...(typeof title === 'string' && title ? { title } : {}),
+              ...(Array.isArray(details)
+                ? { details: details.filter((d): d is string => typeof d === 'string') }
+                : {}),
+              ...(typeof price === 'string' && price ? { price } : {}),
+              ...(typeof originalPrice === 'string' && originalPrice ? { originalPrice } : {}),
+            },
+          ]
         : [];
     });
+    return { offers: parsed, info };
   } catch (error) {
     console.error('[Serper] product lookup failed:', error instanceof Error ? error.message : String(error));
     return null;
@@ -218,7 +417,7 @@ async function fetchOffers(pid: string, market: string): Promise<MerchantOffer[]
  * sending a "GameStop $169" click to another store's page would show a
  * different price than the one Pick advertised.
  */
-function sameSeller(offerSource: string, retailer: string, market: string): boolean {
+export function sameSeller(offerSource: string, retailer: string, market: string): boolean {
   if (collapse(offerSource) === collapse(retailer)) return true;
   const a = resolveMerchant(offerSource, market)?.id;
   const b = resolveMerchant(retailer, market)?.id;
@@ -325,6 +524,28 @@ async function searchSellerSite(
  * second-chance site search finds that seller. Never throws; null means
  * "use the fallback link".
  */
+/**
+ * A product's offers from the paid lookup, through the shared cache: a size
+ * check followed by a click on the same card pays for one lookup, not two.
+ * Null when the lookup failed.
+ */
+export async function lookupOffers(pid: string, market: string): Promise<MerchantOffer[] | null> {
+  return (await lookupProduct(pid, market))?.offers ?? null;
+}
+
+/** The same cached lookup, with what it says about the product itself. */
+export async function lookupProduct(pid: string, market: string): Promise<ProductLookup | null> {
+  const key = `${market.toLowerCase()}:${pid}`;
+  const now = Date.now();
+  let entry = cache.get(key);
+  if (!entry || now - entry.ts >= (entry.offers ? TTL_OK : TTL_FAILED)) {
+    const found = await fetchOffers(pid, market);
+    entry = { offers: found?.offers ?? null, info: found?.info ?? null, ts: now };
+    remember(cache, key, entry);
+  }
+  return entry.offers ? { offers: entry.offers, info: entry.info ?? null } : null;
+}
+
 export async function resolveMerchantUrl(
   pid: string,
   retailer: string,
@@ -333,13 +554,9 @@ export async function resolveMerchantUrl(
 ): Promise<string | null> {
   const key = `${market.toLowerCase()}:${pid}`;
   const now = Date.now();
-  let entry = cache.get(key);
-  if (!entry || now - entry.ts >= (entry.offers ? TTL_OK : TTL_FAILED)) {
-    entry = { offers: await fetchOffers(pid, market), ts: now };
-    remember(cache, key, entry);
-  }
+  const offers = await lookupOffers(pid, market);
 
-  const offer = entry.offers?.find((o) => sameSeller(o.source, retailer, market));
+  const offer = offers?.find((o) => sameSeller(o.source, retailer, market));
   if (offer) return stripTrackingParams(offer.link);
 
   if (!title) return null;

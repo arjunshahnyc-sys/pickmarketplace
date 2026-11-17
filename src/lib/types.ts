@@ -71,6 +71,17 @@ export interface Product {
    * Attached by performLiveSearch; absent on older cached responses.
    */
   attributes?: ProductAttributes;
+  /**
+   * Signed /api/size-check link, attached by performLiveSearch on a size
+   * search only (lib/sizeSearch.ts): the card's "Check size" button.
+   */
+  sizeCheck?: { url: string; size: string };
+  /**
+   * Signed link to Pick's own page for this result (/item), attached by
+   * performLiveSearch. The card links here when present; the page then
+   * links on to the store.
+   */
+  itemUrl?: string;
 }
 
 export interface ProductAttributes {

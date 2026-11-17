@@ -82,6 +82,12 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 2px;
 }
 
+/* The search box is a pill; the rule above would square it off while the
+   cursor is in it. */
+#pick-search:focus-visible {
+  border-radius: 9999px;
+}
+
 /* High contrast focus for buttons and links */
 button:focus-visible,
 a:focus-visible,

@@ -11,6 +11,7 @@ import { getRetailerLogo } from "./RetailerLogos";
 import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
 import LandedCostPanel from "./LandedCostPanel";
+import SizeCheckButton from "./SizeCheckButton";
 import { overlaysFor } from "@/lib/cardOverlays";
 import { IMAGE_BOX_CLASS } from "@/lib/cardLayout";
 import type { Product } from "@/lib/types";
@@ -318,15 +319,25 @@ function ProductCard({
           must stay non-positioned so the overlay measures the wrapper. */}
       <h3 className="text-sm font-semibold text-neutral-900 mt-2 line-clamp-2 leading-tight! min-h-[2.5em] group-hover:text-pick-teal transition">
         <a
-          // clickUrl resolves the store's own product page on click; url
-          // stays the offer's identity and decides the rel below.
-          href={product.clickUrl ?? product.url}
-          target="_blank"
+          // itemUrl is Pick's own page for the result (/item), which then
+          // links on to the store. Without one, clickUrl resolves the
+          // store's own product page on click; url stays the offer's
+          // identity and decides the rel below.
+          href={product.itemUrl ?? product.clickUrl ?? product.url}
+          // Pick's own page opens in this tab (it has a Back to results
+          // button); a store opens in a new one.
+          target={product.itemUrl ? undefined : "_blank"}
           // rel=sponsored is a machine-readable paid-link claim; only make it
           // when THIS link actually carries commission tracking. Per-link, not
           // site-wide: commission-excluded merchants (Amazon) keep a plain rel
           // even when affiliate links are live everywhere else.
-          rel={isAffiliateUrl(product.url) ? "noopener noreferrer sponsored" : "noopener noreferrer"}
+          rel={
+            product.itemUrl
+              ? undefined
+              : isAffiliateUrl(product.url)
+                ? "noopener noreferrer sponsored"
+                : "noopener noreferrer"
+          }
           aria-label={linkLabel}
           // The global a:focus-visible outline would ring only the title
           // text; the wrapper rings the whole card instead (has-[a:focus-visible]).
@@ -398,6 +409,15 @@ function ProductCard({
           up. The cost row is interactive: a positioned sibling above the
           link overlay (see the shell comment). */}
       <div className="mt-auto pt-1">
+        {product.sizeCheck && !product.isFallback && (
+          <SizeCheckButton
+            // A new size search is a new check.
+            key={product.sizeCheck.url}
+            url={product.sizeCheck.url}
+            size={product.sizeCheck.size}
+            retailer={product.retailer}
+          />
+        )}
         {(showVerified || showCompare) && (
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             {showVerified ? (
