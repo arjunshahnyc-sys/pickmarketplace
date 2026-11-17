@@ -1,8 +1,16 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
-import { ArrowRight, Search } from 'lucide-react';
+import { useState, useEffect, useSyncExternalStore, FormEvent } from 'react';
+import { ArrowRight, History, Search, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import {
+  clearSearchHistory,
+  getSearchHistory,
+  getServerSearchHistory,
+  matchingSearches,
+  removeSearch,
+  subscribeSearchHistory,
+} from '@/lib/searchHistory';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -28,6 +36,13 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const reduceMotion = useReducedMotion();
+  // Recent searches from this device (lib/searchHistory.ts). The list opens
+  // under the box while the box has focus, narrows as the shopper types, and
+  // is recorded by the page's handleSearch, so chip and link searches count.
+  const history = useSyncExternalStore(subscribeSearchHistory, getSearchHistory, getServerSearchHistory);
+  const [open, setOpen] = useState(false);
+  const recent = matchingSearches(history, query);
+  const showRecent = open && !isLoading && recent.length > 0;
   const placeholder = `Try "${PLACEHOLDER_QUERIES[placeholderIndex]}"`;
 
   // Only rotate while the field is empty — once the user types, the
@@ -43,13 +58,30 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      setOpen(false);
       onSearch(query.trim());
     }
   };
 
+  const searchAgain = (term: string) => {
+    setQuery(term);
+    setOpen(false);
+    onSearch(term);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-2xl">
-      <div className="relative">
+      <div
+        className="relative"
+        onFocus={() => setOpen(true)}
+        onBlur={(e) => {
+          // Stay open while focus moves between the box and the list.
+          if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setOpen(false);
+        }}
+      >
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
         <input
           id="pick-search"
@@ -58,8 +90,17 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           autoCapitalize="none"
           autoCorrect="off"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onClick={() => setOpen(true)}
+          autoComplete="off"
+          aria-controls={showRecent ? 'pick-recent-searches' : undefined}
           placeholder={placeholder}
+          // Inline so the global :focus-visible rule (2px corners) cannot
+          // square off the pill while the cursor is in it.
+          style={{ borderRadius: 9999 }}
           className="h-14 md:h-16 w-full rounded-full bg-white pl-12 pr-16 text-base text-neutral-900 placeholder:text-transparent border border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-2 focus:ring-[#2A9D8F] transition-shadow"
           disabled={isLoading}
         />
@@ -94,6 +135,51 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
             <ArrowRight size={18} />
           )}
         </button>
+        {showRecent && (
+          <div
+            id="pick-recent-searches"
+            role="group"
+            aria-label="Recent searches"
+            // Keeps the cursor in the box on a mouse press (Safari gives a
+            // pressed button no focus, which would close the list before
+            // the click lands).
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl bg-white py-2 shadow-[0_8px_30px_rgba(0,0,0,0.14)] ring-1 ring-black/5"
+          >
+            <div className="flex items-center justify-between px-4 pb-1 pt-1">
+              <span className="text-xs font-medium text-neutral-500">Recent searches</span>
+              <button
+                type="button"
+                onClick={() => clearSearchHistory()}
+                className="-mr-2 rounded-full px-2 py-1 text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
+              >
+                Clear all
+              </button>
+            </div>
+            <ul>
+              {recent.map((term) => (
+                <li key={term} className="flex items-center hover:bg-neutral-50">
+                  <button
+                    type="button"
+                    onClick={() => searchAgain(term)}
+                    className="flex min-h-11 min-w-0 flex-1 items-center gap-3 pl-4 pr-2 text-left text-base text-neutral-800"
+                  >
+                    <History className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                    <span className="truncate">{term}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSearch(term)}
+                    aria-label={`Remove ${term} from recent searches`}
+                    className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:text-neutral-800 transition-colors"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </form>
   );

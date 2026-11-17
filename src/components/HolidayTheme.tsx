@@ -8,7 +8,7 @@
 // visitor's own clock decides.
 
 import { useEffect } from 'react';
-import { Gift, Snowflake } from 'lucide-react';
+import { Snowflake } from 'lucide-react';
 import { isHolidaySeason } from '@/lib/season';
 
 export function HolidayTheme() {
@@ -67,19 +67,14 @@ export function HolidaySnow() {
   );
 }
 
-// The landing hero's holiday line, above the headline. A lucide icon, not an
-// emoji. The claim stays inside what Pick does: the same kind of gift at a
-// lower price, not "the cheapest price anywhere".
+// The landing hero's holiday line, above the headline. Plain text on
+// purpose: the earlier version was a tinted pill with a gift icon and a
+// two-part slogan, and it read as template filler. The claim stays inside
+// what Pick does: check a gift here first, not "the cheapest price anywhere".
 export function HolidayGiftLine() {
   return (
-    <p className="holiday-only mb-5">
-      <span className="inline-flex items-center gap-2 rounded-full border border-[#2A9D8F]/25 bg-[#2A9D8F]/[0.07] py-1.5 pl-2.5 pr-3.5 text-sm text-[#14524B]">
-        <Gift className="h-4 w-4 shrink-0 text-[#D64545]" aria-hidden="true" />
-        <span>
-          <strong className="font-semibold">Same gift. Smaller price tag.</strong>{' '}
-          <span className="text-[#14524B]/75">Shop the holidays for less.</span>
-        </span>
-      </span>
+    <p className="holiday-only mb-3 text-sm font-medium text-[#D64545]">
+      Buying gifts? Check them here first.
     </p>
   );
 }

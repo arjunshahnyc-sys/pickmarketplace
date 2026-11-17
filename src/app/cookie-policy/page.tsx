@@ -52,7 +52,7 @@ export default function CookiePolicyPage() {
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <h3 className="font-semibold text-black mb-2">Preference Cookies</h3>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    Pick does not set any preference cookies. Your delivery country, currency, and saved list are kept in your browser's local storage instead. That data stays on your device, is never sent to our servers, and is removed when you clear the site's data in your browser.
+                    Pick does not set any preference cookies. Your delivery country, currency, saved list, and the list of your recent searches are kept in your browser's local storage instead. That data stays on your device, is never sent to our servers, and is removed when you clear the site's data in your browser.
                   </p>
                 </div>
 
@@ -115,7 +115,7 @@ export default function CookiePolicyPage() {
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mt-4">
                 <li><strong>Session cookie:</strong> Set only when you sign in, and removed when you sign out or after 30 days</li>
-                <li><strong>Preference cookies:</strong> None set today; your delivery country, currency, and saved list stay in your browser's local storage until you clear it</li>
+                <li><strong>Preference cookies:</strong> None set today; your delivery country, currency, saved list, and recent searches stay in your browser's local storage until you clear it</li>
                 <li>
                   <strong>Affiliate cookies:</strong>{' '}
                   {affiliateLinksEnabled()

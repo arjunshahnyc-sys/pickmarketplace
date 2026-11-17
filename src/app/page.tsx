@@ -39,7 +39,7 @@ import { useDestination } from '@/contexts/DestinationContext';
 import { getRetailerTrust, hasUnverifiedSeller, isRecognizedSeller } from '@/lib/retailerTrust';
 import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useReveal } from '@/lib/motion/useReveal';
+import { addSearch } from '@/lib/searchHistory';
 
 // ============================================================================
 // HERO COMPARISON DATA: AN ILLUSTRATIVE EXAMPLE, NOT A CAPTURED LIVE RESULT.
@@ -143,7 +143,6 @@ function formatCheckedAt(checkedAt?: string): string {
 export default function Home() {
   const { destination } = useDestination();
   const reduceMotion = useReducedMotion();
-  const reveal = useReveal();
   const { provider: fxProvider, status: fxStatus } = useFxProvider();
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState('');
@@ -209,6 +208,8 @@ export default function Home() {
     setResults([]);
     setSearchError(false);
     setSearchErrorMessage(null);
+    // Remember it on this device for the search box's recent list.
+    addSearch(searchQuery);
 
     try {
       // The shopper's destination adds their local market feed server-side
@@ -373,8 +374,8 @@ export default function Home() {
 
       <main id="main-content">
         {/* Hero: the pitch on the left, the proof on the right. The whole
-            first fold is about cheaper equivalents; exact-item matching gets
-            one supporting line under How it works and nowhere else. */}
+            first fold is about cheaper equivalents. How it works lives on
+            its own page (/how-it-works, linked from the footer), not here. */}
         {/* On phones, once a search has run, the pitch (headline and
             paragraph) steps aside so the search box and the results are what
             fills the screen; from md up it stays. */}
@@ -392,12 +393,7 @@ export default function Home() {
                 Find a cheaper product.
               </HeroHeadline>
               <p className={`text-lg text-neutral-600 leading-relaxed max-w-xl mt-4 mb-6 ${hasSearched ? 'hidden md:block' : ''}`}>
-                Type in what you were about to buy. Pick looks for its cheaper twin:{' '}
-                <strong className="font-semibold text-neutral-800">
-                  a different product with the same key specs, reviews about as good, and a
-                  lower price
-                </strong>
-                , and shows you why they compare. Buy that one instead.
+                Try anything.
               </p>
 
               {/* Search Bar */}
@@ -408,7 +404,6 @@ export default function Home() {
               {/* Quick search hints */}
               {!hasSearched && (
                 <div className="mt-6 flex items-center gap-2.5 flex-wrap">
-                  <span className="text-sm text-neutral-500">Try:</span>
                   {['AirPods', 'Textbooks', 'Dorm Stuff', 'Skincare Dupes', 'Oversized Hoodie', 'Laptops', 'Mini Dresses'].map(
                     (term) => (
                       <button
@@ -453,71 +448,6 @@ export default function Home() {
             </a>
           </p>
         </div>
-
-        {/* How it works: the page's ONE how-it-works section (two near
-            duplicates were merged here on 2026-09-01). Step 2 describes the
-            equivalents engine and deliberately does not name the price
-            sources; that sentence lives once, on the retailer strip below.
-            The footnote is the page's single mention of exact-item matching. */}
-        {!hasSearched && (
-          <motion.section {...reveal()} id="how-it-works" className="max-w-5xl mx-auto px-6 py-16 md:py-20">
-            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-[#2A9D8F] mb-3">
-              How it works
-            </p>
-            <h2 className="text-center text-3xl font-bold tracking-tight text-neutral-900 mb-3">
-              Three steps to the cheaper twin
-            </h2>
-            <p className="text-center text-black/60 max-w-md mx-auto mb-10">
-              We do the comparison shopping so you don&apos;t have to open a dozen browser tabs.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div
-                  {...reveal(0.1)}
-                  className="p-6 text-center"
-                >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
-                    1
-                  </div>
-                  <h3 className="font-semibold text-neutral-900 mb-2">Paste or search</h3>
-                  <p className="text-sm text-neutral-600">
-                    Drop in what you want: a product name, a brand, or a whole category. Be as
-                    specific or general as you like.
-                  </p>
-                </motion.div>
-                <motion.div
-                  {...reveal(0.18)}
-                  className="p-6 text-center"
-                >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
-                    2
-                  </div>
-                  <h3 className="font-semibold text-neutral-900 mb-2">We find the cheaper twin</h3>
-                  <p className="text-sm text-neutral-600">
-                    Pick goes through current listings for a different product that shares the
-                    key specs of what you searched, costs well under it, and is reviewed about
-                    as well, by enough people to count.
-                  </p>
-                </motion.div>
-                <motion.div
-                  {...reveal(0.26)}
-                  className="p-6 text-center"
-                >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A9D8F]/10 text-[#2A9D8F] font-bold text-lg mb-4">
-                    3
-                  </div>
-                  <h3 className="font-semibold text-neutral-900 mb-2">Compare and decide</h3>
-                  <p className="text-sm text-neutral-600">
-                    Each pick shows what it shares with the original. Click through to
-                    whichever store has it. Move on with your day.
-                  </p>
-                </motion.div>
-            </div>
-            <p className="mt-6 text-center text-sm text-neutral-500">
-              If the exact item shows up at more than one store, Pick flags the cheapest
-              listing while it&apos;s at it.
-            </p>
-          </motion.section>
-        )}
 
         {/* Retailer strip: the page's one retailer list and one sourcing
             sentence (see the note in TrustedBy.tsx). */}
