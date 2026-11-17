@@ -6,7 +6,8 @@ import Footer from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
 import ProductCard from '@/components/ProductCard';
 import { ProductGridSkeleton } from '@/components/ProductCardSkeleton';
-import { RESULTS_GRID_CLASS } from '@/lib/cardLayout';
+import { RESULTS_GRID_BESIDE_FILTERS_CLASS, RESULTS_GRID_CLASS } from '@/lib/cardLayout';
+import FacetChips from '@/components/FacetChips';
 import SearchSection from '@/components/SearchSection';
 import UnverifiedSellerNote from '@/components/UnverifiedSellerNote';
 import CompareDrawer from '@/components/CompareDrawer';
@@ -491,6 +492,11 @@ export default function Home() {
           return `Checked the first ${checked} for size ${activeSize}.${removed} The rest may be another size, so tap Check size or confirm at the store.`;
         })();
 
+  // Whether the results get a filter column on large screens: only when
+  // there is something to put in it (a size picker, or a chip group with a
+  // real choice). Without one the grid keeps its four columns.
+  const hasFilterColumn = Boolean(sizeKind) || facets.some((g) => g.values.length >= 2);
+
   // Each toggle's count is computed against the OTHER active filters, so
   // the number on the button always matches what clicking it would show.
   const saleCount = useMemo(() => {
@@ -671,8 +677,12 @@ export default function Home() {
                   </p>
                 </div>
 
+                {/* Size and the filter chips sit above the results on
+                    phones and tablets; from lg up they move to a column
+                    beside the grid (below), which stays in view while the
+                    shopper scrolls. */}
                 {sizeKind && (
-                  <SizePicker kind={sizeKind} size={activeSize} onChange={handleSizeChange} className="mb-5" note={sizeNote} />
+                  <SizePicker kind={sizeKind} size={activeSize} onChange={handleSizeChange} className="mb-5 lg:hidden" note={sizeNote} />
                 )}
 
                 {/* Search Section with Filters */}
@@ -694,7 +704,39 @@ export default function Home() {
                   selectedFacets={selectedFacets}
                   onFacetToggle={handleFacetToggle}
                   onFacetsClear={handleFacetsClear}
+                  chipsInSideColumn
                 />
+
+                <div className={hasFilterColumn ? 'lg:flex lg:items-start lg:gap-8' : ''}>
+                {hasFilterColumn && (
+                  // top clears the sticky site header (72px) and the sticky
+                  // sort bar under it; the column scrolls on its own when it
+                  // is taller than the screen.
+                  <aside
+                    aria-label="Filters"
+                    className="hidden lg:block w-52 shrink-0 sticky top-[188px] max-h-[calc(100vh-204px)] overflow-y-auto pr-1 pb-4"
+                  >
+                    {sizeKind && (
+                      <SizePicker
+                        kind={sizeKind}
+                        size={activeSize}
+                        onChange={handleSizeChange}
+                        note={sizeNote}
+                        stacked
+                        className="mb-5"
+                      />
+                    )}
+                    <FacetChips
+                      facets={facets}
+                      counts={facetCounts}
+                      selected={selectedFacets}
+                      onToggle={handleFacetToggle}
+                      onClear={handleFacetsClear}
+                      layout="side"
+                    />
+                  </aside>
+                )}
+                <div className="min-w-0 flex-1">
 
                 {/* A filter is active but nothing qualifies */}
                 {(showOnSaleOnly || showVerifiedOnly || facetsActive) && filteredResults.length === 0 && (
@@ -728,7 +770,7 @@ export default function Home() {
                     initial="hidden"
                     whileInView="show"
                     viewport={{ once: true, amount: 0.05 }}
-                    className={RESULTS_GRID_CLASS}
+                    className={hasFilterColumn ? RESULTS_GRID_BESIDE_FILTERS_CLASS : RESULTS_GRID_CLASS}
                   >
                     {filteredResults.map((product, i) => (
                       // flex so the card stretches to the row height (equal
@@ -748,6 +790,8 @@ export default function Home() {
                 </ErrorBoundary>
 
                 {showUnverifiedNote && <UnverifiedSellerNote className="mt-4" />}
+                </div>
+                </div>
 
                 {/* Affiliate Disclosure */}
                 {!isLoading && results.length > 0 && (

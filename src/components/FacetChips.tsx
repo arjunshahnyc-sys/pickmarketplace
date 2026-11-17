@@ -17,6 +17,12 @@ interface FacetChipsProps {
   onToggle: (key: FacetKey, value: string) => void;
   onClear: () => void;
   className?: string;
+  /**
+   * 'rows' (default): one scrollable row per group, label at the left.
+   * 'side': for the filter column beside the results; the label sits above
+   * its chips and the chips wrap. Same chips either way.
+   */
+  layout?: 'rows' | 'side';
 }
 
 export default function FacetChips({
@@ -26,21 +32,31 @@ export default function FacetChips({
   onToggle,
   onClear,
   className = '',
+  layout = 'rows',
 }: FacetChipsProps) {
+  const side = layout === 'side';
   const groups = facets.filter((g) => g.values.length >= 2);
   if (groups.length === 0) return null;
   const anySelected = Object.values(selected).some((v) => v && v.length > 0);
 
   return (
-    <div className={`flex w-full min-w-0 flex-col gap-2 ${className}`}>
+    <div className={`flex w-full min-w-0 flex-col ${side ? 'gap-5' : 'gap-2'} ${className}`}>
       {groups.map((group) => (
         <div
           key={group.key}
           role="group"
           aria-label={`Filter by ${group.label.toLowerCase()}`}
-          className="flex w-full max-w-full items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]"
+          className={
+            side
+              ? 'flex w-full flex-wrap items-center gap-2'
+              : 'flex w-full max-w-full items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]'
+          }
         >
-          <span className="w-[4.5rem] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+          <span
+            className={`shrink-0 text-[11px] font-semibold uppercase tracking-wide text-neutral-500 ${
+              side ? 'mb-0.5 w-full' : 'w-[4.5rem]'
+            }`}
+          >
             {group.label}
           </span>
           {group.values.map((v) => {
@@ -57,7 +73,9 @@ export default function FacetChips({
                 onClick={() => {
                   if (!empty) onToggle(group.key, v.value);
                 }}
-                className={`tap-grow relative shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px] md:px-3 md:py-1.5 md:text-xs transition ${
+                className={`tap-grow relative rounded-full border px-3.5 py-2 text-[13px] md:px-3 md:py-1.5 md:text-xs transition ${
+                  side ? 'max-w-full text-left' : 'shrink-0 whitespace-nowrap'
+                } ${
                   on
                     ? 'border-[#2A9D8F] bg-teal-50 text-[#1F7A6F]'
                     : empty

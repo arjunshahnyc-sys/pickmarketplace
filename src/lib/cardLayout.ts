@@ -7,6 +7,12 @@
 export const RESULTS_GRID_CLASS = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4';
 
 /**
+ * The same grid beside the filter column (large screens on the home page's
+ * results): the column takes a card's width, so the grid stops at three.
+ */
+export const RESULTS_GRID_BESIDE_FILTERS_CLASS = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4';
+
+/**
  * The product image box: a fixed square with a neutral pad, so every card's
  * image area is the same size whatever the photo's dimensions; the <img>
  * inside uses object-contain. Chips and the Save/Compare controls are

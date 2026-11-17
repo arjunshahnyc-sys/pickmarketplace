@@ -30,6 +30,11 @@ interface SearchSectionProps {
   selectedFacets?: SelectedFacets;
   onFacetToggle?: (key: FacetKey, value: string) => void;
   onFacetsClear?: () => void;
+  /**
+   * The page shows the chips in a filter column beside the results on
+   * large screens, so the rows under this bar are for smaller ones only.
+   */
+  chipsInSideColumn?: boolean;
 }
 
 export default function SearchSection({
@@ -50,6 +55,7 @@ export default function SearchSection({
   selectedFacets = {},
   onFacetToggle,
   onFacetsClear,
+  chipsInSideColumn = false,
 }: SearchSectionProps) {
   // PINCHPOINT 3 FIX - Calculate price range. Only meaningful when every
   // offer shares one currency: mixed-market results (international pilot)
@@ -197,7 +203,7 @@ export default function SearchSection({
           selected={selectedFacets}
           onToggle={onFacetToggle}
           onClear={onFacetsClear}
-          className="mb-4"
+          className={chipsInSideColumn ? 'mb-4 lg:hidden' : 'mb-4'}
         />
       )}
     </>

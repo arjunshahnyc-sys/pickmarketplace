@@ -7,6 +7,7 @@
 // which Google answers loosely (lookups on 2026-11-17 found XL and XXL
 // listings in a size L search), not a promise about any one listing.
 
+import { useId } from 'react';
 import { SIZE_LABELS, SIZE_OPTIONS, type SizeKind } from '@/lib/sizeSearch';
 
 interface SizePickerProps {
@@ -16,20 +17,32 @@ interface SizePickerProps {
   className?: string;
   /** What the automatic check of the first cards found, in place of the standing note. */
   note?: string;
+  /** For the filter column beside the results: the label sits above the choices, styled like the other filter labels. */
+  stacked?: boolean;
 }
 
-export default function SizePicker({ kind, size, onChange, className = '', note }: SizePickerProps) {
+export default function SizePicker({ kind, size, onChange, className = '', note, stacked = false }: SizePickerProps) {
+  // The page renders two pickers (one above the results on phones, one in
+  // the filter column on large screens), so the label id cannot be fixed.
+  const labelId = useId();
   const label = SIZE_LABELS[kind];
   const options = SIZE_OPTIONS[kind];
 
   return (
     <div className={className}>
       <div className="flex flex-wrap items-center gap-2">
-        <span id={`size-picker-${kind}`} className="mr-1 text-sm font-medium text-neutral-700">
+        <span
+          id={labelId}
+          className={
+            stacked
+              ? 'mb-0.5 w-full text-[11px] font-semibold uppercase tracking-wide text-neutral-500'
+              : 'mr-1 text-sm font-medium text-neutral-700'
+          }
+        >
           {label}
         </span>
         {kind === 'letters' ? (
-          <div role="group" aria-labelledby={`size-picker-${kind}`} className="flex flex-wrap gap-2">
+          <div role="group" aria-labelledby={labelId} className="flex flex-wrap gap-2">
             {options.map((option) => {
               const selected = option === size;
               return (
@@ -51,7 +64,7 @@ export default function SizePicker({ kind, size, onChange, className = '', note 
           </div>
         ) : (
           <select
-            aria-labelledby={`size-picker-${kind}`}
+            aria-labelledby={labelId}
             value={size ?? ''}
             onChange={(e) => onChange(e.target.value || null)}
             // 16px on phones so iOS does not zoom the page on focus.
