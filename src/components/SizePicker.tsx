@@ -3,8 +3,9 @@
 // The size picker over clothing and shoe results (lib/sizeSearch.ts decides
 // when it appears and what it offers). Picking a size re-runs the search for
 // that size; picking it again, or "Any", goes back to every size. The note
-// under it says what a size search is and is not: listings and prices for
-// that size, not a promise that the store has it.
+// under it says what a size search is and is not: a search for that size,
+// which Google answers loosely (lookups on 2026-11-17 found XL and XXL
+// listings in a size L search), not a promise about any one listing.
 
 import { SIZE_LABELS, SIZE_OPTIONS, type SizeKind } from '@/lib/sizeSearch';
 
@@ -76,7 +77,7 @@ export default function SizePicker({ kind, size, onChange, className = '' }: Siz
       </div>
       {size && (
         <p className="mt-2 text-xs text-neutral-500">
-          Listings and prices for size {size}. Stock changes, so check the size at the store before you buy.
+          Searched for size {size}. Some listings may be another size, so tap Check size on a card or confirm at the store.
         </p>
       )}
     </div>
