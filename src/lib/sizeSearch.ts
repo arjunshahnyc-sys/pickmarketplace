@@ -105,9 +105,10 @@ export function sizeNamedInTitle(title: string, kind: SizeKind): string | null {
   if (kind === 'letters') {
     // After the word "size", or as the last thing in the title after a
     // comma or dash ("Essential Oversized Hoodie - Stone, XS").
+    // Stores also spell it out at the end ("... - Flint Blue - Large").
     const m =
       text.match(/\bsize[:\s]+(extra small|extra large|[a-z0-9-]+)/) ??
-      text.match(/[,\-–|/]\s*(x{0,3}s|m|x{0,3}l|[2-5]xl?)\s*$/);
+      text.match(/[,\-–|/]\s*(x{0,3}s|m|x{0,3}l|[2-5]xl?|x-small|small|medium|large|x-large|xx-large)\s*$/);
     if (!m) return null;
     const token = m[1];
     const upper = token.toUpperCase();
@@ -217,11 +218,19 @@ function stockOf(details: readonly string[] = []): 'in' | 'out' | null {
   return null;
 }
 
+/**
+ * `listingTitle` is the search row's own title, the fallback when the
+ * lookup has nothing for the store: Google has no product page for some
+ * listings (Kohl's rows came back "Product not found" on 2026-11-17) even
+ * though the row's title says "Size: Large". A title can confirm the size
+ * the listing is for; it never says anything about stock.
+ */
 export function sizeVerdict(
   offers: readonly CheckedOffer[],
   isSeller: (source: string) => boolean,
   kind: SizeKind,
-  size: string
+  size: string,
+  listingTitle = ''
 ): SizeCheckResult {
   const alsoAt = Array.from(
     new Set(
@@ -231,8 +240,13 @@ export function sizeVerdict(
     )
   ).slice(0, 2);
 
+  const fromListing = sizeNamedInTitle(listingTitle, kind);
   const own = offers.filter((o) => isSeller(o.source));
-  if (own.length === 0) return { status: 'unknown', alsoAt };
+  if (own.length === 0) {
+    if (fromListing === size) return { status: 'listed', alsoAt };
+    if (fromListing) return { status: 'other-size', otherSize: fromListing, alsoAt };
+    return { status: 'unknown', alsoAt };
+  }
 
   // The store may list several sizes; the one asked for decides.
   const match = own.find((o) => sizeNamedInTitle(o.title ?? '', kind) === size);
@@ -241,5 +255,12 @@ export function sizeVerdict(
     return { status: stock === 'in' ? 'in-stock' : stock === 'out' ? 'out-of-stock' : 'listed', alsoAt };
   }
   const other = own.map((o) => sizeNamedInTitle(o.title ?? '', kind)).find((s) => s !== null);
-  return other ? { status: 'other-size', otherSize: other, alsoAt } : { status: 'unstated', alsoAt };
+  if (other) return { status: 'other-size', otherSize: other, alsoAt };
+  // The store's offer names no size, but the search row did.
+  if (fromListing === size) {
+    const stock = stockOf(own[0].details);
+    return { status: stock === 'in' ? 'in-stock' : stock === 'out' ? 'out-of-stock' : 'listed', alsoAt };
+  }
+  if (fromListing) return { status: 'other-size', otherSize: fromListing, alsoAt };
+  return { status: 'unstated', alsoAt };
 }

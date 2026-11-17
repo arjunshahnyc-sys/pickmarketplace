@@ -23,13 +23,13 @@ export function sizeCheckMessage(result: SizeCheckResult, size: string, retailer
     case 'out-of-stock':
       return { text: `Size ${size} is out of stock at ${retailer}`, tone: 'text-red-600' };
     case 'listed':
-      return { text: `${retailer} lists size ${size}. Stock not shown.`, tone: 'text-neutral-700' };
+      return { text: `This listing is size ${size}. Stock not shown, check at the store.`, tone: 'text-neutral-700' };
     case 'other-size':
-      return { text: `This listing is size ${result.otherSize}, not ${size}`, tone: 'text-amber-700' };
+      return { text: `This listing is size ${result.otherSize}. Check for ${size} at the store.`, tone: 'text-amber-700' };
     case 'unstated':
       return { text: `${retailer} does not say which sizes it has. Check at the store.`, tone: 'text-neutral-600' };
     default:
-      return { text: 'Could not check this one. Check at the store.', tone: 'text-neutral-600' };
+      return { text: `No size details for this listing. Check at ${retailer}.`, tone: 'text-neutral-600' };
   }
 }
 

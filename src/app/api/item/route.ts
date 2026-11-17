@@ -54,8 +54,17 @@ export async function GET(req: NextRequest) {
   await refreshSearchBudget();
   if (await spendingPaused()) return json({ ok: false });
 
-  const found = await lookupProduct(params.pid, params.market);
-  if (!found) return json({ ok: false });
+  const found = await lookupProduct(params.pid, params.market, { retry: true });
+  if (!found) {
+    // Nothing from the lookup: the size box can still say what the
+    // listing's own title says.
+    return json({
+      ok: false,
+      ...(params.kind && params.size
+        ? { size: sizeVerdict([], () => false, params.kind, params.size, params.title) }
+        : {}),
+    });
+  }
 
   const { market } = params;
   const asOffer = (o: MerchantOffer): ItemOffer => {
@@ -99,7 +108,7 @@ export async function GET(req: NextRequest) {
     storeUrl,
     others: found.offers.filter((o) => !own.includes(o)).slice(0, 8).map(asOffer),
     ...(params.kind && params.size
-      ? { size: sizeVerdict(found.offers, (s) => sameSeller(s, params.retailer, market), params.kind, params.size) }
+      ? { size: sizeVerdict(found.offers, (s) => sameSeller(s, params.retailer, market), params.kind, params.size, params.title) }
       : {}),
   });
 }

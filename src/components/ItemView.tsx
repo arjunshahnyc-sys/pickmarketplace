@@ -87,7 +87,8 @@ export default function ItemView({ base, detailsUrl, backQuery }: ItemViewProps)
   // The store's own price once the listing is in; until then the search's.
   const price = seller?.price ?? `${currencySymbol(base.currency)}${formatPrice(base.price, base.currency)}`;
   const goLabel = seller?.host ? `Go to ${seller.host}` : `Go to ${base.retailer}`;
-  const sizeLine = base.size && ok?.size ? sizeCheckMessage(ok.size, base.size.size, base.retailer) : null;
+  const sizeResult = details?.size ?? null;
+  const sizeLine = base.size && sizeResult ? sizeCheckMessage(sizeResult, base.size.size, base.retailer) : null;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-6 md:py-10">
@@ -161,9 +162,9 @@ export default function ItemView({ base, detailsUrl, backQuery }: ItemViewProps)
               {sizeLine ? (
                 <>
                   <p className={`mt-0.5 text-sm font-medium ${sizeLine.tone}`}>{sizeLine.text}</p>
-                  {ok?.size && ok.size.alsoAt.length > 0 && ok.size.status !== 'in-stock' && (
+                  {sizeResult && sizeResult.alsoAt.length > 0 && sizeResult.status !== 'in-stock' && (
                     <p className="mt-0.5 text-sm text-neutral-600">
-                      Size {base.size.size} in stock at {ok.size.alsoAt.join(' and ')}
+                      Size {base.size.size} in stock at {sizeResult.alsoAt.join(' and ')}
                     </p>
                   )}
                 </>

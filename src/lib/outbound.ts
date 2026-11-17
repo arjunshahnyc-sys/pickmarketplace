@@ -129,11 +129,16 @@ export interface SizeCheckParams {
   market: string;
   kind: SizeKind;
   size: string;
+  /**
+   * The search row's title, the fallback when the lookup has nothing.
+   * Optional so links issued before it existed still verify.
+   */
+  title?: string;
 }
 
 function signSizeCheck(p: SizeCheckParams, secret: string): string {
   return createHmac('sha256', secret)
-    .update(['size-check', p.pid, p.retailer, p.market, p.kind, p.size].join('\n'))
+    .update(['size-check', p.pid, p.retailer, p.market, p.kind, p.size, ...(p.title ? [p.title] : [])].join('\n'))
     .digest('base64url')
     .slice(0, 22);
 }
@@ -148,8 +153,17 @@ export function buildSizeCheckUrl(product: Product, kind: SizeKind, size: string
     market: product.sourceMarket ?? 'US',
     kind,
     size,
+    ...(product.name ? { title: product.name } : {}),
   };
-  const qs = new URLSearchParams({ pid: p.pid, r: p.retailer, m: p.market, k: p.kind, z: p.size, s: signSizeCheck(p, secret) });
+  const qs = new URLSearchParams({
+    pid: p.pid,
+    r: p.retailer,
+    m: p.market,
+    k: p.kind,
+    z: p.size,
+    ...(p.title ? { t: p.title } : {}),
+    s: signSizeCheck(p, secret),
+  });
   return `/api/size-check?${qs.toString()}`;
 }
 
@@ -164,7 +178,8 @@ export function verifySizeCheckParams(search: URLSearchParams): SizeCheckParams 
   const sig = search.get('s');
   if (!secret || !pid || !retailer || !market || !sig) return null;
   if (!isSizeKind(kind) || !isValidSize(kind, size)) return null;
-  const p: SizeCheckParams = { pid, retailer, market, kind, size };
+  const title = search.get('t') || undefined;
+  const p: SizeCheckParams = { pid, retailer, market, kind, size, ...(title ? { title } : {}) };
   const expected = Buffer.from(signSizeCheck(p, secret));
   const given = Buffer.from(sig);
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
@@ -348,7 +363,7 @@ export function clearOfferCache(): void {
   siteCache.clear();
 }
 
-async function fetchOffers(pid: string, market: string): Promise<ProductLookup | null> {
+async function fetchOffers(pid: string, market: string): Promise<ProductLookup | 'retry' | null> {
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) return null;
 
@@ -363,7 +378,7 @@ async function fetchOffers(pid: string, market: string): Promise<ProductLookup |
     });
     if (!response.ok) {
       console.error(`[Serper] product lookup returned ${response.status}`);
-      return null;
+      return response.status >= 500 ? 'retry' : null;
     }
     const data = await response.json();
     const offers: unknown[] = Array.isArray(data?.offers) ? data.offers : [];
@@ -405,7 +420,7 @@ async function fetchOffers(pid: string, market: string): Promise<ProductLookup |
     return { offers: parsed, info };
   } catch (error) {
     console.error('[Serper] product lookup failed:', error instanceof Error ? error.message : String(error));
-    return null;
+    return 'retry';
   } finally {
     clearTimeout(timer);
   }
@@ -529,17 +544,33 @@ async function searchSellerSite(
  * check followed by a click on the same card pays for one lookup, not two.
  * Null when the lookup failed.
  */
-export async function lookupOffers(pid: string, market: string): Promise<MerchantOffer[] | null> {
-  return (await lookupProduct(pid, market))?.offers ?? null;
+export async function lookupOffers(
+  pid: string,
+  market: string,
+  options: { retry?: boolean } = {}
+): Promise<MerchantOffer[] | null> {
+  return (await lookupProduct(pid, market, options))?.offers ?? null;
 }
 
 /** The same cached lookup, with what it says about the product itself. */
-export async function lookupProduct(pid: string, market: string): Promise<ProductLookup | null> {
+export async function lookupProduct(
+  pid: string,
+  market: string,
+  // `retry` is for lookups a shopper asked for and is watching load (the
+  // size check, the product page). A click redirect never retries: the
+  // shopper is waiting on a blank tab.
+  options: { retry?: boolean } = {}
+): Promise<ProductLookup | null> {
   const key = `${market.toLowerCase()}:${pid}`;
   const now = Date.now();
   let entry = cache.get(key);
   if (!entry || now - entry.ts >= (entry.offers ? TTL_OK : TTL_FAILED)) {
-    const found = await fetchOffers(pid, market);
+    // One more try when the lookup itself broke (a timeout, or the "Scraping
+    // failed" 500 it sometimes returns); a failed call is not billed. Not
+    // when Google simply has no page for the product (404).
+    let found = await fetchOffers(pid, market);
+    if (found === 'retry' && options.retry) found = await fetchOffers(pid, market);
+    if (found === 'retry') found = null;
     entry = { offers: found?.offers ?? null, info: found?.info ?? null, ts: now };
     remember(cache, key, entry);
   }

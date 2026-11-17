@@ -81,6 +81,8 @@ describe('sizeNamedInTitle', () => {
     expect(sizeNamedInTitle('Essential Oversized Hoodie - Stone, XS', 'letters')).toBe('XS');
     expect(sizeNamedInTitle('Crest Hoodie - Black - XL', 'letters')).toBe('XL');
     expect(sizeNamedInTitle('Oversized Hoodie - Vitamin C', 'letters')).toBeNull();
+    expect(sizeNamedInTitle("Women's Practical Magic Oversized Fleece Hoodie Sweatshirt - Flint Blue - Large", 'letters')).toBe('L');
+    expect(sizeNamedInTitle("Men's Hollywood Oversized Hoodie, Size: Large, Leopard", 'letters')).toBe('L');
   });
 
   it('reads shoe sizes with halves', () => {
@@ -161,5 +163,30 @@ describe('sizeVerdict', () => {
     expect(sizeVerdict([{ source: 'Gap', title: 'Logo Fleece Hoodie', details: inStock }], isGap, 'letters', 'XL').status).toBe('unstated');
     expect(sizeVerdict([{ source: 'Depop', title: 'Hoodie Size XL', details: inStock }], isGap, 'letters', 'XL')).toEqual({ status: 'unknown', alsoAt: ['Depop'] });
     expect(sizeVerdict([], isGap, 'shoes', '10.5')).toEqual({ status: 'unknown', alsoAt: [] });
+  });
+});
+
+describe('sizeVerdict with the listing title as fallback', () => {
+  const isKohls = (source: string) => source === "Kohl's";
+
+  it('uses the listing title when the lookup has nothing for the store', () => {
+    const title = "Men's Hollywood Oversized Hoodie, Size: Large, Leopard";
+    expect(sizeVerdict([], isKohls, 'letters', 'L', title)).toEqual({ status: 'listed', alsoAt: [] });
+    expect(sizeVerdict([], isKohls, 'letters', 'XL', title)).toEqual({ status: 'other-size', otherSize: 'L', alsoAt: [] });
+    expect(sizeVerdict([], isKohls, 'letters', 'L', "Men's Hollywood Oversized Hoodie")).toEqual({ status: 'unknown', alsoAt: [] });
+  });
+
+  it('never claims stock from a title alone', () => {
+    expect(sizeVerdict([], isKohls, 'letters', 'L', 'Hoodie Size L in stock now').status).toBe('listed');
+  });
+
+  it('pairs the listing title with the store offer when the offer names no size', () => {
+    const offers = [{ source: "Kohl's", title: 'Hollywood Oversized Hoodie', details: ['In stock online'] }];
+    expect(sizeVerdict(offers, isKohls, 'letters', 'L', 'Hollywood Oversized Hoodie, Size: Large').status).toBe('in-stock');
+  });
+
+  it('lets the store offer win over the listing title', () => {
+    const offers = [{ source: "Kohl's", title: 'Hoodie Size M', details: ['In stock online'] }];
+    expect(sizeVerdict(offers, isKohls, 'letters', 'L', 'Hoodie, Size: Large')).toEqual({ status: 'other-size', otherSize: 'M', alsoAt: [] });
   });
 });

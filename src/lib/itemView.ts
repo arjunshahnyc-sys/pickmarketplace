@@ -32,7 +32,7 @@ export interface ItemOffer {
 }
 
 export type ItemDetails =
-  | { ok: false }
+  | { ok: false; size?: SizeCheckResult }
   | {
       ok: true;
       title: string;

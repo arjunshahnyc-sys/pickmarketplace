@@ -31,15 +31,17 @@ export async function GET(req: NextRequest) {
   await refreshSearchBudget();
   if (await spendingPaused()) return json(UNKNOWN);
 
-  const offers = await lookupOffers(params.pid, params.market);
-  if (!offers) return json(UNKNOWN);
+  // No offers (Google has no page for this listing, or the lookup failed):
+  // the verdict falls back to what the listing's own title says.
+  const offers = (await lookupOffers(params.pid, params.market, { retry: true })) ?? [];
 
   return json(
     sizeVerdict(
       offers,
       (source) => sameSeller(source, params.retailer, params.market),
       params.kind,
-      params.size
+      params.size,
+      params.title
     )
   );
 }
