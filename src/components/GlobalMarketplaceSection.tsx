@@ -10,12 +10,36 @@
 
 import { motion } from 'motion/react';
 import { Globe } from 'lucide-react';
+import { useMemo } from 'react';
 import { useReveal } from '@/lib/motion/useReveal';
+import { useDestination } from '@/contexts/DestinationContext';
+import ShippingGlobe, { type GlobePlace } from './ShippingGlobe';
 
 const DESTINATIONS = ['US', 'CA', 'GB', 'DE', 'FR', 'AU', 'JP'];
 
+// One point per market Pick searches, for the globe: lines run from the
+// other six to the shopper's own. [longitude, latitude].
+const MARKET_POINTS: Record<string, GlobePlace> = {
+  US: { name: 'the United States', at: [-74.0, 40.7] },
+  CA: { name: 'Canada', at: [-79.4, 43.7] },
+  GB: { name: 'the United Kingdom', at: [-0.13, 51.5] },
+  DE: { name: 'Germany', at: [13.4, 52.5] },
+  FR: { name: 'France', at: [2.35, 48.86] },
+  AU: { name: 'Australia', at: [151.2, -33.9] },
+  JP: { name: 'Japan', at: [139.7, 35.7] },
+};
+
 export function GlobalMarketplaceSection() {
   const reveal = useReveal();
+  const { destination } = useDestination();
+  const home = MARKET_POINTS[destination.country] ? destination.country : 'US';
+  const globe = useMemo(
+    () => ({
+      destination: MARKET_POINTS[home],
+      origins: DESTINATIONS.filter((c) => c !== home).map((c) => MARKET_POINTS[c]),
+    }),
+    [home]
+  );
   return (
     <motion.section
       {...reveal()}
@@ -25,6 +49,8 @@ export function GlobalMarketplaceSection() {
         className="bg-[#14524B] text-white p-8 md:p-10 relative overflow-hidden"
         style={{ borderRadius: '12px' }}
       >
+        <div className="md:flex md:items-center md:gap-10">
+        <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 mb-3">
           <Globe className="w-5 h-5 text-[#7ECEC2]" aria-hidden="true" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#7ECEC2]">
@@ -58,6 +84,11 @@ export function GlobalMarketplaceSection() {
           <span className="text-xs text-white/50">
             &middot; pick yours in the header
           </span>
+        </div>
+        </div>
+        <div className="mt-8 flex shrink-0 justify-center md:mt-0">
+          <ShippingGlobe destination={globe.destination} origins={globe.origins} size={280} />
+        </div>
         </div>
       </div>
     </motion.section>

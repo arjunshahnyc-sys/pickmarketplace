@@ -42,6 +42,7 @@ import { affiliateLinksEnabled } from '@/lib/affiliate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { addSearch } from '@/lib/searchHistory';
 import SizePicker from '@/components/SizePicker';
+import SpinningBag from '@/components/SpinningBag';
 import {
   lastSearchKey,
   readLastSearch,
@@ -639,7 +640,7 @@ export default function Home() {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <div className="flex items-center gap-3 text-black/60 mb-4">
-                  <div className="w-5 h-5 border-2 border-black/10 border-t-[#2A9D8F] rounded-full spinner" />
+                  <SpinningBag size={32} />
                   <span className="text-sm animate-pulse">{loadingText}</span>
                 </div>
                 {/* Loading skeleton: the same grid and card shell as the
