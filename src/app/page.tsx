@@ -141,17 +141,6 @@ const HERO_COMPARISON: ComparisonResultData = {
   checkedAt: '2026-09-10T20:29:58.225Z',
 };
 
-// Animation variants for staggered product grid
-const gridVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 50, scale: 0.9 },
-  show: { opacity: 1, y: 0, scale: 1 },
-};
-
 // Honest freshness label: results can be served from a 30-minute server cache
 function formatCheckedAt(checkedAt?: string): string {
   if (!checkedAt) return 'just now';
@@ -766,17 +755,21 @@ export default function Home() {
                     object degrades to the boundary fallback instead of
                     blanking the whole results view. */}
                 <ErrorBoundary>
-                  <motion.div
-                    variants={gridVariants}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, amount: 0.05 }}
-                    className={hasFilterColumn ? RESULTS_GRID_BESIDE_FILTERS_CLASS : RESULTS_GRID_CLASS}
-                  >
+                  {/* Each card fades and rises in by itself when it mounts
+                      (.card-in, globals.css), the first few staggered. It
+                      must not depend on the grid: the old version animated
+                      cards from the grid's one-time scroll-into-view, so
+                      cards that came back after a filter was switched off
+                      mounted hidden and stayed hidden. */}
+                  <div className={hasFilterColumn ? RESULTS_GRID_BESIDE_FILTERS_CLASS : RESULTS_GRID_CLASS}>
                     {filteredResults.map((product, i) => (
                       // flex so the card stretches to the row height (equal
                       // card heights across a row; the card is h-full).
-                      <motion.div key={product.id || i} variants={cardVariants} className="flex">
+                      <div
+                        key={product.id || i}
+                        className="flex card-in"
+                        style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}
+                      >
                         <ProductCard
                           product={product}
                           isSelected={compare.isSelected(product)}
@@ -785,9 +778,9 @@ export default function Home() {
                           destinationCountry={destination.country}
                           sizeResult={sizeVerdicts[product.id ?? '']}
                         />
-                      </motion.div>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
                 </ErrorBoundary>
 
                 {showUnverifiedNote && <UnverifiedSellerNote className="mt-4" />}

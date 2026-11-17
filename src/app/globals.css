@@ -608,3 +608,25 @@ html[data-season="holiday"] .holiday-wrap {
     inset: -8px -5px;
   }
 }
+
+/* Result cards fade and rise in when they mount. Pure CSS on the card
+   itself, so it cannot be left hidden by a scroll trigger that already
+   fired (see the results grid in app/page.tsx). */
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.card-in {
+  animation: cardIn 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-in {
+    animation: none;
+  }
+}
