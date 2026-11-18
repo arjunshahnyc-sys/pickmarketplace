@@ -91,8 +91,9 @@ export function estimateShipping(
  *     2026-08-31: the feed carries no delivery field). When a source ever
  *     quotes shipping, it enters here as confidence 'exact'.
  *   Tier 2 - the merchant's own PUBLISHED shipping policy, from the trust
- *     registry (free-over threshold honored against this item's price, or
- *     a published flat standard rate). US domestic only for now by owner
+ *     registry (free-over threshold honored against this item's price, a
+ *     published table of rates by order value, or a published flat
+ *     standard rate, in that order). US domestic only for now by owner
  *     decision 2026-09-01. Confidence 'estimated' (policies carry
  *     conditions and exclusions), provenance = the policy page. A zero
  *     here is a REAL zero (the store ships this order free), and it is the
@@ -179,6 +180,19 @@ export function resolveShipping(args: {
         `Free standard shipping on orders of ${fmtPolicyMoney(freeOver.value, policy.currency)} or more`
       );
     }
+    const tiers = policy.tiersMinor;
+    if (tiers?.verification === 'verified' && tiers.value !== null) {
+      const tier = tiers.value.find((t) => args.itemPriceMinor <= t.upToMinor);
+      if (tier) {
+        return fromPolicy(
+          tier.costMinor,
+          'tier',
+          tier.costMinor === 0
+            ? `Free standard shipping on orders up to ${fmtPolicyMoney(tier.upToMinor, policy.currency)}`
+            : `Standard shipping ${fmtPolicyMoney(tier.costMinor, policy.currency)} on orders up to ${fmtPolicyMoney(tier.upToMinor, policy.currency)}`
+        );
+      }
+    }
     const flat = policy.flatBelowMinor;
     if (flat?.verification === 'verified' && flat.value !== null) {
       return fromPolicy(
@@ -249,6 +263,7 @@ function policyStaleness(policy: MerchantShippingPolicy, now: Date): string | un
   const dates = [
     policy.freeOverMinor,
     policy.flatBelowMinor,
+    policy.tiersMinor,
     policy.alwaysFree,
     policy.scope?.nonContiguousSurchargeMinor,
   ]

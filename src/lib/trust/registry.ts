@@ -38,7 +38,7 @@
 import type { SourcedValue } from '../landedCost/types';
 import { collapse, registrableDomain } from './identity';
 
-export const REGISTRY_VERSION = '2026-09-06.1';
+export const REGISTRY_VERSION = '2026-11-18.1';
 
 /**
  * A merchant's PUBLISHED standard-shipping policy for its own domestic
@@ -60,6 +60,16 @@ export interface MerchantShippingPolicy {
   freeOverMinor?: SourcedValue<number>;
   /** Published flat standard rate below the threshold; absent = unpublished/varies. */
   flatBelowMinor?: SourcedValue<number>;
+  /**
+   * Published standard rates by ORDER VALUE, for stores whose page prints a
+   * table instead of one flat rate ("up to $15.00: $6; $15.01 to $25.00:
+   * $9; ..."). Ascending by upToMinor; the first tier whose upToMinor is at
+   * or above the order value applies. An order above the last tier is not
+   * covered by the table (those pages switch to a percentage or a quote)
+   * and falls through to the next rule. One SourcedValue for the whole
+   * table: it is read off the page as a unit.
+   */
+  tiersMinor?: SourcedValue<Array<{ upToMinor: number; costMinor: number }>>;
   /** Standard shipping is free with no minimum. */
   alwaysFree?: SourcedValue<boolean>;
   /** Conditions on the free tier (membership, loyalty signup), stated as an assumption. */
@@ -217,6 +227,8 @@ function usPolicy(spec: {
   v: string; // lastVerified
   freeOver?: number;
   flat?: number;
+  /** [order value up to (cents), standard rate (cents)], ascending. */
+  tiers?: Array<[number, number]>;
   alwaysFree?: boolean;
   conditions?: string;
   // Geographic scope (see ShippingPolicyScope), structured on 2026-10-23
@@ -249,6 +261,9 @@ function usPolicy(spec: {
     policyUrl: spec.url,
     ...(spec.freeOver !== undefined ? { freeOverMinor: sv(spec.freeOver) } : {}),
     ...(spec.flat !== undefined ? { flatBelowMinor: sv(spec.flat) } : {}),
+    ...(spec.tiers
+      ? { tiersMinor: sv(spec.tiers.map(([upToMinor, costMinor]) => ({ upToMinor, costMinor }))) }
+      : {}),
     ...(spec.alwaysFree ? { alwaysFree: sv(true) } : {}),
     ...(spec.conditions ? { conditions: spec.conditions } : {}),
     ...(Object.keys(scope).length > 0 ? { scope } : {}),
@@ -399,6 +414,326 @@ const P: Record<string, MerchantShippingPolicy> = {
     conditions:
       'Qualifying orders, contiguous US; non-qualifying orders carry a $9.95 MINIMUM fee that varies upward (not a flat rate, so no below-threshold figure is encoded).',
   }),
+  // Research pass 2026-11-18: five finder agents read each store's own policy
+  // page (60 stores); three verifier agents then re-loaded every figure below
+  // the same day and tried to refute it. Encoded conservatively: where a page
+  // says "over $X" or contradicts itself on the exact threshold, X.01 is
+  // used; where a store has member and guest prices, the GUEST price; a
+  // banner promotion is never a threshold. Stores read but left out because
+  // their own pages publish no usable figure: Owala, adidas, DSW, Newegg,
+  // Adorama, Home Depot, BJ's, Vitamix, Samsung ("most items"), Sam's Club
+  // (Plus tier only), New Balance and Nordstrom Rack (holiday promotion
+  // only on the page), Books-A-Million (rate table headed for territories),
+  // Gap (its entry also answers for Gap Factory, which was not read), YETI,
+  // Sony and JBL (pages blocked).
+  'stanley1913-us': usPolicy({
+    url: 'https://www.stanley1913.com/pages/faq/help',
+    v: '2026-11-18',
+    freeOver: 5000, flat: 599,
+    conditions:
+      'Threshold is before tax; the page states no terms for Alaska or Hawaii.',
+  }),
+  'hydroflask-us': usPolicy({
+    url: 'https://faq.hydroflask.com/faqs-shipping-handling-SJhv655Np',
+    v: '2026-11-18',
+    freeOver: 4900, nationwide: true,
+    conditions:
+      '$49 subtotal; valid throughout the US including Alaska and Hawaii; cannot be combined with some promo codes; below $49 the rate is carrier-calculated (not published).',
+  }),
+  'keurig-us': usPolicy({
+    url: 'https://support.keurig.com/?kmContentId=1014902&page=shell&shell=knowledge-article',
+    v: '2026-11-18',
+    freeOver: 3500, flat: 799, contiguousOnly: true,
+    conditions:
+      '$35 after promo codes and discounts, contiguous US and PO boxes; Alaska and Hawaii pay $12.99 under $35 (not encoded).',
+  }),
+  'nespresso-us': usPolicy({
+    url: 'https://www.nespresso.com/us/en/shipping-and-returns',
+    v: '2026-11-18',
+    flat: 695, nonContiguousSurcharge: 500,
+    conditions:
+      'Guest checkout tier: $6.95 on every order ($11.95 to Alaska and Hawaii); registered customers (free account) ship free at $50 excluding tax.',
+  }),
+  'cuisinart-us': usPolicy({
+    url: 'https://www.cuisinart.com/support/shipping-and-return.html',
+    v: '2026-11-18',
+    freeOver: 3501, nationwide: true,
+    conditions:
+      'Page wording is "over $35", so exactly $35.00 is not treated as free; "anywhere within the US"; oversized fees may apply; no rate is published below the threshold.',
+  }),
+  'bathbodyworks-us': usPolicy({
+    url: 'https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658776211-Shipping-Options-United-States',
+    v: '2026-11-18',
+    freeOver: 5000, tiers: [[999, 1099], [4999, 799]], contiguousOnly: true,
+    conditions:
+      '$50 merchandise subtotal after all discounts, contiguous US; not valid on Annual Candle Day dates; Alaska and Hawaii pay $19.99 to $23.99 with no free tier (not encoded).',
+  }),
+  'sallybeauty-us': usPolicy({
+    url: 'https://www.sallybeauty.com/help/shipping-information/',
+    v: '2026-11-18',
+    freeOver: 4000, contiguousOnly: true,
+    conditions:
+      '$40 after discounts and before tax, 48 contiguous states and DC only, no PO boxes; the page calls this an offer the store may end or change; no rate is published below the threshold.',
+  }),
+  'dermstore-us': usPolicy({
+    url: 'https://www.dermstore.com/info/delivery-information.list',
+    v: '2026-11-18',
+    freeOver: 5001, flat: 700,
+    conditions:
+      'Page wording is "over $50" free and "$7 under $50" (after any discount, before tax); exactly $50.00 is not treated as free.',
+  }),
+  'crateandbarrel-us': usPolicy({
+    url: 'https://www.crateandbarrel.com/customer-service/faq-shipping-delivery',
+    v: '2026-11-18',
+    tiers: [[1500, 600], [2500, 900], [4500, 1100], [6500, 1500], [9000, 1800], [12500, 2000], [20000, 2500], [30000, 3000]], nonContiguousSurcharge: 1000,
+    conditions:
+      'Standard rates by merchandise total, contiguous US; Alaska, Hawaii and territories are $10 more per tier; above $300 the rate is 10% of merchandise (not encoded); oversize and furniture delivery fees are separate.',
+  }),
+  'williamssonoma-us': usPolicy({
+    url: 'https://www.williams-sonoma.com/customer-service/shipping-info.html',
+    v: '2026-11-18',
+    tiers: [[1500, 600], [2500, 900], [4500, 1100], [6500, 1500], [9000, 1800], [12500, 2000], [20000, 2500], [30000, 3000]], nonContiguousSurcharge: 2000,
+    conditions:
+      'Standard rates by order total, contiguous 48 states; Alaska and Hawaii add $20; above $300 the rate is 10% of merchandise (not encoded); bulky or heavy items can carry a delivery surcharge.',
+  }),
+  'bose-us': usPolicy({
+    url: 'https://www.bose.com/help/shipping-and-delivery',
+    v: '2026-11-18',
+    freeOver: 4900,
+    conditions:
+      'In-stock orders of $49 or more (stated on Bose product pages); below $49 the charge is shown in the basket (not published).',
+  }),
+  'soundcore-us': usPolicy({
+    url: 'https://www.soundcore.com/policies/shipping-policy',
+    v: '2026-11-18',
+    alwaysFree: true,
+    conditions:
+      'Free Standard Shipping on all orders; faster options are paid.',
+  }),
+  'sharkninja-us': usPolicy({
+    url: 'https://www.sharkninja.com/shipping.html',
+    v: '2026-11-18',
+    freeOver: 9900, flat: 1000, nonContiguousSurcharge: 10000,
+    conditions:
+      'Orders under $99 "may be subject to" the $10 fee, so $10 is the most a standard order pays; Hawaii and Alaska orders carry a $100 surcharge.',
+  }),
+  'gamestop-us': usPolicy({
+    url: 'https://www.gamestop.com/help/articles/156000190550',
+    v: '2026-11-18',
+    flat: 699, contiguousOnly: true,
+    conditions:
+      'Non-member tier: $6.99 standard on every order; Pro members ship free at $54+; continental US only; graded cards and pre-orders are charged per item.',
+  }),
+  'crutchfield-us': usPolicy({
+    url: 'https://www.crutchfield.com/support/shipping.aspx',
+    v: '2026-11-18',
+    freeOver: 5001, flat: 999,
+    conditions:
+      'The page says both "$50 and up" and "must be over $50", so exactly $50.00 is not treated as free; thresholds apply after discounts and before tax.',
+  }),
+  'dell-us': usPolicy({
+    url: 'https://www.dell.com/en-us/lp/dell-free-shipping',
+    v: '2026-11-18',
+    alwaysFree: true, contiguousOnly: true,
+    conditions:
+      'Free standard delivery on everything with no minimum, continental US only (excludes Alaska and PO boxes).',
+  }),
+  'microsoft-us': usPolicy({
+    url: 'https://support.microsoft.com/en-us/account-billing/shipping-options-costs-and-delivery-times-63d48e68-3fb8-6d6f-e73f-f321467d6aee',
+    v: '2026-11-18',
+    alwaysFree: true,
+    conditions:
+      'The cheapest tier (named Expedited, 2-3 business days) is free on eligible products; customizable products are excluded; not available for some Alaska ZIP codes.',
+  }),
+  'levis-us': usPolicy({
+    url: 'https://www.levi.com/US/en_US/info/shipping',
+    v: '2026-11-18',
+    flat: 795,
+    conditions:
+      'Guest tier: ground $7.95 on every order; Red Tab members (free to join) ship free over $75.',
+  }),
+  'uniqlo-us': usPolicy({
+    url: 'https://faq-us.uniqlo.com/articles/en_US/Knowledge/Which-shipping-options-do-you-offer-and-how-much-do-they-cost',
+    v: '2026-11-18',
+    freeOver: 9900, flat: 799,
+    conditions:
+      'Order subtotal of $99 or more before taxes and shipping, after coupons.',
+  }),
+  'lululemon-us': usPolicy({
+    url: 'https://shop.lululemon.com/help/shipping-and-delivery',
+    v: '2026-11-18',
+    alwaysFree: true,
+    conditions:
+      'Standard shipping is free on every order; Express and Priority are paid.',
+  }),
+  'oldnavy-us': usPolicy({
+    url: 'https://oldnavy.gap.com/customerService/info.do?cid=3019',
+    v: '2026-11-18',
+    flat: 900,
+    conditions:
+      'Non-member tier: qualifying items ship for $9; signed-in rewards members ship free at $50 and pay $7 below; third-party seller items ship free.',
+  }),
+  'hm-us': usPolicy({
+    url: 'https://www2.hm.com/en_us/customer-service/shippinganddelivery.html',
+    v: '2026-11-18',
+    freeOver: 7500, flat: 699,
+    conditions:
+      'Non-member tier: $6.99 below $75; members (free to join) ship free over $50; furniture and lighting ship separately.',
+  }),
+  'abercrombie-us': usPolicy({
+    url: 'https://www.abercrombie.com/shop/us/help/shipping-handling',
+    v: '2026-11-18',
+    flat: 700,
+    conditions:
+      'Standard $7 from the rate card. A site banner offers free standard shipping on orders over $99 (after discounts, before tax) with no end date; it is an offer rather than policy text, so it is not encoded.',
+  }),
+  'americaneagle-us': usPolicy({
+    url: 'https://www.ae.com/us/en/content/help/shipping-handling',
+    v: '2026-11-18',
+    freeOver: 7500, flat: 795,
+    conditions:
+      'Guest tier; Real Rewards members get lower thresholds; charged once per order; some categories (bras, swim, third-party shoes) have no free tier.',
+  }),
+  'jcrew-us': usPolicy({
+    url: 'https://www.jcrew.com/help/shipping-handling',
+    v: '2026-11-18',
+    flat: 700, nationwide: true,
+    conditions:
+      'Flat $7 regardless of order size, to all 50 states; free standard shipping is for logged-in rewards members only.',
+  }),
+  'zara-us': usPolicy({
+    url: 'https://www.zara.com/us/en/help-center/DeliveryMethods',
+    v: '2026-11-18',
+    flat: 495,
+    conditions:
+      'Home delivery in 2-4 working days; no free-shipping threshold is published; delivery to a Zara store is free; bulky home items carry their own fee.',
+  }),
+  'urbanoutfitters-us': usPolicy({
+    url: 'https://www.urbanoutfitters.com/help/shipping',
+    v: '2026-11-18',
+    freeOver: 6000, flat: 750,
+    conditions:
+      'Merchandise only (taxes and gift cards do not count); oversized items and furniture can cost more; the app threshold is $50.',
+  }),
+  'asos-us': usPolicy({
+    url: 'https://www.asos.com/us/payments-and-shipping/delivery/?country=us',
+    v: '2026-11-18',
+    freeOver: 7501, flat: 1000,
+    conditions:
+      'Read for ZIP 10001; the page says options vary by location. Wording is "spend over $75.00".',
+  }),
+  'converse-us': usPolicy({
+    url: 'https://converseconsumerservices.my.site.com/s/article/what-are-converse-com-s-shipping-options',
+    v: '2026-11-18',
+    freeOver: 7500, flat: 800, contiguousOnly: true,
+    conditions:
+      'Guest tier; signed-in members ship free; the free offer excludes Alaska and Hawaii.',
+  }),
+  'underarmour-us': usPolicy({
+    url: 'https://www.underarmour.com/en-us/t/shipping.html',
+    v: '2026-11-18',
+    freeOver: 9900, flat: 800,
+    conditions:
+      'Standing policy text; a $75+ promotional banner was also present in the page on 2026-11-18.',
+  }),
+  'puma-us': usPolicy({
+    url: 'https://help.us.puma.com/hc/en-us/articles/38820770179099-Shipping-Delivery',
+    v: '2026-11-18',
+    freeOver: 7500, flat: 800, contiguousOnly: true,
+    conditions:
+      'Pretax total; members have a $50 threshold; Alaska, Hawaii and territories pay $15 on all orders (not encoded).',
+  }),
+  'vans-us': usPolicy({
+    url: 'https://www.vans.com/en-us/help/faq',
+    v: '2026-11-18',
+    freeOver: 9900, flat: 800,
+    conditions:
+      'Guest tier; Vans Family members ship free at $50 and pay $5 below.',
+  }),
+  'crocs-us': usPolicy({
+    url: 'https://www.crocs.com/customer-service/faqs',
+    v: '2026-11-18',
+    freeOver: 4499, flat: 899,
+    conditions:
+      'Economy, the cheapest tier; pre-tax subtotal after discounts; the tier named Standard Ground costs more.',
+  }),
+  'skechers-us': usPolicy({
+    url: 'https://www.skechers.com/shipping-policy/',
+    v: '2026-11-18',
+    flat: 995, nationwide: true,
+    conditions:
+      'Guest tier: $9.95 on every order, all 50 states; Skechers Plus members (free to join) get free standard shipping.',
+  }),
+  'footlocker-us': usPolicy({
+    url: 'https://help.footlocker.com/hc/en-us/articles/360034159954-What-are-your-shipping-prices-and-time-frames',
+    v: '2026-11-18',
+    flat: 899, nonContiguousSurcharge: 300,
+    conditions:
+      'Non-member tier: $8.99 within the 48 contiguous states, $11.99 elsewhere; FLX members (free to join) ship free on non-excluded items.',
+  }),
+  'journeys-us': usPolicy({
+    url: 'https://www.journeys.com/help?a=Shipping-Options---id--DtQkYyScRdSBSIR-EGLwGA',
+    v: '2026-11-18',
+    flat: 799, contiguousOnly: true,
+    conditions:
+      'Non-member tier; All Access members (free to join) ship free; Hawaii is $17.99 (not encoded). A temporary non-member free-shipping promotion at $75+ was live on 2026-11-18.',
+  }),
+  'zappos-us': usPolicy({
+    url: 'https://www.zappos.com/c/shipping-and-returns',
+    v: '2026-11-18',
+    alwaysFree: true, nationwide: true,
+    conditions:
+      'Free shipping anywhere in the United States including territories and APO/FPO.',
+  }),
+  'walgreens-us': usPolicy({
+    url: 'https://www.walgreens.com/topic/help/shipping/shipping_help_main.jsp',
+    v: '2026-11-18',
+    freeOver: 3500, flat: 599, contiguousOnly: true,
+    conditions:
+      'Order subtotal after promo codes, excluding tax; standard shipping only inside the 48 contiguous states; orders over 20 lb pay a per-weight fee.',
+  }),
+  'cvs-us': usPolicy({
+    url: 'https://www.cvs.com/retail/help/help-subtopic-shipping-information',
+    v: '2026-11-18',
+    freeOver: 3500, flat: 599,
+    conditions:
+      'Orders outside the 48 contiguous states may carry additional charges; orders over 50 lb carry a surcharge.',
+  }),
+  'jcpenney-us': usPolicy({
+    url: 'https://www.jcpenney.com/m/customer-service/shipping-information',
+    v: '2026-11-18',
+    freeOver: 4900, flat: 895, contiguousOnly: true,
+    conditions:
+      'Rates for the 48 contiguous states; truck-delivered and some manufacturer-delivered items excluded; oversized surcharges are separate.',
+  }),
+  'belk-us': usPolicy({
+    url: 'https://www.belk.com/customer-service/shipping-information/',
+    v: '2026-11-18',
+    freeOver: 9900, flat: 1295,
+    conditions:
+      'The page notes it may not reflect all current shipping promotions.',
+  }),
+  'barnesnoble-us': usPolicy({
+    url: 'https://help.barnesandnoble.com/hc/en-us/articles/5334520517531-Shipping-Speeds-and-Fees',
+    v: '2026-11-18',
+    freeOver: 6000, flat: 699,
+    conditions:
+      'Non-member tier, eligible items; Premium and Legacy members ship free at $15; orders with a vinyl record pay $7.99 below the threshold.',
+  }),
+  'chewy-us': usPolicy({
+    url: 'https://www.chewy.com/customer-care/shipping-and-tracking/shipping-information/shipping-cost-and-timing',
+    v: '2026-11-18',
+    freeOver: 4900, flat: 695, contiguousOnly: true,
+    conditions:
+      'Subtotal before tax and discounts; contiguous US only, no PO boxes.',
+  }),
+  'lego-us': usPolicy({
+    url: 'https://www.lego.com/en-us/page/shipping-handling',
+    v: '2026-11-18',
+    freeOver: 3500, flat: 695,
+    conditions:
+      'Merchandise only; the page states a $12.50 Alaska and Hawaii surcharge under express shipping without saying whether it applies to standard orders, so those states are left unestimated.',
+  }),
 };
 
 // ─── The registry ──────────────────────────────────────────────────────────
@@ -448,8 +783,8 @@ export const REGISTRY: readonly MerchantEntry[] = [
     domain: 'officedepot.com', logo: '/logos/officedepot.svg',
   }),
   entry({ id: 'rei-us', shipping: P['rei-us'], name: 'REI', domain: 'rei.com' }),
-  entry({ id: 'chewy-us', name: 'Chewy', domain: 'chewy.com' }),
-  entry({ id: 'gamestop-us', name: 'GameStop', domain: 'gamestop.com' }),
+  entry({ id: 'chewy-us', shipping: P['chewy-us'], name: 'Chewy', domain: 'chewy.com' }),
+  entry({ id: 'gamestop-us', shipping: P['gamestop-us'], name: 'GameStop', domain: 'gamestop.com' }),
   entry({ id: 'microcenter-us', name: 'Micro Center', domain: 'microcenter.com' }),
   entry({ id: 'dickssportinggoods-us', shipping: P['dickssportinggoods-us'], name: "Dick's Sporting Goods", domain: 'dickssportinggoods.com' }),
   entry({ id: 'apple-us', shipping: P['apple-us'], name: 'Apple', domain: 'apple.com', tier: 'brand-direct' }),
@@ -460,7 +795,7 @@ export const REGISTRY: readonly MerchantEntry[] = [
     logo: '/logos/academysportsoutdoors.svg',
   }),
   entry({ id: 'golfgalaxy-us', name: 'Golf Galaxy', domain: 'golfgalaxy.com' }),
-  entry({ id: 'stanley1913-us', name: 'Stanley 1913', domain: 'stanley1913.com', tier: 'brand-direct' }),
+  entry({ id: 'stanley1913-us', shipping: P['stanley1913-us'], name: 'Stanley 1913', domain: 'stanley1913.com', tier: 'brand-direct' }),
   entry({ id: 'zumiez-us', name: 'Zumiez', domain: 'zumiez.com' }),
   entry({ id: 'petco-us', name: 'Petco', domain: 'petco.com' }),
   entry({ id: 'petsmart-us', name: 'PetSmart', domain: 'petsmart.com' }),
@@ -470,26 +805,26 @@ export const REGISTRY: readonly MerchantEntry[] = [
   }),
   entry({ id: 'sephora-us', shipping: P['sephora-us'], name: 'Sephora', domain: 'sephora.com' }),
   entry({
-    id: 'bathbodyworks-us', name: 'Bath & Body Works',
+    id: 'bathbodyworks-us', shipping: P['bathbodyworks-us'], name: 'Bath & Body Works',
     aliases: ['bathbodyworks', 'bathandbodyworks'],
     domain: 'bathandbodyworks.com', logo: '/logos/bathbodyworks.svg',
   }),
-  entry({ id: 'footlocker-us', name: 'Foot Locker', domain: 'footlocker.com' }),
+  entry({ id: 'footlocker-us', shipping: P['footlocker-us'], name: 'Foot Locker', domain: 'footlocker.com' }),
   entry({ id: 'finishline-us', name: 'Finish Line', domain: 'finishline.com' }),
-  entry({ id: 'jcpenney-us', name: 'JCPenney', domain: 'jcpenney.com' }),
+  entry({ id: 'jcpenney-us', shipping: P['jcpenney-us'], name: 'JCPenney', domain: 'jcpenney.com' }),
   entry({ id: 'dillards-us', name: "Dillard's", domain: 'dillards.com' }),
-  entry({ id: 'belk-us', name: 'Belk', domain: 'belk.com' }),
+  entry({ id: 'belk-us', shipping: P['belk-us'], name: 'Belk', domain: 'belk.com' }),
   entry({
     id: 'qvc-us', name: 'QVC', domain: 'qvc.com',
     added: REVIEW_2026_08_31('Promoted config-only → verified: established US retailer, already in the landed-cost config.'),
   }),
   entry({
-    id: 'crateandbarrel-us', name: 'Crate & Barrel',
+    id: 'crateandbarrel-us', shipping: P['crateandbarrel-us'], name: 'Crate & Barrel',
     // Serper reports both spellings; '&' collapses away, 'and' doesn't.
     aliases: ['crateandbarrel', 'cratebarrel'],
     domain: 'crateandbarrel.com', logo: '/logos/crateandbarrel.svg',
   }),
-  entry({ id: 'williamssonoma-us', name: 'Williams Sonoma', domain: 'williams-sonoma.com' }),
+  entry({ id: 'williamssonoma-us', shipping: P['williamssonoma-us'], name: 'Williams Sonoma', domain: 'williams-sonoma.com' }),
   entry({ id: 'potterybarn-us', name: 'Pottery Barn', domain: 'potterybarn.com' }),
   entry({
     id: 'ikea-us', name: 'IKEA', aliases: ['ikea', 'ikeaus'],
@@ -514,69 +849,69 @@ export const REGISTRY: readonly MerchantEntry[] = [
   // "Unverified seller" (lululemon, Gap, H&M, Walgreens, ThriftBooks,
   // SharkNinja...) or as unlabelled marketplaces (Whatnot, Poshmark, StockX).
   // Badge logos are plain wordmarks under public/logos.
-  entry({ id: 'lululemon-us', name: 'lululemon', domain: 'lululemon.com', tier: 'brand-direct', aliases: ['lululemon', 'lululemonathletica'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'lululemon-us', shipping: P['lululemon-us'], name: 'lululemon', domain: 'lululemon.com', tier: 'brand-direct', aliases: ['lululemon', 'lululemonathletica'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'gap-us', name: 'Gap', domain: 'gap.com', tier: 'brand-direct', aliases: ['gap', 'gapfactory'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'oldnavy-us', name: 'Old Navy', domain: 'gap.com', tier: 'brand-direct', subdomains: ['oldnavy'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'oldnavy-us', shipping: P['oldnavy-us'], name: 'Old Navy', domain: 'gap.com', tier: 'brand-direct', subdomains: ['oldnavy'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'bananarepublic-us', name: 'Banana Republic', domain: 'gap.com', tier: 'brand-direct', subdomains: ['bananarepublic'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'athleta-us', name: 'Athleta', domain: 'gap.com', tier: 'brand-direct', subdomains: ['athleta'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'hm-us', name: 'H&M', domain: 'hm.com', tier: 'national-retailer', aliases: ['hm', 'handm'], subdomains: ['www2'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'uniqlo-us', name: 'Uniqlo', domain: 'uniqlo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'hm-us', shipping: P['hm-us'], name: 'H&M', domain: 'hm.com', tier: 'national-retailer', aliases: ['hm', 'handm'], subdomains: ['www2'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'uniqlo-us', shipping: P['uniqlo-us'], name: 'Uniqlo', domain: 'uniqlo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'hollister-us', name: 'Hollister', domain: 'hollisterco.com', tier: 'brand-direct', aliases: ['hollister', 'hollisterco'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'abercrombie-us', name: 'Abercrombie & Fitch', domain: 'abercrombie.com', tier: 'brand-direct', aliases: ['abercrombiefitch', 'abercrombie', 'abercrombieandfitch'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'americaneagle-us', name: 'American Eagle', domain: 'ae.com', tier: 'brand-direct', aliases: ['americaneagle', 'americaneagleoutfitters', 'aerie'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'abercrombie-us', shipping: P['abercrombie-us'], name: 'Abercrombie & Fitch', domain: 'abercrombie.com', tier: 'brand-direct', aliases: ['abercrombiefitch', 'abercrombie', 'abercrombieandfitch'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'americaneagle-us', shipping: P['americaneagle-us'], name: 'American Eagle', domain: 'ae.com', tier: 'brand-direct', aliases: ['americaneagle', 'americaneagleoutfitters', 'aerie'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'loft-us', name: 'LOFT', domain: 'loft.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'anntaylor-us', name: 'Ann Taylor', domain: 'anntaylor.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'jcrew-us', name: 'J.Crew', domain: 'jcrew.com', tier: 'brand-direct', aliases: ['jcrew', 'jcrewfactory'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'levis-us', name: "Levi's", domain: 'levi.com', tier: 'brand-direct', aliases: ['levis', 'levi'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'jcrew-us', shipping: P['jcrew-us'], name: 'J.Crew', domain: 'jcrew.com', tier: 'brand-direct', aliases: ['jcrew', 'jcrewfactory'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'levis-us', shipping: P['levis-us'], name: "Levi's", domain: 'levi.com', tier: 'brand-direct', aliases: ['levis', 'levi'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'adidas-us', name: 'adidas', domain: 'adidas.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'underarmour-us', name: 'Under Armour', domain: 'underarmour.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'underarmour-us', shipping: P['underarmour-us'], name: 'Under Armour', domain: 'underarmour.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'newbalance-us', name: 'New Balance', domain: 'newbalance.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'puma-us', name: 'PUMA', domain: 'puma.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'puma-us', shipping: P['puma-us'], name: 'PUMA', domain: 'puma.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'reebok-us', name: 'Reebok', domain: 'reebok.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'converse-us', name: 'Converse', domain: 'converse.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'vans-us', name: 'Vans', domain: 'vans.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'skechers-us', name: 'Skechers', domain: 'skechers.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'crocs-us', name: 'Crocs', domain: 'crocs.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'zara-us', name: 'Zara', domain: 'zara.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'asos-us', name: 'ASOS', domain: 'asos.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'converse-us', shipping: P['converse-us'], name: 'Converse', domain: 'converse.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'vans-us', shipping: P['vans-us'], name: 'Vans', domain: 'vans.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'skechers-us', shipping: P['skechers-us'], name: 'Skechers', domain: 'skechers.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'crocs-us', shipping: P['crocs-us'], name: 'Crocs', domain: 'crocs.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'zara-us', shipping: P['zara-us'], name: 'Zara', domain: 'zara.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'asos-us', shipping: P['asos-us'], name: 'ASOS', domain: 'asos.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'fashionnova-us', name: 'Fashion Nova', domain: 'fashionnova.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'revolve-us', name: 'Revolve', domain: 'revolve.com', tier: 'national-retailer', aliases: ['revolve', 'revolveclothing'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'princesspolly-us', name: 'Princess Polly', domain: 'princesspolly.com', tier: 'brand-direct', subdomains: ['us'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'gymshark-us', name: 'Gymshark', domain: 'gymshark.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'sharkninja-us', name: 'SharkNinja', domain: 'sharkninja.com', tier: 'brand-direct', aliases: ['sharkninja', 'ninja', 'ninjakitchen', 'shark', 'sharkclean'], regional: ['ninjakitchen.com', 'sharkclean.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'sharkninja-us', shipping: P['sharkninja-us'], name: 'SharkNinja', domain: 'sharkninja.com', tier: 'brand-direct', aliases: ['sharkninja', 'ninja', 'ninjakitchen', 'shark', 'sharkclean'], regional: ['ninjakitchen.com', 'sharkclean.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'sony-us', name: 'Sony', domain: 'sony.com', tier: 'brand-direct', aliases: ['sony', 'sonyelectronics'], subdomains: ['electronics', 'store'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'samsung-us', name: 'Samsung', domain: 'samsung.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'bose-us', name: 'Bose', domain: 'bose.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'bose-us', shipping: P['bose-us'], name: 'Bose', domain: 'bose.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'jbl-us', name: 'JBL', domain: 'jbl.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'soundcore-us', name: 'soundcore', domain: 'soundcore.com', tier: 'brand-direct', aliases: ['soundcore', 'anker', 'ankersoundcore'], regional: ['anker.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'soundcore-us', shipping: P['soundcore-us'], name: 'soundcore', domain: 'soundcore.com', tier: 'brand-direct', aliases: ['soundcore', 'anker', 'ankersoundcore'], regional: ['anker.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'jlab-us', name: 'JLab', domain: 'jlab.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'sennheiser-us', name: 'Sennheiser', domain: 'sennheiser.com', tier: 'brand-direct', aliases: ['sennheiser', 'sennheiserconsumeraudio'], regional: ['sennheiser-hearing.com'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'logitech-us', name: 'Logitech', domain: 'logitech.com', tier: 'brand-direct', aliases: ['logitech', 'logitechg'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'garmin-us', name: 'Garmin', domain: 'garmin.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'gopro-us', name: 'GoPro', domain: 'gopro.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'lego-us', name: 'LEGO', domain: 'lego.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'lego-us', shipping: P['lego-us'], name: 'LEGO', domain: 'lego.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'nintendo-us', name: 'Nintendo', domain: 'nintendo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'microsoft-us', name: 'Microsoft', domain: 'microsoft.com', tier: 'brand-direct', aliases: ['microsoft', 'microsoftstore'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'dell-us', name: 'Dell', domain: 'dell.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'microsoft-us', shipping: P['microsoft-us'], name: 'Microsoft', domain: 'microsoft.com', tier: 'brand-direct', aliases: ['microsoft', 'microsoftstore'], added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'dell-us', shipping: P['dell-us'], name: 'Dell', domain: 'dell.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'hp-us', name: 'HP', domain: 'hp.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'lenovo-us', name: 'Lenovo', domain: 'lenovo.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'yeti-us', name: 'YETI', domain: 'yeti.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'hydroflask-us', name: 'Hydro Flask', domain: 'hydroflask.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'hydroflask-us', shipping: P['hydroflask-us'], name: 'Hydro Flask', domain: 'hydroflask.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'owala-us', name: 'Owala', domain: 'owala.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'cuisinart-us', name: 'Cuisinart', domain: 'cuisinart.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'keurig-us', name: 'Keurig', domain: 'keurig.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'nespresso-us', name: 'Nespresso', domain: 'nespresso.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'cuisinart-us', shipping: P['cuisinart-us'], name: 'Cuisinart', domain: 'cuisinart.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'keurig-us', shipping: P['keurig-us'], name: 'Keurig', domain: 'keurig.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
+  entry({ id: 'nespresso-us', shipping: P['nespresso-us'], name: 'Nespresso', domain: 'nespresso.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
   entry({ id: 'vitamix-us', name: 'Vitamix', domain: 'vitamix.com', tier: 'brand-direct', added: REVIEW_2026_09_06(BRAND_DIRECT_REASON) }),
-  entry({ id: 'walgreens-us', name: 'Walgreens', domain: 'walgreens.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'cvs-us', name: 'CVS Pharmacy', domain: 'cvs.com', tier: 'national-retailer', aliases: ['cvs', 'cvspharmacy'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'walgreens-us', shipping: P['walgreens-us'], name: 'Walgreens', domain: 'walgreens.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'cvs-us', shipping: P['cvs-us'], name: 'CVS Pharmacy', domain: 'cvs.com', tier: 'national-retailer', aliases: ['cvs', 'cvspharmacy'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'riteaid-us', name: 'Rite Aid', domain: 'riteaid.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'thriftbooks-us', name: 'ThriftBooks', domain: 'thriftbooks.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'barnesnoble-us', name: 'Barnes & Noble', domain: 'barnesandnoble.com', tier: 'national-retailer', aliases: ['barnesnoble', 'barnesandnoble'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'barnesnoble-us', shipping: P['barnesnoble-us'], name: 'Barnes & Noble', domain: 'barnesandnoble.com', tier: 'national-retailer', aliases: ['barnesnoble', 'barnesandnoble'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'booksamillion-us', name: 'Books-A-Million', domain: 'booksamillion.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'overstock-us', name: 'Overstock', domain: 'overstock.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'brandsmart-us', name: 'BrandsMart USA', domain: 'brandsmartusa.com', tier: 'national-retailer', aliases: ['brandsmartusa', 'brandsmart'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'abt-us', name: 'Abt', domain: 'abt.com', tier: 'national-retailer', aliases: ['abt', 'abtelectronics'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'crutchfield-us', name: 'Crutchfield', domain: 'crutchfield.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'crutchfield-us', shipping: P['crutchfield-us'], name: 'Crutchfield', domain: 'crutchfield.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'sweetwater-us', name: 'Sweetwater', domain: 'sweetwater.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'guitarcenter-us', name: 'Guitar Center', domain: 'guitarcenter.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'musiciansfriend-us', name: "Musician's Friend", domain: 'musiciansfriend.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
@@ -587,15 +922,15 @@ export const REGISTRY: readonly MerchantEntry[] = [
   entry({ id: 'hibbett-us', name: 'Hibbett', domain: 'hibbett.com', tier: 'national-retailer', aliases: ['hibbett', 'hibbettsports', 'hibbettkids', 'citygear'], added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'jdsports-us', name: 'JD Sports', domain: 'jdsports.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'champssports-us', name: 'Champs Sports', domain: 'champssports.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'zappos-us', name: 'Zappos', domain: 'zappos.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'zappos-us', shipping: P['zappos-us'], name: 'Zappos', domain: 'zappos.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'dsw-us', name: 'DSW', domain: 'dsw.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'famousfootwear-us', name: 'Famous Footwear', domain: 'famousfootwear.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'journeys-us', name: 'Journeys', domain: 'journeys.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'journeys-us', shipping: P['journeys-us'], name: 'Journeys', domain: 'journeys.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'shoecarnival-us', name: 'Shoe Carnival', domain: 'shoecarnival.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'hottopic-us', name: 'Hot Topic', domain: 'hottopic.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'pacsun-us', name: 'PacSun', domain: 'pacsun.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'tillys-us', name: "Tilly's", domain: 'tillys.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'urbanoutfitters-us', name: 'Urban Outfitters', domain: 'urbanoutfitters.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'urbanoutfitters-us', shipping: P['urbanoutfitters-us'], name: 'Urban Outfitters', domain: 'urbanoutfitters.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'anthropologie-us', name: 'Anthropologie', domain: 'anthropologie.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'freepeople-us', name: 'Free People', domain: 'freepeople.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'nordstromrack-us', name: 'Nordstrom Rack', domain: 'nordstromrack.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
@@ -610,8 +945,8 @@ export const REGISTRY: readonly MerchantEntry[] = [
   entry({ id: 'scheels-us', name: 'Scheels', domain: 'scheels.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'backcountry-us', name: 'Backcountry', domain: 'backcountry.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'moosejaw-us', name: 'Moosejaw', domain: 'moosejaw.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'sallybeauty-us', name: 'Sally Beauty', domain: 'sallybeauty.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
-  entry({ id: 'dermstore-us', name: 'Dermstore', domain: 'dermstore.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'sallybeauty-us', shipping: P['sallybeauty-us'], name: 'Sally Beauty', domain: 'sallybeauty.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
+  entry({ id: 'dermstore-us', shipping: P['dermstore-us'], name: 'Dermstore', domain: 'dermstore.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'iherb-us', name: 'iHerb', domain: 'iherb.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'vitacost-us', name: 'Vitacost', domain: 'vitacost.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
   entry({ id: 'gnc-us', name: 'GNC', domain: 'gnc.com', tier: 'national-retailer', added: REVIEW_2026_09_06(NATIONAL_RETAILER_REASON) }),
@@ -1124,8 +1459,23 @@ export function validateRegistry(): string[] {
           errors.push(`${e.id}: verified shipping policy ${field} needs lastVerified`);
         }
       }
-      if (!p.freeOverMinor && !p.flatBelowMinor && !p.alwaysFree) {
+      if (!p.freeOverMinor && !p.flatBelowMinor && !p.alwaysFree && !p.tiersMinor) {
         errors.push(`${e.id}: shipping policy carries no usable rule`);
+      }
+      const tiers = p.tiersMinor?.value;
+      if (tiers) {
+        if (tiers.length === 0) errors.push(`${e.id}: shipping policy tier table is empty`);
+        tiers.forEach((t, i) => {
+          if (!Number.isSafeInteger(t.upToMinor) || !Number.isSafeInteger(t.costMinor) || t.upToMinor <= 0 || t.costMinor < 0) {
+            errors.push(`${e.id}: shipping policy tier ${i} must hold non-negative integer cents`);
+          }
+          if (i > 0 && t.upToMinor <= tiers[i - 1].upToMinor) {
+            errors.push(`${e.id}: shipping policy tiers must ascend by order value`);
+          }
+        });
+        if (p.tiersMinor?.verification === 'verified' && !p.tiersMinor.lastVerified) {
+          errors.push(`${e.id}: verified shipping policy tiersMinor needs lastVerified`);
+        }
       }
       const scope = p.scope;
       if (scope) {

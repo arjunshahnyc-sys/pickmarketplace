@@ -69,12 +69,65 @@ describe('buildLandedCostInput', () => {
 
   it('merchants with no published policy fall to the carrier benchmark, never a default', () => {
     const input = buildLandedCostInput(
-      product({ id: 'shoe', price: 89.99, retailer: 'GameStop', category: 'shoes' }),
+      product({ id: 'shoe', price: 89.99, retailer: 'Home Depot', category: 'shoes' }),
       { country: 'US', currency: 'USD' }
     )!;
     // Ground Advantage zone-4 benchmark: boxed shoes ride the 5 lb band.
     expect(input.shipping).toMatchObject({ costMinor: 1_580, confidence: 'estimated' });
     expect(input.shipping!.sourceId).toContain('shipping-estimate:US:US');
+  });
+
+  // Research pass 2026-11-18: 44 more stores' own published policies.
+  const ship = (retailer: string, price: number, subdivision?: string) =>
+    buildLandedCostInput(
+      product({ id: 'x', price, retailer, category: 'shoes' }),
+      { country: 'US', currency: 'USD', ...(subdivision ? { subdivision } : {}) }
+    )!.shipping;
+
+  it('a flat rate under the threshold and a real zero at it (Stanley 1913, $5.99 under $50)', () => {
+    expect(ship('Stanley 1913', 30)).toMatchObject({ costMinor: 599, confidence: 'estimated' });
+    expect(ship('Stanley 1913', 30)!.sourceId).toContain('shipping-policy:stanley1913.com');
+    expect(ship('Stanley 1913', 50)).toMatchObject({ costMinor: 0 });
+  });
+
+  it('"over $50" on the page means exactly $50.00 still pays (Dermstore)', () => {
+    expect(ship('Dermstore', 50)).toMatchObject({ costMinor: 700 });
+    expect(ship('Dermstore', 50.01)).toMatchObject({ costMinor: 0 });
+  });
+
+  it('a guest-only flat rate has no free tier (Zara $4.95, Levi\'s $7.95)', () => {
+    expect(ship('Zara', 400)).toMatchObject({ costMinor: 495 });
+    expect(ship("Levi's", 400)).toMatchObject({ costMinor: 795 });
+  });
+
+  it('always-free stores read as a real zero (Zappos, lululemon)', () => {
+    expect(ship('Zappos', 12)).toMatchObject({ costMinor: 0 });
+    expect(ship('lululemon', 12)).toMatchObject({ costMinor: 0 });
+  });
+
+  it('a published table of rates by order value picks its tier (Crate & Barrel)', () => {
+    expect(ship('Crate & Barrel', 15)).toMatchObject({ costMinor: 600 });
+    expect(ship('Crate & Barrel', 15.01)).toMatchObject({ costMinor: 900 });
+    expect(ship('Crate & Barrel', 120)).toMatchObject({ costMinor: 2_000 });
+    expect(ship('Crate & Barrel', 120)!.sourceId).toContain(':tier');
+    // Alaska and Hawaii are a published $10 more per tier.
+    expect(ship('Crate & Barrel', 120, 'HI')).toMatchObject({ costMinor: 3_000 });
+    // Above the last tier the page switches to a percentage, which is not
+    // encoded: the table does not answer, so the carrier benchmark does.
+    expect(ship('Crate & Barrel', 450)!.sourceId).toContain('shipping-estimate:US:US');
+  });
+
+  it('tiers sit under a free threshold (Bath & Body Works: $10.99, $7.99, free at $50)', () => {
+    expect(ship('Bath & Body Works', 8)).toMatchObject({ costMinor: 1_099 });
+    expect(ship('Bath & Body Works', 30)).toMatchObject({ costMinor: 799 });
+    expect(ship('Bath & Body Works', 50)).toMatchObject({ costMinor: 0 });
+    // Its Alaska and Hawaii prices are a different table that is not encoded.
+    expect(ship('Bath & Body Works', 30, 'AK')).toBeUndefined();
+  });
+
+  it('a published non-contiguous price rides on the flat rate (Nespresso $6.95, $11.95 to Hawaii)', () => {
+    expect(ship('Nespresso', 40, 'GA')).toMatchObject({ costMinor: 695 });
+    expect(ship('Nespresso', 40, 'HI')).toMatchObject({ costMinor: 1_195 });
   });
 
   it("a $250 speaker at Dick's rides the free-over-$75 policy: a real zero, labeled", () => {

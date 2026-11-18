@@ -350,7 +350,7 @@ describe('US domestic shipping estimates (Ground Advantage zone-4 benchmark)', (
           name: 'Nike Air Zoom Running Shoes',
           price: 89.99,
           image: '',
-          retailer: 'GameStop', // no published shipping policy in the registry
+          retailer: 'Home Depot', // no published shipping policy in the registry
           category: 'Shoes',
           currency: 'USD',
           sourceMarket: 'US',
