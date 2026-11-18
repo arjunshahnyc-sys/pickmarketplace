@@ -90,7 +90,30 @@ export interface LandedCostInput {
     subdivision?: string;
     /** Shopper display currency; all breakdown lines are in this currency. */
     currency: CurrencyCode;
+    /**
+     * Combined sales tax rate (state + county + city + special districts)
+     * for the shopper's ZIP, when the state publishes one. Derived in the
+     * browser from the ZIP; the ZIP itself never enters this input.
+     */
+    localSalesTax?: LocalSalesTaxRate;
   };
+}
+
+/**
+ * A ZIP's combined sales tax rate, read from the state's own published
+ * rate and boundary files (public/salestax/us, built by
+ * scripts/build-us-zip-sales-tax.mjs). One ZIP can straddle jurisdictions,
+ * so three figures are carried: the rate on the most address ranges in the
+ * ZIP (the one the estimate uses) and the lowest and highest among them.
+ * All three are equal for most ZIPs. Unit: deci-basis-points (7.75% = 7750).
+ */
+export interface LocalSalesTaxRate {
+  deciBps: number;
+  minDeciBps: number;
+  maxDeciBps: number;
+  /** ISO date the published files were read. */
+  asOf: string;
+  sourceUrl: string;
 }
 
 /**
@@ -292,6 +315,13 @@ export interface DestinationRules {
      * rates that integer bps cannot represent without rounding.
      */
     ratesDeciBps: Record<string, SourcedValue<number>>;
+    /**
+     * Subdivision -> does the state tax a store's separately stated
+     * shipping charge on a taxable item? true = the tax base is item plus
+     * shipping; false = item only. A state with no row keeps the item-only
+     * base and says so (never a guess either way).
+     */
+    shippingTaxable?: Record<string, SourcedValue<boolean>>;
     meta: { sourceUrl: string; notes?: string };
   };
   /** See money.ts for what this means; per-country cash rounding would extend it. */

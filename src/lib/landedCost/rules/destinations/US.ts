@@ -5,7 +5,7 @@
 
 import type { DestinationRules, ReliefPolicy, TaxThresholdPolicy } from '../../types';
 import { todo, verified } from '../seed';
-import { US_STATE_SALES_TAX_DECIBPS } from '../usSalesTax';
+import { US_SHIPPING_TAXABLE, US_STATE_SALES_TAX_DECIBPS } from '../usSalesTax';
 
 const V = '2026-08-26';
 const HTSUS = 'https://hts.usitc.gov/';
@@ -70,12 +70,15 @@ export const US: DestinationRules = {
     },
   ],
   // US consumer prices are listed TAX-EXCLUSIVE; checkout adds state sales
-  // tax on the delivery address. State-level base rates only (verified
-  // 2026-08-31, see usSalesTax.ts); local surtaxes are an assumption, never
-  // an invented average.
+  // tax on the delivery address. State-level base rates (verified
+  // 2026-08-31, see usSalesTax.ts) are the floor; with the shopper's ZIP the
+  // combined rate the state publishes for it is used instead
+  // (usLocalSalesTax.ts), and shippingTaxable says where the shipping
+  // charge is taxed too. Never an invented average.
   domesticSalesTax: {
     label: 'Sales tax',
     ratesDeciBps: US_STATE_SALES_TAX_DECIBPS,
+    shippingTaxable: US_SHIPPING_TAXABLE,
     meta: {
       sourceUrl: 'https://www.taxadmin.org/state-tax-agencies',
       notes: 'One row per state + DC from each Department of Revenue or statute; unit is deci-basis-points. See usSalesTax.ts for scheduled changes on record (DC 2026-10-01).',

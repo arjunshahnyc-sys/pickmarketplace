@@ -339,3 +339,128 @@ export const US_STATE_SALES_TAX_DECIBPS: Record<string, SourcedValue<number>> = 
 
 /** Two-letter codes of every state with a rate row (50 states + DC). */
 export const US_STATE_CODES: string[] = Object.keys(US_STATE_SALES_TAX_DECIBPS).sort();
+
+// DOES THE STATE TAX SHIPPING? (2026-11-18)
+//
+// Whether a store's separately stated shipping charge on a taxable item is
+// itself taxed. true = taxed (the tax base is item plus shipping), false =
+// not taxed. Read from each state's own Streamlined Sales Tax "Taxability
+// Matrix: Library of Definitions" (2026 versions), section "Delivery
+// charges for personal property or services except for direct mail", rows
+// 11000 (handling) and 11010 (transportation, shipping, postage). The four
+// "false" states were also read in their revenue department's own text.
+// Georgia's "true" is corroborated by a real checkout (Owala, 2026-11-18:
+// $1.16 tax on a $7.99 item plus $6.99 shipping, 7.75% of $14.98).
+//
+// Covers the 19 states with a ZIP rate table; every other state has NO row
+// and the calculator says shipping tax "varies by state" as before.
+// Deliberately absent from the 19:
+//   NV - conditional: pure postage is excluded, but any handling or packing
+//        component makes the whole charge taxable (Tax Bulletin SUT
+//        15-0002), and a store's "shipping" line does not say which it is.
+//   WY - the matrix says excluded, the statute it cites reads the other
+//        way for delivery charges; not settled.
+export const US_SHIPPING_TAXABLE: Record<string, SourcedValue<boolean>> = {
+  AR: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14932',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-04), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. A.C.A. 26-52-103.'
+  ),
+  GA: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14974',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-03), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. O.C.G.A. 48-8-2(34).'
+  ),
+  IA: verified(
+    false,
+    'https://sst.streamlinedsalestax.org/TM/Form/14956',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-31), rows 11000 and 11010: excluded from the sales price when separately stated. Iowa Code 423.1(51)(c); rule 701-204.8(1): delivery charges stated and agreed in the sale agreement are not subject to tax.'
+  ),
+  KS: verified(
+    false,
+    'https://sst.streamlinedsalestax.org/TM/Form/14978',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-09-14), rows 11000 and 11010: excluded from the sales price when separately stated. Kansas DOR Notice 23-02: separately stated delivery charges are not part of the selling price on and after 2023-07-01.'
+  ),
+  MN: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14929',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-03), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. Minn. Stat. 297A.61, Subd. 7(a)(4).'
+  ),
+  NC: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14958',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-27), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. G.S. 105-164.3.'
+  ),
+  ND: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14970',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-06), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. NDCC 57-39.2-01(12)(a)(4).'
+  ),
+  NE: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14914',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-03), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. Neb. Rev. Stat. 77-2701.35(1)(d).'
+  ),
+  OH: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14973',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-31), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. R.C. 5739.01(H)(1)(a)(iv).'
+  ),
+  OK: verified(
+    false,
+    'https://sst.streamlinedsalestax.org/TM/Form/14968',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-31), rows 11000 and 11010: excluded from the sales price when separately stated. OAC 710:65-19-70(b): a separately stated charge for transporting the items to the consumer is not subject to sales tax.'
+  ),
+  SD: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14940',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-07), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. SDCL 10-45-1.14.'
+  ),
+  TN: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14898',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-03), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. T.C.A. 67-6-102(92)(A)(iv).'
+  ),
+  UT: verified(
+    false,
+    'https://sst.streamlinedsalestax.org/TM/Form/14917',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-31), rows 11000 and 11010: excluded from the sales price when separately stated. Utah Tax Commission Publication 25: delivery charges are not subject to sales tax if stated separately on the invoice.'
+  ),
+  VT: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14951',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-27), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. 32 V.S.A. 9701(4)(A)(iv).'
+  ),
+  WA: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14954',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-17), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. RCW 82.08.010.'
+  ),
+  WI: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14903',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-07-12), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. Wis. Stat. 77.51(15b)(a)4..'
+  ),
+  WV: verified(
+    true,
+    'https://sst.streamlinedsalestax.org/TM/Form/14962',
+    '2026-11-18',
+    'Taxability Matrix 2026 (published 2026-08-04), rows 11000 and 11010: handling and transportation, shipping and postage charges are included in the sales price. W. Va. Code 11-15B-2(b)(14).'
+  ),
+};

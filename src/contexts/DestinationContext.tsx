@@ -27,12 +27,25 @@
 // outside what Pick can estimate and are refused with a message rather
 // than mapped to a wrong state. A hand-picked state keeps the ZIP only
 // while the ZIP still describes it.
+//
+// LOCAL SALES TAX (2026-11-18): with a ZIP entered, the combined state and
+// local rate the state itself publishes for that ZIP is looked up, again in
+// the browser, from one static file that covers every state Pick has
+// (lib/landedCost/usLocalSalesTax.ts), so the download says nothing about
+// where the shopper is. Only the resulting RATE joins the destination the
+// estimates read; it is derived on every load and never stored.
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { landedCostEnabled } from '@/lib/flags';
 import { getDestinationRules, supportedDestinations } from '@/lib/landedCost/rules/loader';
 import { US_STATE_CODES } from '@/lib/landedCost/rules/usSalesTax';
 import { normalizeZip, resolveZip } from '@/lib/landedCost/usZip';
+import {
+  loadUsLocalSalesTax,
+  lookupLocalSalesTax,
+  type UsLocalSalesTaxTable,
+} from '@/lib/landedCost/usLocalSalesTax';
+import type { LocalSalesTaxRate } from '@/lib/landedCost/types';
 
 export interface Destination {
   country: string;
@@ -44,6 +57,11 @@ export interface Destination {
    * `subdivision`, never sent anywhere (see the POSTAL CODE note above).
    */
   postalCode?: string;
+  /**
+   * The ZIP's published combined sales tax rate, when the state publishes
+   * one. Derived, never persisted (see LOCAL SALES TAX above).
+   */
+  localSalesTax?: LocalSalesTaxRate;
 }
 
 /** What happened to a ZIP the shopper entered; drives the field's message. */
@@ -155,6 +173,30 @@ export function DestinationProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // The ZIP rate table is fetched only once a US ZIP is on file.
+  const [taxTable, setTaxTable] = useState<UsLocalSalesTaxTable | null>(null);
+  const wantsTaxTable =
+    landedCostEnabled() && destination.country === 'US' && Boolean(destination.postalCode);
+  useEffect(() => {
+    if (!wantsTaxTable || taxTable) return;
+    let cancelled = false;
+    loadUsLocalSalesTax().then((table) => {
+      if (!cancelled && table) setTaxTable(table);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [wantsTaxTable, taxTable]);
+  // What consumers read: the stored choice plus the derived rate. Setters
+  // below keep working from `destination`, so the rate is never persisted.
+  const shown = useMemo<Destination>(() => {
+    const localSalesTax =
+      destination.country === 'US'
+        ? lookupLocalSalesTax(taxTable, destination.subdivision, destination.postalCode)
+        : null;
+    return localSalesTax ? { ...destination, localSalesTax } : destination;
+  }, [destination, taxTable]);
+
   const persist = (next: Destination) => {
     setDestination(next);
     try {
@@ -165,7 +207,7 @@ export function DestinationProvider({ children }: { children: ReactNode }) {
   };
 
   const value: DestinationContextValue = {
-    destination,
+    destination: shown,
     // Leaving the US drops the state and ZIP; returning does not resurrect
     // them (the shopper re-picks, or geo seeds the state on a fresh visit).
     setCountry: (country) => persist({ country, currency: currencyFor(country) }),

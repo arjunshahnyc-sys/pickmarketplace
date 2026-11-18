@@ -217,7 +217,7 @@ export function calculateLandedCost(
   if (lane === 'domestic') {
     const c = combineConfidence('exact', input.merchant.configConfidence);
     pushZero(lines, 'duty', 'Import duty', 'Domestic purchase: no import charges', c);
-    domesticSalesTaxLine(input, ctx, lines, warnings, assumptions, itemDest, resolve, c);
+    domesticSalesTaxLine(input, ctx, lines, warnings, assumptions, itemDest, shippingDest, resolve, c);
     pushZero(lines, 'fee', 'Customs fees', 'Domestic purchase: no import charges', c);
   } else if (lane === 'intra-eu') {
     pushZero(lines, 'duty', 'Import duty', 'Intra-EU delivery: free movement of goods', laneConfidence);
@@ -706,6 +706,7 @@ function domesticSalesTaxLine(
   warnings: string[],
   assumptions: string[],
   itemDest: Known | null,
+  shippingDest: Known | null,
   resolve: <T>(sv: SourcedValue<T>, rowId: string) => Resolved<T> | null,
   laneConfidence: Confidence
 ): void {
@@ -756,21 +757,72 @@ function domesticSalesTaxLine(
     assumptions.push('Local sales taxes, where allowed, are not included.');
     return;
   }
-  // Rate is in deci-bps (6.875% = 6875): amount = item * rate / 100_000.
-  const amount = mulDivRound(itemDest.amountMinor, rate.value, 100_000);
-  const pct = (rate.value / 1000).toFixed(3).replace(/\.?0+$/, '');
+  const pctOf = (deciBps: number) => (deciBps / 1000).toFixed(3).replace(/\.?0+$/, '');
+
+  // WHAT IS TAXED. Where the state taxes a store's shipping charge on a
+  // taxable item, the base is item plus shipping (Georgia does; a $7.99
+  // item with $6.99 shipping is taxed on $14.98). A state with no verified
+  // row keeps the item-only base and says so.
+  const shipRow = st.shippingTaxable?.[sub];
+  const shipRule = shipRow ? resolve(shipRow, `${rowId}.shippingTaxable`) : null;
+  let base = itemDest.amountMinor;
+  let baseText = 'Item price';
+  let baseConfidence = itemDest.confidence;
+  let shippingNote: string;
+  if (shipRule?.value === true) {
+    if (shippingDest) {
+      base = sumMinor([itemDest.amountMinor, shippingDest.amountMinor]);
+      baseConfidence = combineConfidence(itemDest.confidence, shippingDest.confidence);
+      baseText = 'Item price plus shipping';
+      shippingNote = `${sub} taxes shipping charges on taxable items, so the shipping line is taxed too.`;
+    } else {
+      shippingNote = `${sub} also taxes shipping charges; that part is not included because the shipping cost is unknown.`;
+    }
+  } else if (shipRule?.value === false) {
+    shippingNote = `${sub} does not tax a separately stated shipping charge.`;
+  } else {
+    shippingNote = 'Whether shipping is taxed varies by state and is not included.';
+  }
+
+  // WHICH RATE. With the shopper's ZIP, the combined rate the state itself
+  // publishes for that ZIP (state + county + city + special districts).
+  // A ZIP can straddle jurisdictions: the rate on the most address ranges
+  // in the ZIP is used and the spread is stated. Without a ZIP, or in a
+  // state that publishes no such file, the state base rate as before.
+  const local = input.destination.localSalesTax;
+  if (local && local.deciBps >= rate.value) {
+    const amount = mulDivRound(base, local.deciBps, 100_000);
+    const spread = local.maxDeciBps > local.minDeciBps;
+    lines.push({
+      kind: 'tax',
+      label: `${st.label} (${sub})`,
+      amountMinor: amount,
+      basis: `${baseText} x ${pctOf(local.deciBps)}% combined state and local rate for your ZIP`,
+      confidence: combineConfidence('estimated', baseConfidence, laneConfidence),
+      sourceId: `${rowId}.zip`,
+    });
+    assumptions.push(
+      spread
+        ? `Sales tax uses the combined state and local rate ${sub} publishes for your ZIP code (read ${local.asOf}). Addresses in this ZIP pay between ${pctOf(local.minDeciBps)}% and ${pctOf(local.maxDeciBps)}%; the rate covering the most addresses is used, so yours may differ. ${shippingNote}`
+        : `Sales tax uses the combined state and local rate ${sub} publishes for your ZIP code (read ${local.asOf}). ${shippingNote}`
+    );
+    return;
+  }
+
+  // Rate is in deci-bps (6.875% = 6875): amount = base * rate / 100_000.
+  const amount = mulDivRound(base, rate.value, 100_000);
   lines.push({
     kind: 'tax',
     label: `${st.label} (${sub})`,
     amountMinor: amount,
-    basis: `Item price x ${pct}% ${sub} state base rate`,
+    basis: `${baseText} x ${pctOf(rate.value)}% ${sub} state base rate`,
     // Never better than estimated: the state base rate is real, but the
     // shopper's combined rate depends on local surtaxes we do not invent.
-    confidence: combineConfidence('estimated', itemDest.confidence, laneConfidence),
+    confidence: combineConfidence('estimated', baseConfidence, laneConfidence),
     sourceId: rowId,
   });
   assumptions.push(
-    `Sales tax is estimated at the ${sub} state base rate; local surtaxes vary by address and are not included, and whether shipping is taxed varies by state.`
+    `Sales tax is estimated at the ${sub} state base rate; local surtaxes vary by address and are not included (enter a ZIP code to use the local rate where the state publishes one). ${shippingNote}`
   );
 }
 

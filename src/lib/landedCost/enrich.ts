@@ -22,6 +22,7 @@ import type {
   LandedCostInput,
   LineKind,
   ShippingEstimateRoute,
+  LocalSalesTaxRate,
 } from './types';
 
 /**
@@ -46,6 +47,8 @@ export interface Destination {
   currency: string;
   /** Subdivision (US state) for domestic sales tax; undefined = not chosen. */
   subdivision?: string;
+  /** The ZIP's published combined rate, when known (see LocalSalesTaxRate). */
+  localSalesTax?: LocalSalesTaxRate;
 }
 
 /**
@@ -325,13 +328,15 @@ export function buildLandedCostInput(
           destinationCountry: destination.country,
           destinationSubdivision: destination.subdivision,
         }),
-    // Copied field by field: the calculator needs country, currency and
-    // state, and nothing else the picker may hold (a typed ZIP stays in the
-    // browser's picker state; see usZip.ts).
+    // Copied field by field: the calculator needs country, currency,
+    // state and the ZIP's published tax rate, and nothing else the picker
+    // may hold (the typed ZIP itself stays in the browser's picker state;
+    // see usZip.ts).
     destination: {
       country: destination.country,
       currency: destination.currency,
       subdivision: destination.subdivision,
+      ...(destination.localSalesTax ? { localSalesTax: destination.localSalesTax } : {}),
     },
   };
 }
@@ -361,6 +366,9 @@ function breakdownCacheKey(
     product.sourceMarket ?? 'US',
     destination.country,
     destination.subdivision ?? '',
+    destination.localSalesTax
+      ? `${destination.localSalesTax.deciBps}-${destination.localSalesTax.minDeciBps}-${destination.localSalesTax.maxDeciBps}`
+      : '',
     destination.currency,
     fxKey,
   ].join('|');

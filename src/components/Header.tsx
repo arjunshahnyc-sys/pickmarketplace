@@ -26,7 +26,7 @@ import { normalizeZip } from '@/lib/landedCost/usZip';
 const CURRENCY_OPTIONS = ['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY', 'INR'];
 
 const ZIP_PRIVACY_NOTE =
-  "Your ZIP code stays in this browser. It picks the delivery state for the sales tax estimate and tells the estimate which stores' shipping terms apply at your address. It is never sent to Pick's servers, so we cannot see or store it. Clear the field to remove it.";
+  "Your ZIP code stays in this browser. It picks the delivery state and, in states that publish one, the combined state and local sales tax rate for your ZIP, and it tells the estimate which stores' shipping terms apply at your address. It is never sent to Pick's servers, so we cannot see or store it. Clear the field to remove it.";
 
 const ZIP_MESSAGES: Record<Exclude<PostalCodeOutcome, 'set' | 'cleared'>, string> = {
   invalid: 'Enter a 5-digit US ZIP code.',
@@ -136,7 +136,7 @@ function DestinationPicker({ compact = false }: { compact?: boolean }) {
             }}
             aria-describedby={zipMessage ? `${zipNoteId} ${zipStatusId}` : zipNoteId}
             aria-invalid={zipMessage ? true : undefined}
-            title="Delivery ZIP code. Sets the state for the tax and shipping estimates. Stays on this device and is never sent to Pick."
+            title="Delivery ZIP code. Sets the state and local tax rate and the shipping terms for the estimates. Stays on this device and is never sent to Pick."
             className={`${compact ? 'h-11 w-24 px-3.5 text-base' : 'h-8 w-[4.25rem] px-2.5 text-xs'} rounded-full bg-gray-100 font-medium text-neutral-700 placeholder:text-neutral-400 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20`}
           />
           <label className="sr-only" htmlFor={`dest-state${suffix}`}>
