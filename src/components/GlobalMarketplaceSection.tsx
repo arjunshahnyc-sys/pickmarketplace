@@ -15,10 +15,10 @@ import { useReveal } from '@/lib/motion/useReveal';
 import { useDestination } from '@/contexts/DestinationContext';
 import ShippingGlobe, { type GlobePlace } from './ShippingGlobe';
 
-const DESTINATIONS = ['US', 'CA', 'GB', 'DE', 'FR', 'AU', 'JP'];
+const DESTINATIONS = ['US', 'CA', 'GB', 'DE', 'FR', 'AU', 'JP', 'IN'];
 
 // One point per market Pick searches, for the globe: lines run from the
-// other six to the shopper's own. [longitude, latitude].
+// others to the shopper's own. [longitude, latitude].
 const MARKET_POINTS: Record<string, GlobePlace> = {
   US: { name: 'the United States', at: [-74.0, 40.7] },
   CA: { name: 'Canada', at: [-79.4, 43.7] },
@@ -27,6 +27,7 @@ const MARKET_POINTS: Record<string, GlobePlace> = {
   FR: { name: 'France', at: [2.35, 48.86] },
   AU: { name: 'Australia', at: [151.2, -33.9] },
   JP: { name: 'Japan', at: [139.7, 35.7] },
+  IN: { name: 'India', at: [77.2, 28.6] },
 };
 
 export function GlobalMarketplaceSection() {

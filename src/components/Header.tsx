@@ -23,7 +23,7 @@ import { normalizeZip } from '@/lib/landedCost/usZip';
 // DestinationContext); the shield tip beside the field says exactly that,
 // because a shopper typing an address detail deserves to know who can see
 // it: nobody at Pick.
-const CURRENCY_OPTIONS = ['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY'];
+const CURRENCY_OPTIONS = ['USD', 'CAD', 'GBP', 'EUR', 'AUD', 'JPY', 'INR'];
 
 const ZIP_PRIVACY_NOTE =
   "Your ZIP code stays in this browser. It picks the delivery state for the sales tax estimate and tells the estimate which stores' shipping terms apply at your address. It is never sent to Pick's servers, so we cannot see or store it. Clear the field to remove it.";

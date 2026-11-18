@@ -12,7 +12,7 @@ import type { DestinationRules } from '../types';
 
 describe('registry', () => {
   it('serves all seeded destinations', () => {
-    expect(supportedDestinations().sort()).toEqual(['AU', 'CA', 'DE', 'FR', 'GB', 'JP', 'US']);
+    expect(supportedDestinations().sort()).toEqual(['AU', 'CA', 'DE', 'FR', 'GB', 'IN', 'JP', 'US']);
     for (const c of supportedDestinations()) {
       expect(getDestinationRules(c)?.country).toBe(c);
     }
@@ -24,6 +24,7 @@ describe('registry', () => {
     expect(getDestinationRules('GB')?.currency).toBe('GBP');
     expect(getDestinationRules('DE')?.currency).toBe('EUR');
     expect(getDestinationRules('JP')?.currency).toBe('JPY');
+    expect(getDestinationRules('IN')?.currency).toBe('INR');
   });
 });
 

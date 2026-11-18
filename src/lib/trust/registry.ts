@@ -91,7 +91,7 @@ export type TrustTier =
   | 'config-only';
 
 /** Feed markets a registry entry can appear in (matches FEED_MARKETS). */
-export type RegistryMarket = 'us' | 'gb' | 'de' | 'fr' | 'ca' | 'au' | 'jp';
+export type RegistryMarket = 'us' | 'gb' | 'de' | 'fr' | 'ca' | 'au' | 'jp' | 'in';
 
 export interface MerchantDomains {
   /** Registrable domain (eTLD+1), lowercase: 'ikea.com'. */
@@ -154,6 +154,7 @@ const MIGRATED = {
 };
 const REVIEW_2026_08_31 = (why: string) => ({ date: '2026-08-31', reason: why });
 const REVIEW_2026_09_06 = (why: string) => ({ date: '2026-09-06', reason: why });
+const IN_2026_11_18 = (why: string) => ({ date: '2026-11-18', reason: why });
 const BRAND_DIRECT_REASON = 'Brand-owned storefront (2026-09-06 sweep: the brand\'s own site was showing "Unverified seller").';
 const NATIONAL_RETAILER_REASON = 'Established US retailer (2026-09-06 sweep: common in results, was showing "Unverified seller").';
 const MARKETPLACE_REASON = 'Marketplace: listings are independent sellers, so prices there describe the seller, not the item.';
@@ -836,6 +837,66 @@ export const REGISTRY: readonly MerchantEntry[] = [
     id: 'yahooshopping-jp', name: 'Yahoo! Shopping', aliases: ['yahooshopping'],
     markets: ['jp'], domain: 'yahoo.co.jp', subdomains: ['shopping', 'store', 'www'],
     tier: 'config-only', country: 'JP',
+  }),
+
+  // IN market (added 2026-11-18 from three live feed probes). Only
+  // Amazon.in and Nike's own India store carry a badge, reusing logos
+  // already reviewed for their US entries; the rest are config-only: the
+  // registry knows they are Indian storefronts (so their offers compute as
+  // domestic, not as imports) but no seller review has been done and they
+  // show no badge.
+  entry({
+    id: 'amazon-in', name: 'Amazon India', aliases: ['amazonin', 'amazon'],
+    markets: ['in'], domain: 'amazon.in', tier: 'marketplace',
+    logo: '/logos/amazon.svg', country: 'IN', thirdParty: true,
+    added: IN_2026_11_18(MARKETPLACE_REASON),
+  }),
+  entry({
+    id: 'nike-in', name: 'Nike India', aliases: ['nikeindia'], markets: ['in'],
+    domain: 'nike.com', tier: 'brand-direct', logo: '/logos/nike.svg', country: 'IN',
+    added: IN_2026_11_18("Nike's own India storefront (nike.com/in); same brand-direct treatment as nike-us."),
+  }),
+  entry({
+    id: 'flipkart-in', name: 'Flipkart', markets: ['in'], domain: 'flipkart.com',
+    tier: 'config-only', country: 'IN', thirdParty: true,
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'croma-in', name: 'Croma', markets: ['in'], domain: 'croma.com',
+    tier: 'config-only', country: 'IN',
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'reliancedigital-in', name: 'Reliance Digital', markets: ['in'],
+    domain: 'reliancedigital.in', tier: 'config-only', country: 'IN',
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'vijaysales-in', name: 'Vijay Sales', markets: ['in'], domain: 'vijaysales.com',
+    tier: 'config-only', country: 'IN',
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'tatacliq-in', name: 'Tata CLiQ',
+    aliases: ['tatacliq', 'tatacliqluxury', 'tatacliqfashion'],
+    markets: ['in'], domain: 'tatacliq.com', subdomains: ['luxury', 'www'],
+    tier: 'config-only', country: 'IN', thirdParty: true,
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'ajio-in', name: 'AJIO', aliases: ['ajio', 'ajiocom'], markets: ['in'],
+    domain: 'ajio.com', tier: 'config-only', country: 'IN', thirdParty: true,
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'myntra-in', name: 'Myntra', markets: ['in'], domain: 'myntra.com',
+    tier: 'config-only', country: 'IN', thirdParty: true,
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
+  }),
+  entry({
+    id: 'nykaa-in', name: 'Nykaa', markets: ['in'], domain: 'nykaa.com',
+    tier: 'config-only', country: 'IN',
+    added: IN_2026_11_18('India storefront country for the delivered-cost estimate; not seller-reviewed.'),
   }),
 ];
 

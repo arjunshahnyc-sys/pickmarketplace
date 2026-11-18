@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { panelLines } from '../../../components/LandedCostPanel';
 import { calculateLandedCost } from '../calculate';
-import { fineCategoryFor } from '../classify/fineCategory';
+import { fineCategoryFor, isAccessoryListing } from '../classify/fineCategory';
 import { typicalShippedWeight } from '../classify/weightEstimates';
 import { buildLandedCostInput, estimateShipping, summarizeTotal, withLandedCosts } from '../enrich';
 import { FixtureFxProvider } from '../fx';
@@ -206,6 +206,129 @@ describe('the Japan unlock', () => {
     expect(out.totalMinor).toBe(7_350 + 5_571 + 0 + 1_292 + 200);
     expect(out.unknownComponents).toEqual([]);
     expect(isTopSlotEligible(out)).toBe(true);
+  });
+});
+
+describe('accessories are not their parent product', () => {
+  it('the Owala Bottle Boot is not a pair of boots', () => {
+    // Live 2026-11-18: filed under shoes, estimated at 1.5 kg and $15.80
+    // postage; the store charged $6.99.
+    expect(fineCategoryFor('Owala Bottle Boot', 'Shoes')).toBeUndefined();
+    expect(estimateShipping(fineCategoryFor('Owala Bottle Boot', 'Shoes'), 'US', 'US')).toBeUndefined();
+  });
+
+  it.each([
+    'Spigen Ultra Hybrid Case for iPhone 15 Pro',
+    'iPhone 15 Pro Silicone Case',
+    'Apple Watch Band 45mm Sport Loop',
+    'Nespresso Vertuo Coffee Pods Variety Pack',
+    'Sony WH-1000XM5 Replacement Ear Pads',
+    'SONY WH-1000XM6 Wireless Noise Canceling Headphones Skin Brushed Black',
+    'Apple AirPods Max 2 Headphone Stand/Charging Pad',
+    'Google Pixel Buds Pro 2 Right Ear Replacement Hazel',
+    'Stanley Quencher Replacement Lid 40 oz',
+    'MacBook Pro 14 Laptop Sleeve',
+    'Silicone Boot for 40 oz Tumbler',
+    'Nike Shoe Laces 45 inch',
+    'Apple AirPods Pro Replacement Charging Case',
+  ])('accessory: %s', (name) => {
+    expect(isAccessoryListing(name)).toBe(true);
+    expect(fineCategoryFor(name, 'Electronics')).toBeUndefined();
+  });
+
+  it.each([
+    ['Apple AirPods Pro 3 Wireless Earbuds with MagSafe Charging Case', 'earbuds'],
+    ['Apple AirPods 4 Wireless Earbuds Bluetooth Headphones USB-C Charging Case', 'headphones'],
+    ['Stanley Quencher H2.0 Tumbler with Lid and Straw 40 oz', 'drinkware'],
+    ['Owala FreeSip Insulated Stainless Steel Water Bottle with Straw', 'drinkware'],
+    ['Timberland Premium 6 Inch Waterproof Boot', 'shoes'],
+    ['Dr. Martens 1460 Smooth Leather Lace Up Boot', 'shoes'],
+    ['CeraVe Daily Moisturizing Lotion for Dry Skin 236ml', 'skincare'],
+    ['CeraVe Hydrating Cleanser 473ml Refill', 'skincare'],
+    ['KitchenAid Artisan Stand Mixer 5 Quart', 'kitchen'],
+    ['Sony WH-1000XM5 Wireless Noise Canceling Headphones', 'headphones'],
+    ['Brita Water Pitcher 10 Cup W Filter Electronic Lid', undefined],
+  ])('not an accessory: %s', (name, category) => {
+    expect(isAccessoryListing(name)).toBe(false);
+    expect(fineCategoryFor(name)).toBe(category);
+  });
+
+  it('a clothing name with "sleeve" keeps its feed category', () => {
+    expect(fineCategoryFor("Carhartt Men's K87 Short Sleeve Pocket T-Shirt", 'Clothing')).toBe('Clothing');
+  });
+});
+
+describe('India: one rate for every personal import', () => {
+  const fx = new FixtureFxProvider(
+    { 'USD:INR': { midMicros: 90_000_000, asOf: '2026-11-18T00:00:00Z' } },
+    { spreadBps: 0 }
+  );
+  const at = new Date('2026-11-18T00:00:00Z');
+
+  it('US to India uses FCPIS group 10 up to 4 lb and PMI group 6 above', () => {
+    const route = getShippingEstimateRoute('US', 'IN')!;
+    expect(route.bands.map((b) => b.costMinor.value)).toEqual([
+      3_115, 3_480, 5_015, 6_865, 8_945, 12_610,
+    ]);
+    expect(route.bands[0].costMinor.notes).toContain('price group 10');
+    expect(route.bands[5].costMinor.notes).toContain('price group 6');
+    expect(collectShippingWarnings(route, at)).toEqual([]);
+  });
+
+  it('a $200 pair of headphones computes end to end at 30.98% of the delivered value', () => {
+    // 1 USD = 90 INR. Item Rs 18,000; estimated FCPIS 2 lb postage $34.80
+    // -> Rs 3,132. CIF value Rs 21,132. Duty with surcharge 11% = 2,324.52;
+    // IGST 18% of (21,132 + 2,324.52) = 4,222.17; India Post fee Rs 30
+    // since charges are due. Amounts below are paise.
+    const { rules, rulesWarnings } = loadRulesFor('IN', at);
+    const out = calculateLandedCost(
+      {
+        item: {
+          priceMinor: 20_000,
+          currency: 'USD',
+          hs: { code: '8518', confidence: 'estimated', sourceId: 'category-map:headphones' },
+        },
+        merchant: { id: 'target', country: 'US', incoterm: 'DAP', configConfidence: 'estimated' },
+        shipping: estimateShipping('headphones', 'US', 'IN'),
+        destination: { country: 'IN', currency: 'INR' },
+      },
+      { rules, eu: EU_MEMBERSHIP, fx, rulesWarnings }
+    );
+    const line = (k: string) => out.lines.find((l) => l.kind === k)!;
+    expect(line('item').amountMinor).toBe(1_800_000);
+    expect(line('shipping').amountMinor).toBe(313_200);
+    expect(line('duty').amountMinor).toBe(232_452);
+    expect(line('tax').amountMinor).toBe(422_217);
+    expect(line('fee').amountMinor).toBe(3_000);
+    expect(out.totalMinor).toBe(1_800_000 + 313_200 + 232_452 + 422_217 + 3_000);
+    expect(out.unknownComponents).toEqual([]);
+    // Duty + tax over the CIF value is the published 30.98%.
+    expect(((232_452 + 422_217) / 2_113_200).toFixed(4)).toBe('0.3098');
+  });
+
+  it('the rate does not depend on what the product is, or on knowing it', () => {
+    const { rules, rulesWarnings } = loadRulesFor('IN', at);
+    const run = (hs?: string) =>
+      calculateLandedCost(
+        {
+          item: {
+            priceMinor: 20_000,
+            currency: 'USD',
+            ...(hs ? { hs: { code: hs, confidence: 'estimated' as const, sourceId: 'test' } } : {}),
+          },
+          merchant: { id: 'target', country: 'US', incoterm: 'DAP', configConfidence: 'estimated' },
+          shipping: estimateShipping('headphones', 'US', 'IN'),
+          destination: { country: 'IN', currency: 'INR' },
+        },
+        { rules, eu: EU_MEMBERSHIP, fx, rulesWarnings }
+      );
+    const duty = (hs?: string) => run(hs).lines.find((l) => l.kind === 'duty')!.amountMinor;
+    expect(duty('6404')).toBe(232_452); // shoes
+    expect(duty('3304')).toBe(232_452); // cosmetics
+    expect(duty()).toBe(232_452); // unclassified
+    // Printed books are kept out of heading 9804: their rate is not on
+    // file, so duty stays unknown instead of borrowing the 11%.
+    expect(duty('4901')).toBeNull();
   });
 });
 

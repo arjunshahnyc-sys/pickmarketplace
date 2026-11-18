@@ -37,17 +37,26 @@ const STEPS: Array<{ maxGrams: number; label: string }> = [
 
 function route(
   destination: string,
-  priceGroup: number,
+  // One number when both services share a price group; India does not
+  // (FCPIS group 10, PMI group 6), so it passes both.
+  priceGroup: number | { fcpis: number; pmi: number },
   // [FCPIS 1lb, 2lb, 3lb, 4lb, PMI 5lb, PMI 10lb] in US cents.
-  cents: [number, number, number, number, number, number]
+  cents: [number, number, number, number, number, number],
+  // Rows added after the first pass carry their own verification date and
+  // the Notice 123 edition they were read from.
+  read: { verified: string; edition: string } = { verified: V, edition: '2026-07-12' }
 ): ShippingEstimateRoute {
+  const groups =
+    typeof priceGroup === 'number' ? { fcpis: priceGroup, pmi: priceGroup } : priceGroup;
+  // The first four steps are FCPIS, the last two PMI (see STEPS).
+  const groupFor = (i: number) => (i < 4 ? groups.fcpis : groups.pmi);
   const bands = STEPS.map((step, i): { maxGrams: number; costMinor: SourcedValue<number> } => ({
     maxGrams: step.maxGrams,
     costMinor: verified(
       cents[i],
       NOTICE_123,
-      V,
-      `${step.label}, price group ${priceGroup}. Notice 123 effective 2026-07-12.`
+      read.verified,
+      `${step.label}, price group ${groupFor(i)}. Notice 123 effective ${read.edition}.`
     ),
   }));
   return {
@@ -58,7 +67,10 @@ function route(
     bands,
     meta: {
       sourceUrl: NOTICE_123,
-      notes: `US to ${destination}: USPS price group ${priceGroup} for both FCPIS and PMI (Country Price Groups table, verified 2026-08-27).`,
+      notes:
+        groups.fcpis === groups.pmi
+          ? `US to ${destination}: USPS price group ${groups.fcpis} for both FCPIS and PMI (Country Price Groups table, verified ${read.verified}).`
+          : `US to ${destination}: USPS price group ${groups.fcpis} for FCPIS and ${groups.pmi} for PMI (Country Price Groups table, verified ${read.verified}).`,
     },
   };
 }
@@ -97,6 +109,19 @@ const ROUTES: Record<string, ShippingEstimateRoute> = {
   'US:CA': route('CA', 1, [2_600, 2_905, 3_850, 4_760, 5_905, 8_625]),
   'US:AU': route('AU', 12, [4_125, 4_605, 6_525, 7_910, 10_665, 16_615]),
   'US:JP': route('JP', 17, [3_395, 3_790, 5_645, 7_190, 8_360, 11_155]),
+  // India, read 2026-11-18 from the Notice 123 edition effective 2026-10-04
+  // (a time-limited price change that runs to 2027-01-17, when prices change
+  // again). Row "India | 6 | 70 | 3 | 6 | 44 | 3 | 6 | 10 | 10": PMI group 6,
+  // FCPIS group 10. The same read reproduced the six Japan cells above
+  // exactly, which confirms both the table reading and that Japan's prices
+  // did not move between editions. India is not on the USPS suspension list
+  // (page updated 2026-11-06).
+  'US:IN': route(
+    'IN',
+    { fcpis: 10, pmi: 6 },
+    [3_115, 3_480, 5_015, 6_865, 8_945, 12_610],
+    { verified: '2026-11-18', edition: '2026-10-04' }
+  ),
 };
 
 export function getShippingEstimateRoute(

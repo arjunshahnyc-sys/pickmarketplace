@@ -96,6 +96,14 @@ describe('all-markets rollout (probed live 2026-08-27)', () => {
     expect(parseFirstPrice('€217.89')).toBe(217.89); // DE/FR: dot decimal with hl=en
     expect(parseFirstPrice('¥35,343')).toBe(35_343); // JP: comma thousands, no decimals
     expect(parseFirstPrice('$442.37')).toBe(442.37); // CA/AU
+    // IN (probed live 2026-11-18): Indian digit grouping puts two digits in
+    // every comma group but the last, so 3,99,900 is 399,900 and not 3.
+    expect(parseFirstPrice('₹24,999')).toBe(24_999);
+    expect(parseFirstPrice('₹22,616.61')).toBe(22_616.61);
+    expect(parseFirstPrice('₹3,99,900')).toBe(399_900);
+    expect(parseFirstPrice('₹3,58,379.69')).toBe(358_379.69);
+    expect(parseFirstPrice('₹1,23,45,678')).toBe(12_345_678);
+    expect(parseFirstPrice('₹800')).toBe(800);
     expect(parseFirstPrice('£174.99')).toBe(174.99); // GB
     expect(parseFirstPrice('$15.99 - $29.99')).toBe(15.99); // ranges keep the low end
   });

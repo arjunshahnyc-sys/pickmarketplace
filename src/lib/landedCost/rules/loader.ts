@@ -14,11 +14,12 @@ import { DE } from './destinations/DE';
 import { FR } from './destinations/FR';
 import { AU } from './destinations/AU';
 import { JP } from './destinations/JP';
+import { IN } from './destinations/IN';
 
 export const RULES_MAX_AGE_DAYS = 90;
 
 const REGISTRY: Record<string, DestinationRules> = {
-  US, CA, GB, DE, FR, AU, JP,
+  US, CA, GB, DE, FR, AU, JP, IN,
 };
 
 export function getDestinationRules(country: string): DestinationRules | null {

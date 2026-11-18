@@ -2,16 +2,24 @@
 // SAFE FORMATTERS - Prevent crashes from undefined/null/NaN values
 // ============================================================================
 
-import { minorUnitExponent } from './landedCost/money';
+import { groupDigits, minorUnitExponent } from './landedCost/money';
 
 /**
  * Safely formats a price value with the currency's decimal count.
  * @param price - The price value (can be number, string, undefined, null)
  * @param currency - Optional ISO code; omitted keeps the legacy 2-decimal
  *   behavior (all pre-international call sites). JPY renders 0 decimals.
- * @returns Formatted price string like "12.99" (or "0.00" if invalid)
+ * @returns Formatted price string like "12.99" or "1,299.00" (or "0.00" if
+ *   invalid), with thousands separators in the currency's own style
+ *   (rupees group as "1,29,900.00"). For machine-read output (structured
+ *   data) use formatPricePlain, which has no separators.
  */
 export function formatPrice(price: any, currency?: string): string {
+  return groupDigits(formatPricePlain(price, currency), currency);
+}
+
+/** formatPrice without thousands separators: "1299.00". */
+export function formatPricePlain(price: any, currency?: string): string {
   const decimals = currency ? minorUnitExponent(currency) : 2;
   const invalid = (0).toFixed(decimals);
 
@@ -43,6 +51,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   CAD: 'CA$',
   AUD: 'A$',
   JPY: '¥',
+  INR: '₹',
 };
 
 export function currencySymbol(currency?: string): string {

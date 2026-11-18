@@ -161,10 +161,12 @@ function buildDirectRetailerUrl(retailerSource: string, productTitle: string): s
 // "$15.99 - $29.99" must parse as 15.99, not parseFloat('15.9929.99');
 // returns the first (lowest) number in the string. Handles every feed
 // market's format (probed live 2026-08-27: hl:'en' yields "€217.89",
-// "¥35,343" — dot decimals, comma thousands, everywhere). Exported for the
-// per-market format tests.
+// "¥35,343" — dot decimals, comma thousands, everywhere). India is the one
+// exception (probed live 2026-11-18): its feed groups digits the Indian
+// way, "₹3,99,900" for 399,900, so a comma group may hold two digits as
+// well as three. Exported for the per-market format tests.
 export function parseFirstPrice(priceStr: string | undefined | null): number {
-  const match = priceStr?.match(/\d+(?:,\d{3})*(?:\.\d+)?/);
+  const match = priceStr?.match(/\d+(?:,\d{2,3})*(?:\.\d+)?/);
   return match ? parseFloat(match[0].replace(/,/g, '')) : 0;
 }
 
@@ -183,7 +185,8 @@ export interface ScraperResult {
  * hl:'en' returns dot-decimal English formatting everywhere, e.g.
  * "€217.89", "¥35,343", so parseFirstPrice handles every feed). maxPrice
  * is the junk-price ceiling in the market's own currency: the legacy
- * 10,000 bound would drop nearly every JPY offer.
+ * 10,000 bound would drop nearly every JPY offer. India added 2026-11-18
+ * (three live probes: "₹24,999", "₹22,616.61", "₹3,99,900").
  */
 export const FEED_MARKETS = {
   us: { gl: 'us', country: 'US', currency: 'USD', maxPrice: 10_000 },
@@ -193,6 +196,7 @@ export const FEED_MARKETS = {
   ca: { gl: 'ca', country: 'CA', currency: 'CAD', maxPrice: 15_000 },
   au: { gl: 'au', country: 'AU', currency: 'AUD', maxPrice: 15_000 },
   jp: { gl: 'jp', country: 'JP', currency: 'JPY', maxPrice: 2_000_000 },
+  in: { gl: 'in', country: 'IN', currency: 'INR', maxPrice: 1_000_000 },
 } as const;
 export type FeedMarket = keyof typeof FEED_MARKETS;
 

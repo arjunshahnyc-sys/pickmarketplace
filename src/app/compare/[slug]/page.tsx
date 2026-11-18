@@ -9,7 +9,7 @@ import { loadComparison } from '@/lib/comparisonData';
 import { formatCheckedDate, type ComparisonRow, type ComparisonTwin } from '@/lib/comparisonPage';
 import { COMPARISON_CATEGORY_LABELS, COMPARISONS, comparisonCopy, getComparison } from '@/lib/comparisons';
 import { formatMinorUnits } from '@/lib/landedCost/money';
-import { currencySymbol, formatPrice, formatRating } from '@/lib/formatters';
+import { currencySymbol, formatPrice, formatPricePlain, formatRating } from '@/lib/formatters';
 
 // Static cheaper-twin comparison pages, one per eval test set item
 // (lib/comparisons.ts): the real price of the item on top, every listing
@@ -182,8 +182,8 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
           offers: {
             '@type': 'AggregateOffer',
             priceCurrency: item.rows[0].currency,
-            lowPrice: formatPrice(Math.min(...item.rows.map((r) => r.price)), item.rows[0].currency),
-            highPrice: formatPrice(Math.max(...item.rows.map((r) => r.price)), item.rows[0].currency),
+            lowPrice: formatPricePlain(Math.min(...item.rows.map((r) => r.price)), item.rows[0].currency),
+            highPrice: formatPricePlain(Math.max(...item.rows.map((r) => r.price)), item.rows[0].currency),
             offerCount: item.rows.length,
             url: `${SITE_URL}/compare/${entry.slug}`,
           },

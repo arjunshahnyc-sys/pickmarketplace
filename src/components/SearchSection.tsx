@@ -8,6 +8,8 @@ import type { FacetGroup, FacetKey, SelectedFacets } from '@/lib/facets/deriveFa
 import { Product } from '@/lib/types';
 import { landedCostEnabled } from '@/lib/flags';
 import { currencySymbol, formatPrice } from '@/lib/formatters';
+import { minorUnitExponent } from '@/lib/landedCost/money';
+import { shopperPriceFor } from '@/lib/shopperPrice';
 
 interface SearchSectionProps {
   resultsCount: number;
@@ -60,11 +62,22 @@ export default function SearchSection({
   // PINCHPOINT 3 FIX - Calculate price range. Only meaningful when every
   // offer shares one currency: mixed-market results (international pilot)
   // hide the range rather than compare pounds to dollars numerically.
+  // The range reads in the shopper's currency, like the cards, when every
+  // offer converted (lib/shopperPrice.ts).
+  const shopperPrices = products.map((p) => shopperPriceFor(p));
+  const allConverted =
+    products.length > 0 &&
+    shopperPrices.every((s) => s !== null && s.currency === shopperPrices[0]?.currency);
   const currencies = new Set(products.map((p) => p.currency ?? 'USD'));
-  const singleCurrency = currencies.size <= 1;
-  const rangeSymbol = currencySymbol(products[0]?.currency);
-  const minPrice = products.length > 0 ? Math.min(...products.map(p => p.price)) : 0;
-  const maxPrice = products.length > 0 ? Math.max(...products.map(p => p.price)) : 0;
+  const singleCurrency = allConverted || currencies.size <= 1;
+  const rangeCurrency = allConverted ? shopperPrices[0]!.currency : products[0]?.currency;
+  const rangeSymbol = currencySymbol(rangeCurrency);
+  const rangeScale = 10 ** minorUnitExponent(rangeCurrency ?? 'USD');
+  const rangeValues = allConverted
+    ? shopperPrices.map((s) => s!.amountMinor / rangeScale)
+    : products.map((p) => p.price);
+  const minPrice = products.length > 0 ? Math.min(...rangeValues) : 0;
+  const maxPrice = products.length > 0 ? Math.max(...rangeValues) : 0;
 
   // Compare: the count is always in the label so the sticky bar never
   // reflows; below two picks the button is inert but still focusable, and
@@ -187,7 +200,7 @@ export default function SearchSection({
           {showOnSaleOnly ? `${resultsCount} products on sale` : `${resultsCount} results`}
           {products.length > 0 && singleCurrency && (
             <span className="ml-2 text-pick-teal font-semibold">
-              • {rangeSymbol}{formatPrice(minPrice, products[0]?.currency)} to {rangeSymbol}{formatPrice(maxPrice, products[0]?.currency)}
+              • {rangeSymbol}{formatPrice(minPrice, rangeCurrency)} to {rangeSymbol}{formatPrice(maxPrice, rangeCurrency)}
             </span>
           )}
         </div>

@@ -16,7 +16,7 @@
 // DISPLAY ROUNDING (per country): amounts stay in minor units end to end;
 // rendering divides by 10^exponent and shows exactly `exponent` decimals.
 // Every currently supported destination currency (USD, CAD, GBP, EUR, AUD,
-// JPY) uses plain decimal display with no cash rounding. A currency with
+// JPY, INR) uses plain decimal display with no cash rounding. A currency with
 // cash rounding (e.g. CHF 0.05 steps) would add a display rule in its
 // destination rules file; nothing in the arithmetic changes.
 
@@ -32,6 +32,7 @@ const MINOR_UNIT_EXPONENTS: Record<string, number> = {
   EUR: 2,
   AUD: 2,
   JPY: 0,
+  INR: 2,
 };
 
 export function minorUnitExponent(currency: CurrencyCode): number {
@@ -92,13 +93,35 @@ export function sumMinor(amounts: number[]): number {
 
 /**
  * Format minor units for display: divide by 10^exponent, always showing
- * `exponent` decimals ("1234" USD -> "12.34"; "1234" JPY -> "1234").
+ * `exponent` decimals and thousands separators (1234 USD -> "12.34";
+ * 1234 JPY -> "1,234"; 12345678 INR -> "1,23,456.78").
  * Pure string arithmetic; the amount never passes through a float.
  */
 export function formatMinorUnits(amountMinor: number, currency: CurrencyCode): string {
   assertMinorUnits(amountMinor, 'amountMinor');
   const exp = minorUnitExponent(currency);
-  if (exp === 0) return String(amountMinor);
+  if (exp === 0) return groupDigits(String(amountMinor), currency);
   const s = String(amountMinor).padStart(exp + 1, '0');
-  return `${s.slice(0, -exp)}.${s.slice(-exp)}`;
+  return groupDigits(`${s.slice(0, -exp)}.${s.slice(-exp)}`, currency);
+}
+
+/**
+ * Thousands separators for a plain decimal string ("1234567.89"), the way
+ * the currency's own shoppers write it: groups of three everywhere except
+ * the rupee, which keeps the last three digits together and pairs the rest
+ * ("12,34,567.89", the lakh and crore grouping). String work only, so no
+ * float ever touches the amount.
+ */
+export function groupDigits(plain: string, currency?: CurrencyCode): string {
+  const [whole, fraction] = plain.split('.');
+  const digits = whole.replace(/^-/, '');
+  let grouped: string;
+  if (currency === 'INR' && digits.length > 3) {
+    const head = digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    grouped = `${head},${digits.slice(-3)}`;
+  } else {
+    grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  const sign = whole.startsWith('-') ? '-' : '';
+  return fraction === undefined ? `${sign}${grouped}` : `${sign}${grouped}.${fraction}`;
 }

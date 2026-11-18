@@ -4,6 +4,8 @@ import { X } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { COMPARE_MAX, selectionKey } from '@/lib/compare/selection';
 import { currencySymbol, formatPrice } from '@/lib/formatters';
+import { formatMinorUnits } from '@/lib/landedCost/money';
+import { shopperPriceFor } from '@/lib/shopperPrice';
 
 interface CompareDrawerProps {
   selectedProducts: Product[];
@@ -62,8 +64,12 @@ export default function CompareDrawer({
                       {product.name}
                     </p>
                     <p className="text-xs text-black/60">
-                      {currencySymbol(product.currency)}
-                      {formatPrice(product.price, product.currency)}
+                      {(() => {
+                        const shopper = shopperPriceFor(product);
+                        return shopper
+                          ? `${currencySymbol(shopper.currency)}${formatMinorUnits(shopper.amountMinor, shopper.currency)}`
+                          : `${currencySymbol(product.currency)}${formatPrice(product.price, product.currency)}`;
+                      })()}
                     </p>
                   </div>
                   {/* Always visible on touch (no hover to reveal it); on

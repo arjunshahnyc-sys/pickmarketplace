@@ -53,6 +53,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   EUR: '€',
   AUD: 'A$',
   JPY: '¥',
+  INR: '₹',
 };
 
 function money(amountMinor: number, currency: string): string {

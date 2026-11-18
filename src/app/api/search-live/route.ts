@@ -7,8 +7,8 @@ import { BUDGET_PAUSED_MESSAGE, refreshSearchBudget } from "@/lib/searchBudget";
 import { isSizeKind, isValidSize } from "@/lib/sizeSearch";
 
 // Destination countries whose local shopping feed joins the US one when the
-// landed-cost flag is on. All six destinations active (price formats probed
-// and merchant tables built 2026-08-27).
+// landed-cost flag is on. Six destinations active since 2026-08-27 (price
+// formats probed and merchant tables built then); India joined 2026-11-18.
 const MARKET_BY_DEST: Record<string, FeedMarket> = {
   GB: "gb",
   DE: "de",
@@ -16,6 +16,7 @@ const MARKET_BY_DEST: Record<string, FeedMarket> = {
   CA: "ca",
   AU: "au",
   JP: "jp",
+  IN: "in",
 };
 
 export async function GET(req: NextRequest) {

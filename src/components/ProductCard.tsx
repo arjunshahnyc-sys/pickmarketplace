@@ -10,6 +10,8 @@ import InfoTip from "./InfoTip";
 import { getRetailerLogo } from "./RetailerLogos";
 import { isAffiliateUrl } from "@/lib/affiliate";
 import { currencySymbol, formatPrice, formatRating } from "@/lib/formatters";
+import { formatMinorUnits } from "@/lib/landedCost/money";
+import { shopperPriceFor } from "@/lib/shopperPrice";
 import LandedCostPanel from "./LandedCostPanel";
 import SizeCheckButton from "./SizeCheckButton";
 import type { SizeCheckResult } from "@/lib/sizeSearch";
@@ -82,6 +84,20 @@ function ProductCard({
     groupSavingsAmount: savingsAmount,
   });
 
+  // Every amount on the card reads in the shopper's own currency when the
+  // breakdown could convert it (lib/shopperPrice.ts); otherwise the store's
+  // currency, as before.
+  const shopper = shopperPriceFor(product);
+  const storeMoney = (amount: number, currency = product.currency) =>
+    `${currencySymbol(currency)}${formatPrice(amount, currency)}`;
+  const cardMoney = (storeAmount: number, storeCurrency = product.currency) =>
+    shopper && (storeCurrency ?? 'USD') === (product.currency ?? 'USD')
+      ? `${currencySymbol(shopper.currency)}${formatMinorUnits(shopper.convert(storeAmount), shopper.currency)}`
+      : storeMoney(storeAmount, storeCurrency);
+  const cardPrice = shopper
+    ? `${currencySymbol(shopper.currency)}${formatMinorUnits(shopper.amountMinor, shopper.currency)}`
+    : storeMoney(product.price);
+
   const { isSaved, toggleItem } = useSavedList();
   const saved = isSaved(product.url);
   // Market-scoped identity: "Target" in the AU feed is Target Australia,
@@ -129,7 +145,7 @@ function ProductCard({
   const linkLabel = `${
     product.isFallback
       ? `Search for ${product.name} on ${product.retailer}`
-      : `View ${product.name} on ${product.retailer}, ${currencySymbol(product.currency)}${formatPrice(product.price, product.currency)}`
+      : `View ${product.name} on ${product.retailer}, ${cardPrice}`
   }${
     flagged
       ? '. Warning: possible scam, not from a verified reseller'
@@ -197,8 +213,7 @@ function ProductCard({
                   Same item
                 </span>
                 <span className="max-w-full truncate text-xs font-semibold leading-tight text-[#1F7A6F] max-sm:text-[11px]">
-                  Save {currencySymbol(overlays.savings.currency)}
-                  {formatPrice(overlays.savings.amount, overlays.savings.currency)}
+                  Save {cardMoney(overlays.savings.amount, overlays.savings.currency)}
                 </span>
               </span>
             )}
@@ -308,8 +323,7 @@ function ProductCard({
       )}
       {farBelow && (
         <p className="mt-1 text-[11px] leading-tight text-amber-700">
-          Priced far below the {currencySymbol(product.currency)}
-          {formatPrice(farBelow.referencePrice, product.currency)} verified stores charge. Check the listing before buying.
+          Priced far below the {cardMoney(farBelow.referencePrice)} verified stores charge. Check the listing before buying.
         </p>
       )}
 
@@ -357,9 +371,9 @@ function ProductCard({
         {productGroupSize && productGroupSize > 1 && showLowestPrice && (
           <span className="text-xs text-neutral-500">from</span>
         )}
-        <span className="text-xl font-bold tabular-nums text-neutral-900">{currencySymbol(product.currency)}{formatPrice(product.price, product.currency)}</span>
+        <span className="text-xl font-bold tabular-nums text-neutral-900">{cardPrice}</span>
         {product.originalPrice && product.originalPrice > product.price && (
-          <span className="text-sm line-through text-neutral-400 font-normal">{currencySymbol(product.currency)}{formatPrice(product.originalPrice, product.currency)}</span>
+          <span className="text-sm line-through text-neutral-400 font-normal">{cardMoney(product.originalPrice)}</span>
         )}
       </div>
 

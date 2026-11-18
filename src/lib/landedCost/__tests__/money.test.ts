@@ -59,8 +59,18 @@ describe('formatMinorUnits', () => {
     expect(formatMinorUnits(0, 'USD')).toBe('0.00');
     expect(formatMinorUnits(100, 'GBP')).toBe('1.00');
   });
+  it('adds thousands separators, the rupee in its own lakh grouping', () => {
+    expect(formatMinorUnits(123_456_789, 'USD')).toBe('1,234,567.89');
+    expect(formatMinorUnits(99_999, 'USD')).toBe('999.99');
+    expect(formatMinorUnits(100_000, 'GBP')).toBe('1,000.00');
+    expect(formatMinorUnits(2_899_000, 'INR')).toBe('28,990.00');
+    expect(formatMinorUnits(39_990_000, 'INR')).toBe('3,99,900.00');
+    expect(formatMinorUnits(1_234_567_800, 'INR')).toBe('1,23,45,678.00');
+    expect(formatMinorUnits(99_900, 'INR')).toBe('999.00');
+    expect(formatMinorUnits(3_534_300, 'JPY')).toBe('3,534,300');
+  });
   it('renders JPY with no decimals', () => {
-    expect(formatMinorUnits(1_234, 'JPY')).toBe('1234');
+    expect(formatMinorUnits(1_234, 'JPY')).toBe('1,234');
     expect(minorUnitExponent('JPY')).toBe(0);
   });
 });

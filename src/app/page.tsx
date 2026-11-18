@@ -152,6 +152,7 @@ function formatCheckedAt(checkedAt?: string): string {
 
 export default function Home() {
   const { destination } = useDestination();
+  const searchSeq = useRef(0);
   const reduceMotion = useReducedMotion();
   const { provider: fxProvider, status: fxStatus } = useFxProvider();
   const [results, setResults] = useState<any[]>([]);
@@ -252,6 +253,12 @@ export default function Home() {
       // Not worth failing a search over
     }
 
+    // Only the newest search may write to the page. A shopper outside the
+    // US who opens a results link starts one search for the default
+    // country, then a second once their saved country is restored; if the
+    // first answer arrives last it must not replace the second (found
+    // 2026-11-18: an Indian shopper's reload showed US-only results).
+    const seq = ++searchSeq.current;
     try {
       // The shopper's destination adds their local market feed server-side
       // (flag-gated there too); without the flag the param is never sent.
@@ -278,6 +285,7 @@ export default function Home() {
           saveLastSearch({ key: searchKey, q: searchQuery, kind, size, data });
         }
       }
+      if (seq !== searchSeq.current) return;
       setResults(data.results || []);
       // A size search with results: reuse this tab's earlier answers for it
       // (coming back from a product page), or queue the automatic check.
@@ -303,12 +311,13 @@ export default function Home() {
         }
       }
     } catch (error) {
+      if (seq !== searchSeq.current) return;
       console.error('Search failed:', error);
       setResults([]);
       setSearchResponse(null);
       setSearchError(true);
     } finally {
-      setIsLoading(false);
+      if (seq === searchSeq.current) setIsLoading(false);
     }
   };
 

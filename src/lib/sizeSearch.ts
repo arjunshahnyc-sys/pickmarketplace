@@ -12,6 +12,8 @@
 // offers, how the size joins the search, and which listings to drop because
 // their title names a different size.
 
+import { isAccessoryListing } from './landedCost/classify/fineCategory';
+
 export type SizeKind = 'letters' | 'shoes' | 'waist';
 
 const LETTER_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
@@ -61,6 +63,9 @@ function kindOf(text: string): SizeKind | null {
 /** Which size picker a search gets, from its words alone. null = none. */
 export function sizeKindForQuery(query: string): SizeKind | null {
   if (HAS_SIZE.test(query)) return null;
+  // "owala bottle boot" is a sleeve for a bottle, not footwear: no shoe
+  // size picker, and no remembered shoe size bolted onto the search.
+  if (isAccessoryListing(query)) return null;
   return kindOf(query);
 }
 
@@ -74,7 +79,7 @@ export function sizeKindForResults(query: string, titles: readonly string[]): Si
   if (HAS_SIZE.test(query) || titles.length < 4) return null;
   const counts: Record<SizeKind, number> = { letters: 0, shoes: 0, waist: 0 };
   for (const title of titles) {
-    const kind = kindOf(title);
+    const kind = isAccessoryListing(title) ? null : kindOf(title);
     if (kind) counts[kind] += 1;
   }
   const [kind, count] = (Object.entries(counts) as Array<[SizeKind, number]>).sort((a, b) => b[1] - a[1])[0];

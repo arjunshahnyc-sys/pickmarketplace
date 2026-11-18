@@ -12,7 +12,7 @@ const ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 // USD->X: feed prices arrive in each market's own currency and the display
 // currency is the shopper's free choice, so GBP:USD and EUR:JPY are as real
 // as USD:GBP. TableFxProvider does exact-key lookups with no inversion.
-const CURRENCIES = ['USD', 'GBP', 'CAD', 'AUD', 'EUR', 'JPY'];
+const CURRENCIES = ['USD', 'GBP', 'CAD', 'AUD', 'EUR', 'JPY', 'INR'];
 // ECB publishes once per business day around 16:00 CET; 6 hours keeps us at
 // most one refresh behind while sending the ECB a handful of requests a day.
 const TTL_MS = 6 * 60 * 60 * 1000;

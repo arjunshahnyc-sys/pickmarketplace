@@ -1,4 +1,4 @@
-import { formatPrice } from '@/lib/formatters';
+import { formatPricePlain } from '@/lib/formatters';
 
 interface OrganizationSchemaProps {
   name: string;
@@ -69,7 +69,7 @@ export function ProductSchema({
     url,
     offers: {
       '@type': 'Offer',
-      price: formatPrice(price),
+      price: formatPricePlain(price),
       priceCurrency: currency,
       availability: `https://schema.org/${availability}`,
       url,

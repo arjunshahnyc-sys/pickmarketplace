@@ -246,6 +246,11 @@ describe('landed-cost config parity with the pre-registry tables', () => {
     ['AU', 'kogan', 'AU'], ['AU', 'sonyaustraliaonline', 'AU'], ['AU', 'ebay', 'AU'],
     ['JP', 'amazon', 'JP'], ['JP', 'amazoncojp', 'JP'], ['JP', 'rakuten', 'JP'],
     ['JP', 'yodobashi', 'JP'], ['JP', 'biccamera', 'JP'], ['JP', 'yahooshopping', 'JP'],
+    ['IN', 'amazonin', 'IN'], ['IN', 'amazon', 'IN'], ['IN', 'nikeindia', 'IN'],
+    ['IN', 'flipkart', 'IN'], ['IN', 'croma', 'IN'], ['IN', 'reliancedigital', 'IN'],
+    ['IN', 'vijaysales', 'IN'], ['IN', 'tatacliq', 'IN'], ['IN', 'tatacliqluxury', 'IN'],
+    ['IN', 'tatacliqfashion', 'IN'], ['IN', 'ajio', 'IN'], ['IN', 'ajiocom', 'IN'],
+    ['IN', 'myntra', 'IN'], ['IN', 'nykaa', 'IN'],
   ];
 
   it('every pre-registry US key still resolves to a US storefront', () => {
