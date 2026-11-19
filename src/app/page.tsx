@@ -234,9 +234,10 @@ export default function Home() {
     setAutoCheck(null);
     autoCheckKey.current = null;
     setIsLoading(true);
-    // A new result set: picks from the previous one must not linger in
-    // the drawer, and its chips do not apply to the new results.
-    compare.clear();
+    // A new result set: its chips do not apply to the new results. Compare
+    // picks are KEPT (2026-11-18): a shopper picks one product, searches
+    // for another, and compares the two. Only an open comparison closes.
+    compare.closeModal();
     setSelectedFacets({});
     setQuery(searchQuery);
     setHasSearched(true);

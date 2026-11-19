@@ -8,6 +8,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Product } from '../types';
 import {
   COMPARE_MAX,
+  COMPARE_STORAGE_KEY,
+  parseStoredSelection,
   selectionAnnouncement,
   selectionKey,
   toggleSelection,
@@ -20,6 +22,37 @@ export function useCompareSelection(max = COMPARE_MAX) {
 
   // Announce each change against the previous selection (live region).
   const prevRef = useRef<Product[]>(selected);
+
+  // Picks outlive a search, a product-page visit and a reload (this tab's
+  // sessionStorage; see selection.ts). Restored after mount, so the server
+  // and first client render agree on an empty tray, and restored silently:
+  // nothing changed for a screen reader to hear about.
+  const restored = useRef(false);
+  useEffect(() => {
+    let stored: Product[] = [];
+    try {
+      stored = parseStoredSelection(window.sessionStorage.getItem(COMPARE_STORAGE_KEY), max);
+    } catch {
+      // Storage unavailable: start empty.
+    }
+    restored.current = true;
+    if (stored.length === 0) return;
+    prevRef.current = stored;
+    // Deliberate mount-time restore, the same pattern as the destination
+    // picker: storage can only be read after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelected(stored);
+  }, [max]);
+  useEffect(() => {
+    if (!restored.current) return;
+    try {
+      if (selected.length === 0) window.sessionStorage.removeItem(COMPARE_STORAGE_KEY);
+      else window.sessionStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      // Best effort only.
+    }
+  }, [selected]);
+
   useEffect(() => {
     const prev = prevRef.current;
     if (prev === selected) return;

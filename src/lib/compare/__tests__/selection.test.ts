@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareButtonState,
+  parseStoredSelection,
   selectionAnnouncement,
   selectionKey,
   toggleSelection,
@@ -87,5 +88,36 @@ describe('selectionAnnouncement', () => {
     ]) {
       expect(s).not.toContain('—');
     }
+  });
+});
+
+describe('picks kept across searches (stored for the tab)', () => {
+  const sony = { id: 'serper:best buy:sony xm6', name: 'Sony WH-1000XM6', price: 459.99, image: '', retailer: 'Best Buy', url: 'https://www.bestbuy.com/x' };
+  const bose = { id: 'serper:bose:qc ultra', name: 'Bose QC Ultra', price: 429, image: '', retailer: 'Bose', url: 'https://www.bose.com/y' };
+
+  it('a pick from one search comes back intact for the next', () => {
+    const stored = parseStoredSelection(JSON.stringify([sony]));
+    expect(stored).toEqual([sony]);
+    // ...and the product from the second search joins it.
+    expect(toggleSelection(stored, bose).map((p) => p.name)).toEqual(['Sony WH-1000XM6', 'Bose QC Ultra']);
+  });
+
+  it('nothing stored, or storage holding junk, is an empty tray', () => {
+    expect(parseStoredSelection(null)).toEqual([]);
+    expect(parseStoredSelection('')).toEqual([]);
+    expect(parseStoredSelection('{not json')).toEqual([]);
+    expect(parseStoredSelection('{"a":1}')).toEqual([]);
+  });
+
+  it('drops entries that could not be shown or opened, duplicates, and anything past two', () => {
+    const raw = JSON.stringify([
+      { name: 'No price', retailer: 'X', url: 'https://x.test' },
+      { ...sony, url: 'javascript:alert(1)' },
+      sony,
+      sony,
+      bose,
+      { ...bose, id: 'third', name: 'Third' },
+    ]);
+    expect(parseStoredSelection(raw).map((p) => p.name)).toEqual(['Sony WH-1000XM6', 'Bose QC Ultra']);
   });
 });

@@ -82,3 +82,48 @@ export function selectionAnnouncement<T extends Selectable>(
   if (next.length >= max) return `${next.length} of ${max} selected: ${names}. Ready to compare.`;
   return `${next.length} of ${max} selected: ${names}. Tick Compare on one more card.`;
 }
+
+// ── Keeping picks across searches and page changes ─────────────────────────
+// Picks live in this tab's sessionStorage, so a pick survives a new search,
+// a visit to a product page and a reload, and ends with the tab. Each pick
+// is stored as the card it was picked from (name, price, store, link), so
+// the tray can show it while the results on screen are for something else.
+
+export const COMPARE_STORAGE_KEY = 'pick-compare';
+
+/** What a stored pick must have to be shown and compared again. */
+function isStoredPick(value: unknown): value is Product {
+  if (typeof value !== 'object' || value === null) return false;
+  const p = value as Record<string, unknown>;
+  return (
+    typeof p.name === 'string' &&
+    p.name.length > 0 &&
+    typeof p.price === 'number' &&
+    Number.isFinite(p.price) &&
+    typeof p.retailer === 'string' &&
+    typeof p.url === 'string' &&
+    /^https?:\/\//.test(p.url)
+  );
+}
+
+/** Picks read back from storage: malformed entries dropped, duplicates and overflow trimmed. */
+export function parseStoredSelection(raw: string | null, max = COMPARE_MAX): Product[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const picks: Product[] = [];
+    const seen = new Set<string>();
+    for (const entry of parsed) {
+      if (!isStoredPick(entry)) continue;
+      const key = selectionKey(entry);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      picks.push(entry);
+      if (picks.length >= max) break;
+    }
+    return picks;
+  } catch {
+    return [];
+  }
+}
