@@ -207,13 +207,21 @@ function ProductCard({
         {(overlays.savings || overlays.tag) && (
           <div className="absolute top-2 left-2 z-[1] flex max-w-[calc(100%-2.75rem)] flex-col items-start gap-1">
             {overlays.savings?.kind === 'same-item' && (
-              // Same-item tag: this exact product, cheapest of its listings.
-              <span className="flex max-w-full flex-col items-start rounded-lg bg-white/95 px-2 py-1 shadow-sm max-sm:px-1.5">
+              // Lowest-price tag: this exact product, cheapest of its listings.
+              // The saving is measured against what stores typically charge
+              // for the item (the middle price among verified stores, see
+              // productGrouping.ts), and the tag says so: a shopper asked
+              // "save compared to what?" of the old "Same item / Save $X"
+              // wording (feedback 2026-11-19).
+              <span
+                className="flex max-w-full flex-col items-start rounded-lg bg-white/95 px-2 py-1 shadow-sm max-sm:px-1.5"
+                title={`The lowest price Pick found for this item: ${cardMoney(overlays.savings.amount, overlays.savings.currency)} less than stores typically charge for it.`}
+              >
                 <span className="text-[9px] font-medium uppercase leading-none tracking-wide text-neutral-500">
-                  Same item
+                  Lowest price
                 </span>
                 <span className="max-w-full truncate text-xs font-semibold leading-tight text-[#1F7A6F] max-sm:text-[11px]">
-                  Save {cardMoney(overlays.savings.amount, overlays.savings.currency)}
+                  {cardMoney(overlays.savings.amount, overlays.savings.currency)} below typical
                 </span>
               </span>
             )}
