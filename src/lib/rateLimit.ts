@@ -45,6 +45,14 @@ export const RATE_LIMITS = {
   // opened. Over the limit the page still shows what the card knew and
   // the button to the store.
   item: { name: 'item', limit: 20, windowMs: 60 * 1000 },
+  // Price alert sign-up: each one can send a confirmation email, so it is
+  // as tight as the contact form.
+  priceWatch: { name: 'priceWatch', limit: 5, windowMs: 15 * 60 * 1000 },
+  // Tile photos on the /compare picture grid (/api/compare-thumb): a cold
+  // one can spend a search. The whole catalog is 65 tiles, so one shopper
+  // scrolling the full page twice fits; over the limit a tile shows a
+  // placeholder and nothing is spent.
+  compareThumb: { name: 'compareThumb', limit: 150, windowMs: 60 * 1000 },
 } satisfies Record<string, RateLimitRule>;
 
 interface Bucket {

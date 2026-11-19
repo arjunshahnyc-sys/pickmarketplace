@@ -9,6 +9,8 @@ import { loadComparison } from '@/lib/comparisonData';
 import { formatCheckedDate, type ComparisonRow, type ComparisonTwin } from '@/lib/comparisonPage';
 import { COMPARISON_CATEGORY_LABELS, COMPARISONS, comparisonCopy, getComparison } from '@/lib/comparisons';
 import { formatMinorUnits } from '@/lib/landedCost/money';
+import { alertsConfigured } from '@/lib/priceWatch';
+import PriceAlertSignup from '@/components/PriceAlertSignup';
 import { currencySymbol, formatPrice, formatPricePlain, formatRating } from '@/lib/formatters';
 
 // Static cheaper-twin comparison pages, one per eval test set item
@@ -117,7 +119,25 @@ function Reviews({ row }: { row: ComparisonRow }) {
 
 function TwinCard({ twin, against }: { twin: ComparisonTwin; against: string }) {
   return (
-    <div className="rounded-2xl border border-[#2A9D8F]/30 bg-white p-5">
+    <div className="rounded-2xl border border-[#2A9D8F]/30 bg-white p-5 sm:flex sm:gap-5">
+      {/* The photo is a way in too: it opens the same store page as the button. */}
+      {twin.image && (
+        <OutboundLink
+          href={twin.url}
+          clickHref={twin.clickUrl}
+          className="mb-4 block w-full max-w-[200px] shrink-0 self-start overflow-hidden rounded-xl bg-gray-100 p-3 transition hover:opacity-90 sm:mb-0 sm:w-44"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={twin.image}
+            alt={`${twin.name}, at ${twin.store}`}
+            loading="lazy"
+            decoding="async"
+            className="aspect-square w-full object-contain mix-blend-multiply"
+          />
+        </OutboundLink>
+      )}
+      <div className="min-w-0 flex-1">
       <p className="text-xs font-semibold uppercase tracking-wide text-[#1F7A6F]">
         Similar pick · {twin.savingsPercent}% less
       </p>
@@ -149,12 +169,14 @@ function TwinCard({ twin, against }: { twin: ComparisonTwin; against: string }) 
       >
         See it at {twin.store} ↗
       </OutboundLink>
+      </div>
     </div>
   );
 }
 
 export default async function ComparisonPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const alertsOn = alertsConfigured();
   const entry = getComparison(slug);
   // Before any paid search: an unknown slug is a 404, not a query.
   if (!entry) notFound();
@@ -275,6 +297,11 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
               >
                 See it at {item.top.store} ↗
               </OutboundLink>
+              {/* Price drop alert: only where Pick can really send email, and
+                  only for a verified store's new unit (lib/priceWatch.ts). */}
+              {alertsOn && comparison.item.topIsVerifiedNew && (
+                <PriceAlertSignup slug={entry.slug} name={entry.name} priceLabel={price(item.top)} />
+              )}
             </div>
           ) : (
             <p className="text-neutral-600">
@@ -284,6 +311,76 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
               one. The live search shows everything it found.
             </p>
           )}
+        </section>
+
+        {/* The cheaper twin comes straight after the price (2026-11-19): it is
+            what a shopper arriving from the picture grid came to see. */}
+        <section aria-labelledby="cheaper-twin" className="mb-10">
+          <h2 id="cheaper-twin" className="text-xl font-semibold text-neutral-900 mb-1">
+            {copy.alternativesHeading}
+          </h2>
+          {comparison.twinSearch ? (
+            <p className="text-xs text-neutral-500 mb-3">
+              A different product from another brand. Pick searched for &ldquo;{comparison.twinSearch}&rdquo; and kept
+              only products of the same kind that state at least one spec the {entry.name} states, are rated 4 stars
+              or more (and no more than half a star below it) from at least 50 reviews, are sold new by a verified
+              store, and cost at least 25% less
+              {comparison.twinReferencePrice !== null
+                ? ` than ${currencySymbol(item.top?.currency ?? 'USD')}${formatPrice(comparison.twinReferencePrice, item.top?.currency ?? 'USD')}, the lower of the price on top and what it typically costs`
+                : ''}
+              . The chips are specs both products&apos; listings state, nothing more.
+            </p>
+          ) : (
+            <p className="text-xs text-neutral-500 mb-3">
+              Pick does not look for a twin here: a different book is not an equivalent of this one.
+            </p>
+          )}
+          {twin ? (
+            <>
+              <TwinCard twin={twin} against={entry.name} />
+              {comparison.moreTwins.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs text-neutral-500 mb-2">Also passed the bar:</p>
+                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {comparison.moreTwins.map((t) => (
+                      <li key={`${t.store}|${t.name}`}>
+                        <OutboundLink
+                          href={t.url}
+                          clickHref={t.clickUrl}
+                          className="group block h-full rounded-2xl border border-black/10 bg-white p-3 transition hover:border-[#2A9D8F]"
+                        >
+                          {t.image && (
+                            <span className="block aspect-square overflow-hidden rounded-xl bg-gray-100 p-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={t.image}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                className="h-full w-full object-contain mix-blend-multiply"
+                              />
+                            </span>
+                          )}
+                          <span className="mt-2 block text-sm font-medium leading-snug text-neutral-900 line-clamp-2 group-hover:text-[#1F7A6F]">
+                            {t.name}
+                          </span>
+                          <span className="mt-1 block text-sm text-neutral-700">
+                            {price(t)} at {t.store}
+                          </span>
+                          <span className="mt-0.5 block text-xs font-medium text-[#1F7A6F]">{t.savingsPercent}% less</span>
+                        </OutboundLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : comparison.twinSearch ? (
+            <div className="rounded-2xl border border-dashed border-black/15 bg-white/60 p-5 text-sm text-neutral-600">
+              No product passed that bar on {checked}. Pick would rather show nothing than a lookalike that is not
+              as good, so this section stays empty until a search turns one up.
+            </div>
+          ) : null}
         </section>
 
         {/* Every listing of the item */}
@@ -337,54 +434,6 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
             </div>
           </section>
         )}
-
-        {/* The cheaper twin */}
-        <section aria-labelledby="cheaper-twin" className="mb-10">
-          <h2 id="cheaper-twin" className="text-xl font-semibold text-neutral-900 mb-1">
-            {copy.alternativesHeading}
-          </h2>
-          {comparison.twinSearch ? (
-            <p className="text-xs text-neutral-500 mb-3">
-              A different product from another brand. Pick searched for &ldquo;{comparison.twinSearch}&rdquo; and kept
-              only products of the same kind that state at least one spec the {entry.name} states, are rated 4 stars
-              or more (and no more than half a star below it) from at least 50 reviews, are sold new by a verified
-              store, and cost at least 25% less
-              {comparison.twinReferencePrice !== null
-                ? ` than ${currencySymbol(item.top?.currency ?? 'USD')}${formatPrice(comparison.twinReferencePrice, item.top?.currency ?? 'USD')}, the lower of the price on top and what it typically costs`
-                : ''}
-              . The chips are specs both products&apos; listings state, nothing more.
-            </p>
-          ) : (
-            <p className="text-xs text-neutral-500 mb-3">
-              Pick does not look for a twin here: a different book is not an equivalent of this one.
-            </p>
-          )}
-          {twin ? (
-            <>
-              <TwinCard twin={twin} against={entry.name} />
-              {comparison.moreTwins.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs text-neutral-500 mb-2">Also passed the bar:</p>
-                  <ul className="space-y-2">
-                    {comparison.moreTwins.map((t) => (
-                      <li key={`${t.store}|${t.name}`} className="text-sm text-neutral-700">
-                        <OutboundLink href={t.url} clickHref={t.clickUrl} className="font-medium text-neutral-900 hover:text-[#2A9D8F]">
-                          {t.name}
-                        </OutboundLink>{' '}
-                        · {price(t)} at {t.store} · {t.savingsPercent}% less
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          ) : comparison.twinSearch ? (
-            <div className="rounded-2xl border border-dashed border-black/15 bg-white/60 p-5 text-sm text-neutral-600">
-              No product passed that bar on {checked}. Pick would rather show nothing than a lookalike that is not
-              as good, so this section stays empty until a search turns one up.
-            </div>
-          ) : null}
-        </section>
 
         {comparison.hasUnverifiedSeller && <UnverifiedSellerNote className="mb-10" />}
 

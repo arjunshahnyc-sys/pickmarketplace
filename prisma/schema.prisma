@@ -41,3 +41,41 @@ model Price {
   productId String
   createdAt DateTime @default(now())
 }
+
+// Price drop alerts (2026-11-18). One row per email per compare page. The
+// address is used for nothing but that page's alerts; `token` is the secret
+// in the confirm and unsubscribe links. An unconfirmed row is never emailed
+// again after the one confirmation message.
+model PriceWatch {
+  id             String    @id @default(cuid())
+  email          String
+  slug           String
+  token          String    @unique
+  /// Price on the page when the shopper signed up, and the store charging it.
+  baselinePrice  Float
+  baselineStore  String
+  currency       String    @default("USD")
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+  /// Price named in the last alert sent; the next alert must beat it.
+  lastAlertPrice Float?
+  lastAlertAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@unique([email, slug])
+  @@index([slug])
+}
+
+// Each price the alert check read, kept so a price history can be drawn
+// later. One row per watched page per check.
+model PricePoint {
+  id          String   @id @default(cuid())
+  slug        String
+  price       Float
+  store       String
+  currency    String   @default("USD")
+  verifiedNew Boolean
+  checkedAt   DateTime @default(now())
+
+  @@index([slug, checkedAt])
+}

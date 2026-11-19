@@ -79,6 +79,13 @@ export default function Privacy() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-semibold mb-4">Price Drop Alerts</h2>
+            <p className="text-black/80 leading-relaxed">
+              If you ask for a price drop alert on a product page, we store the email address you enter, which product it is for, and the price on the day you asked. We send one email asking you to confirm, and after that only an email when that product&apos;s price falls. We do not use the address for anything else and we do not share it, other than with the email service that delivers the message. Every alert has a link that stops them, and you can ask us to delete the address at any time.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-semibold mb-4">Data Security</h2>
             <p className="text-black/80 leading-relaxed">
               We implement appropriate technical and organizational measures to protect your information. However, no internet transmission is completely secure, and we cannot guarantee absolute security.
@@ -97,7 +104,7 @@ export default function Privacy() {
               <li>Lodge a complaint with a supervisory authority</li>
             </ul>
             <p className="text-black/80 leading-relaxed mt-4">
-              There is no settings page for these requests yet. Email support@pickmarketplace.app from the address on your account and we will take care of it. We do not send marketing email, so there is nothing to unsubscribe from.
+              There is no settings page for these requests yet. Email support@pickmarketplace.app from the address on your account and we will take care of it. We do not send marketing email. The only email we send on request is a price drop alert, and each one has a link to stop them.
             </p>
           </section>
 

@@ -257,6 +257,15 @@ export default function Header() {
               in the mobile menu) once there is a real reason to create an
               account, and say that reason next to the button. */}
           <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
+            {/* The picture grid of products and their cheaper alternatives
+                (2026-11-19). No prefetch, like every link into /compare. */}
+            <Link
+              href="/compare"
+              prefetch={false}
+              className="text-sm font-medium text-neutral-700 hover:text-[#1F7A6F] transition-colors"
+            >
+              Cheaper alternatives
+            </Link>
             {landedCostEnabled() && <DestinationPicker />}
             <SavedListButton />
 
@@ -330,6 +339,14 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-pick-border">
             <nav aria-label="Mobile navigation" className="flex flex-col space-y-3">
+              <Link
+                href="/compare"
+                prefetch={false}
+                className="py-2 text-sm font-medium text-neutral-800 hover:text-pick-teal transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Cheaper alternatives
+              </Link>
               {landedCostEnabled() && <DestinationPicker compact />}
               {isAuthenticated && (
                 <>
