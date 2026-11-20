@@ -53,6 +53,9 @@ export const RATE_LIMITS = {
   // scrolling the full page twice fits; over the limit a tile shows a
   // placeholder and nothing is spent.
   compareThumb: { name: 'compareThumb', limit: 150, windowMs: 60 * 1000 },
+  // Visit counter (/api/visit): a browser reports at most once per page
+  // load, so this only stops something hammering the counter.
+  visit: { name: 'visit', limit: 20, windowMs: 60 * 1000 },
 } satisfies Record<string, RateLimitRule>;
 
 interface Bucket {

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { bumpStat } from "@/lib/dailyStats";
 import { toAffiliateUrl } from "@/lib/affiliate";
 import { resolveMerchantUrl, verifyClickParams } from "@/lib/outbound";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
@@ -36,6 +37,9 @@ export async function GET(req: NextRequest) {
 
   const ua = req.headers.get("user-agent") ?? "";
   if (!ua || BOT_UA.test(ua)) return redirect(fallback);
+
+  // One more click through to a store today (a daily count only).
+  after(() => bumpStat('store_click'));
 
   // Over budget: skip the paid lookup, keep the click.
   if (!checkRateLimit(req, RATE_LIMITS.out).ok) return redirect(fallback);

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import VisitBeacon from "@/components/VisitBeacon";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SavedListProvider } from "@/contexts/SavedListContext";
 import { DestinationProvider } from "@/contexts/DestinationContext";
@@ -101,6 +102,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Same-origin script + beacon (/_vercel/insights/*), so the strict
             CSP's 'self' policy covers it without changes. */}
         <Analytics />
+        {/* Pick's own daily counts of new and returning visits (see
+            lib/dailyStats.shared.ts for exactly what is stored). */}
+        <VisitBeacon />
       </body>
     </html>
   );

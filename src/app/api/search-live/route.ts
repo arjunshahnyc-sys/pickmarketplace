@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { bumpStat } from "@/lib/dailyStats";
 import { buildRetailerDeepLinks, type FeedMarket } from "@/lib/scrapers";
 import { performLiveSearch } from "@/lib/searchService";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
@@ -94,6 +95,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // One more search today (a daily count, nothing about the search).
+    after(() => bumpStat('search'));
     return NextResponse.json(data);
   } catch (error) {
     // Log error for debugging

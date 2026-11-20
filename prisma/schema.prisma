@@ -79,3 +79,14 @@ model PricePoint {
 
   @@index([slug, checkedAt])
 }
+
+// Usage counters (2026-11-20): one count per day per metric (new visits,
+// returning visits, searches, store clicks). Counts only: nothing here
+// identifies a visitor. See src/lib/dailyStats.shared.ts.
+model DailyStat {
+  day    String
+  metric String
+  count  Int    @default(0)
+
+  @@id([day, metric])
+}

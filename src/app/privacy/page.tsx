@@ -74,7 +74,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Cookies and Tracking</h2>
             <p className="text-black/80 leading-relaxed">
-              We use a session cookie to keep you signed in if you create an account, and similar technologies to analyze usage patterns. Your delivery country, state, and ZIP code (if you enter one), your saved list, your clothing and shoe sizes (if you pick one), and the list of your recent searches are kept in your browser's local storage rather than in cookies, and they never leave your device. (Each search is sent to our servers to get results; the list of past ones is not.) You can clear recent searches from the search box. You can control cookies and site data through your browser settings.
+              We use a session cookie to keep you signed in if you create an account, and similar technologies to analyze usage patterns. Your delivery country, state, and ZIP code (if you enter one), your saved list, your clothing and shoe sizes (if you pick one), and the list of your recent searches are kept in your browser's local storage rather than in cookies, and they never leave your device. (Each search is sent to our servers to get results; the list of past ones is not.) To learn whether people come back, your browser also keeps the dates of its first and latest visit, and tells us only whether a visit is new or returning; we add that to a daily count and keep nothing that identifies you. We do not do this for visitors in the EU, the UK or Switzerland. You can clear recent searches from the search box. You can control cookies and site data through your browser settings.
             </p>
           </section>
 
