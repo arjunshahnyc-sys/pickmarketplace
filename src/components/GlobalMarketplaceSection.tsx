@@ -61,19 +61,15 @@ export function GlobalMarketplaceSection() {
         <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3 max-w-xl">
           The price on the tag isn&apos;t the price at your door.
         </h2>
-        <p className="text-white/80 leading-relaxed max-w-2xl mb-4">
-          Shopping from outside the US? Pick estimates what an item really costs to get to
-          you: the price, international shipping, import duty, and tax, converted to your
-          currency at today&apos;s rate. Results rank by that total, so the cheapest sticker
-          price never beats the cheapest real cost.
-        </p>
-        <p className="text-sm text-white/60 leading-relaxed max-w-2xl mb-6">
-          When a store doesn&apos;t quote international shipping, we estimate it from published
-          parcel rates at a typical weight for the product, and say so. Every number is
-          labeled: estimates say estimate, unknowns say unknown, and nothing is ever a quote.
+        {/* Two short lines (2026-11-19, owner: fewer words on the homepage).
+            "Estimates, never quotes" keeps the honesty rule in view; the
+            method is spelled out on /how-it-works and in each breakdown. */}
+        <p className="text-white/80 leading-relaxed max-w-xl mb-6">
+          Pick adds shipping, import duty and tax, in your currency, and ranks by the total.
+          Estimates, never quotes.
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-white/50">Delivering estimates for</span>
+          <span className="text-xs text-white/50">Delivering to</span>
           {DESTINATIONS.map((c) => (
             <span
               key={c}

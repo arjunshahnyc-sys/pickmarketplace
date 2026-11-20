@@ -24,6 +24,22 @@ import { COMPARISONS, comparisonsByCategory } from '@/lib/comparisons';
 // is a row that opens on tap, one at a time, and its links are finger
 // height. The links stay in the HTML when a category is closed (hidden with
 // CSS, not removed), so crawlers still find all of them from the homepage.
+// The eight tiles with photos: products people search for by name, one or
+// two from each kind of thing Pick covers.
+const FEATURED_SLUGS = [
+  'bose-quietcomfort-ultra-earbuds',
+  'stanley-quencher-40-oz',
+  'dyson-airwrap-id',
+  'airpods-4-anc',
+  'owala-freesip-24-oz',
+  'adidas-samba-og',
+  'lululemon-align-pant-25',
+  'dyson-v8',
+];
+const FEATURED = FEATURED_SLUGS.map((slug) => COMPARISONS.find((c) => c.slug === slug)).filter(
+  (c): c is (typeof COMPARISONS)[number] => Boolean(c)
+);
+
 export function PopularComparisons() {
   const reveal = useReveal();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
@@ -34,13 +50,57 @@ export function PopularComparisons() {
       className="max-w-5xl mx-auto px-6 py-16 md:py-20"
     >
       <h2 id="popular-comparisons" className="text-2xl md:text-3xl font-bold tracking-tight text-neutral-900">
-        Cheaper alternatives to popular products
+        Popular products, and what to buy instead
       </h2>
-      <p className="mt-3 max-w-2xl text-neutral-600">
-        One page per product: its lowest real price across verified stores, and a different product with the same
-        key specs for less when one passes Pick&apos;s bar. Each page says when its prices were checked.
+      {/* Pictures first (2026-11-19, owner: the homepage was a wall of
+          words). Eight tiles with photos lead; the full list of names sits
+          folded underneath. Photos come from /api/compare-thumb and load
+          only as a tile scrolls into view. */}
+      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {FEATURED.map((entry) => (
+          <li key={entry.slug}>
+            <Link
+              href={`/compare/${entry.slug}`}
+              prefetch={false}
+              className="group block h-full rounded-2xl border border-black/10 bg-white p-3 transition hover:border-[#2A9D8F] hover:shadow-sm"
+            >
+              <span className="block aspect-square overflow-hidden rounded-xl bg-gray-100 p-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/compare-thumb/${entry.slug}`}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  width={240}
+                  height={240}
+                  className="h-full w-full object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-[1.04]"
+                />
+              </span>
+              <span className="mt-2 block text-sm font-medium leading-snug text-neutral-900 line-clamp-2 group-hover:text-[#1F7A6F]">
+                {entry.name}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-6">
+        <Link
+          href="/compare"
+          prefetch={false}
+          className="inline-block rounded-xl bg-[#1F7A6F] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#14524B]"
+        >
+          See all {COMPARISONS.length}
+        </Link>
       </p>
-      <div className="mt-8 grid gap-x-8 md:gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Every page still gets its plain link from the homepage (see the
+          note at the top): the list is folded, not removed, so the links
+          stay in the HTML for crawlers. */}
+      <details className="group/all mt-8 border-t border-black/10 pt-4">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-neutral-700 hover:text-[#1F7A6F] [&::-webkit-details-marker]:hidden">
+          Browse all by name
+          <ChevronDown className="h-4 w-4 transition-transform group-open/all:rotate-180" aria-hidden="true" />
+        </summary>
+      <div className="mt-6 grid gap-x-8 md:gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
         {comparisonsByCategory().map((group) => {
           const open = openCategory === group.category;
           const listId = `comparisons-${group.category}`;
@@ -83,13 +143,11 @@ export function PopularComparisons() {
           );
         })}
       </div>
-      <p className="mt-8 flex flex-col md:flex-row md:flex-wrap gap-x-6 md:gap-y-2 text-sm [&_a]:py-2.5 md:[&_a]:py-0">
-        <Link href="/compare" className="font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
-          See all {COMPARISONS.length} comparisons
-        </Link>
+      </details>
+      <p className="mt-6 text-sm">
         {/* No prefetch: rendering that page runs paid searches. */}
         <Link href="/price-check/black-friday" prefetch={false} className="font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
-          Black Friday price check: are the deals actually lower?
+          Black Friday price check
         </Link>
       </p>
     </motion.section>

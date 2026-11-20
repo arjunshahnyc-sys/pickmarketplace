@@ -109,8 +109,8 @@ import {
 const HERO_COMPARISON: ComparisonResultData = {
   isExample: true,
   query: 'sony wh-1000xm6',
-  intro:
-    "Say you want headphones that cancel noise, last a long time on a charge, and switch between your phone and laptop, and Sony's XM6 caught your eye.",
+  // No intro or payoff line (2026-11-19, owner: too many words on the
+  // homepage): the two photos, two prices and the Save figure say it.
   input: {
     name: 'Sony WH-1000XM6 Wireless Noise Canceling Headphones',
     price: 459.99,
@@ -136,8 +136,6 @@ const HERO_COMPARISON: ComparisonResultData = {
   // Exactly what the matcher produces for this pair (see the note above
   // and the pinned test); keep the two in step.
   sharedSpecs: ['Over ear', 'Active noise canceling', 'LDAC audio', 'Bluetooth', '30+ hr battery'],
-  // {saving} is filled from the two prices above, so it can never drift.
-  payoff: 'The features you were shopping for, {saving} less.',
   checkedAt: '2026-09-10T20:29:58.225Z',
 };
 
@@ -610,10 +608,10 @@ export default function Home() {
             affiliateLinksEnabled() so it can't drift from what links do */}
         <div>
           <p className="max-w-5xl mx-auto px-6 py-3 text-sm text-neutral-700">
-            <span className="font-semibold text-[#14524B]">Pick is free to use.</span>{' '}
+            <span className="font-semibold text-[#14524B]">Pick is free.</span>{' '}
             {affiliateLinksEnabled()
-              ? 'Retailers pay us a commission when you buy through our links, and results are never ranked by commission.'
-              : "Retailer commissions will keep it that way: once our affiliate partnerships go live, we'll earn a commission when you buy through our links. Results are never ranked by commission."}{' '}
+              ? 'Stores pay us a commission when you buy through our links. Results are never ranked by it.'
+              : 'Results are never ranked by commission.'}{' '}
             <a href="/compliance" className="underline decoration-black/20 hover:text-[#14524B] transition-colors">
               Full disclosure
             </a>

@@ -85,7 +85,7 @@ const PLACEHOLDER_FOOTNOTE =
 // Illustrative pair: real products at list prices, not a live check.
 const EXAMPLE_SECTION_LABEL = 'Example result';
 const EXAMPLE_FOOTNOTE =
-  'An example at list prices, not a live check. Search above to see current listings.';
+  'Example at list prices, not a live check.';
 
 // Explicit locale and UTC so server and client render the same string.
 const checkedDateFormat = new Intl.DateTimeFormat('en-US', {
