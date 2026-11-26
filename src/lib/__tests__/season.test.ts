@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isHolidaySeason } from '@/lib/season';
+import { isBlackFridayWindow, isHolidaySeason } from '@/lib/season';
 
 // Dates are built with the local-time constructor (month is zero-based), the
 // same clock the check reads, so these hold in any time zone.
@@ -23,5 +23,22 @@ describe('isHolidaySeason', () => {
   it('does not come back on its own the next year', () => {
     expect(isHolidaySeason(new Date(2027, 11, 20))).toBe(false);
     expect(isHolidaySeason(new Date(2025, 11, 20))).toBe(false);
+  });
+});
+
+describe('isBlackFridayWindow', () => {
+  it('is on from November 20 through the last minute of November 30', () => {
+    expect(isBlackFridayWindow(new Date(2026, 10, 19, 23, 59))).toBe(false);
+    expect(isBlackFridayWindow(new Date(2026, 10, 20, 0, 0))).toBe(true);
+    expect(isBlackFridayWindow(new Date(2026, 10, 27))).toBe(true);
+    expect(isBlackFridayWindow(new Date(2026, 10, 30, 23, 59, 59))).toBe(true);
+  });
+
+  it('is off from December 1', () => {
+    expect(isBlackFridayWindow(new Date(2026, 11, 1, 0, 0))).toBe(false);
+  });
+
+  it('does not come back on its own the next year', () => {
+    expect(isBlackFridayWindow(new Date(2027, 10, 26))).toBe(false);
   });
 });

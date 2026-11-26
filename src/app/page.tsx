@@ -27,6 +27,7 @@ import Header from '@/components/Header';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HeroHeadline } from '@/components/HeroHeadline';
 import { HolidayGiftLine, HolidaySnow } from '@/components/HolidayTheme';
+import { BlackFridayBand, BlackFridayPill } from '@/components/BlackFridayFeature';
 import { PopularComparisons } from '@/components/PopularComparisons';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
@@ -557,6 +558,7 @@ export default function Home() {
               className={hasSearched ? 'max-w-2xl' : 'lg:col-span-6'}
             >
               {/* Hero Text First on Mobile, Search Second */}
+              {!hasSearched && <BlackFridayPill />}
               {!hasSearched && <HolidayGiftLine />}
               <HeroHeadline className={`text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-[#14524B] max-w-[16ch] ${hasSearched ? 'hidden md:block' : ''}`}>
                 Find a cheaper product.
@@ -603,6 +605,10 @@ export default function Home() {
             )}
           </div>
         </section>
+
+        {/* Black Friday: the price check page, featured right under the
+            first fold through Cyber Monday (see BlackFridayFeature.tsx). */}
+        {!hasSearched && <BlackFridayBand />}
 
         {/* How Pick makes money: one prominent line, wording tied to
             affiliateLinksEnabled() so it can't drift from what links do */}

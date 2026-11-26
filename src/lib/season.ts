@@ -21,3 +21,16 @@ export function isHolidaySeason(now: Date): boolean {
   if (month === 12) return true;
   return month === START_MONTH && now.getDate() >= START_DAY;
 }
+
+// The Black Friday feature on the landing page (a dark band under the hero
+// and a pill above the headline, both linking to /price-check/black-friday)
+// runs from 2026-11-20 through Cyber Monday, 2026-11-30, and then switches
+// itself off the same way: the visitor's clock, year pinned.
+const SALE_START_DAY = 20;
+const SALE_END_DAY = 30;
+
+/** True from November 20 through November 30, 2026, in the given date's local time. */
+export function isBlackFridayWindow(now: Date): boolean {
+  if (now.getFullYear() !== HOLIDAY_YEAR || now.getMonth() + 1 !== START_MONTH) return false;
+  return now.getDate() >= SALE_START_DAY && now.getDate() <= SALE_END_DAY;
+}

@@ -9,7 +9,7 @@
 
 import { useEffect } from 'react';
 import { Snowflake } from 'lucide-react';
-import { isHolidaySeason } from '@/lib/season';
+import { isBlackFridayWindow, isHolidaySeason } from '@/lib/season';
 
 export function HolidayTheme() {
   useEffect(() => {
@@ -18,6 +18,13 @@ export function HolidayTheme() {
       root.dataset.season = 'holiday';
     } else {
       delete root.dataset.season;
+    }
+    // The Black Friday feature (BlackFridayFeature.tsx) works the same way,
+    // on its own shorter dates: <html data-sale="black-friday">.
+    if (isBlackFridayWindow(new Date())) {
+      root.dataset.sale = 'black-friday';
+    } else {
+      delete root.dataset.sale;
     }
   }, []);
   return null;
@@ -73,7 +80,7 @@ export function HolidaySnow() {
 // what Pick does: check a gift here first, not "the cheapest price anywhere".
 export function HolidayGiftLine() {
   return (
-    <p className="holiday-only mb-3 text-sm font-medium text-[#D64545]">
+    <p className="holiday-only holiday-gift-line mb-3 text-sm font-medium text-[#D64545]">
       Buying gifts? Check them here first.
     </p>
   );

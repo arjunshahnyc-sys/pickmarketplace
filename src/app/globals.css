@@ -503,6 +503,22 @@ html[data-season="holiday"] .holiday-only {
   to { opacity: 1; }
 }
 
+/* Black Friday feature on the landing page, 2026-11-20 through 2026-11-30
+   (dates in lib/season.ts). Same switch as the holiday look: the markup is
+   always there with .black-friday-only, shown only while HolidayTheme.tsx
+   has marked <html data-sale="black-friday">. During those days the pill
+   above the headline takes the gift line's place. */
+.black-friday-only {
+  display: none;
+}
+html[data-sale="black-friday"] .black-friday-only {
+  display: revert;
+  animation: holidayIn 0.6s ease both;
+}
+html[data-sale="black-friday"] .holiday-gift-line {
+  display: none;
+}
+
 /* Gift wrap on the header in season: wrapping-paper stripes (wide pale teal,
    thin red, thin gold) on the diagonal instead of plain white. Kept faint so
    the logo, the pickers and the bag icon read exactly as before. The class
