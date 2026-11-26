@@ -73,6 +73,11 @@ export interface PriceCheckRow {
   entry: ComparisonEntry;
   /** Today's lowest confirmed price: a verified store's new unit of exactly the product. */
   today: ComparisonRow | null;
+  /**
+   * A photo of the product: the confirmed listing's, or failing that any
+   * listing's from the same search. Null when the search gave none.
+   */
+  image: string | null;
   /** The store's own crossed-out price, when it shows one above today's. */
   crossedOut: number | null;
   /** Google's typical price range for the product, when it gives one. */
@@ -94,9 +99,11 @@ export function priceCheckRow(entry: ComparisonEntry, comparison: Comparison | n
   const today = comparison && comparison.item.topIsVerifiedNew ? comparison.item.top : null;
   const googleTypicalRange = comparison?.item.googleTypicalRange ?? null;
   const crossedOut = today && today.originalPrice !== null && today.originalPrice > today.price ? today.originalPrice : null;
+  const photo = today?.image || comparison?.item.rows?.find((r) => r.image)?.image || '';
   return {
     entry,
     today,
+    image: /^https:\/\//.test(photo) ? photo : null,
     crossedOut,
     googleTypicalRange,
     position: today ? typicalPosition(today.price, googleTypicalRange) : null,

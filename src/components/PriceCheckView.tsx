@@ -83,51 +83,77 @@ function RangeBar({ row }: { row: PriceCheckRow }) {
   );
 }
 
+/**
+ * The product's photo, which leads each card (2026-11-26, owner: pictures,
+ * not long names). The name stays as a small line beside it.
+ */
+function Photo({ row }: { row: PriceCheckRow }) {
+  return (
+    <span className="block h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-gray-100 p-2 sm:h-32 sm:w-32">
+      {row.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={row.image}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={128}
+          height={128}
+          className="h-full w-full object-contain mix-blend-multiply"
+        />
+      )}
+    </span>
+  );
+}
+
 function ProductCard({ row }: { row: PriceCheckRow }) {
   const comparePath = `/compare/${row.entry.slug}`;
   if (!row.today) {
     return (
-      <li className="rounded-2xl border border-dashed border-black/15 bg-white/60 p-5">
-        <h3 className="font-semibold text-neutral-700">{row.entry.name}</h3>
-        <p className="mt-2 text-sm text-neutral-500">
-          No confirmed price today. Pick did not find a new unit of exactly this product at a verified store.
-        </p>
-        {/* A prefetch would render the target, and a render is a paid search. */}
-        <Link href={comparePath} prefetch={false} className="mt-3 inline-block text-sm font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
-          See what Pick did find
-        </Link>
+      <li className="flex gap-4 rounded-2xl border border-dashed border-black/15 bg-white/60 p-5">
+        <Photo row={row} />
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium leading-snug text-neutral-600 line-clamp-2">{row.entry.name}</h3>
+          <p className="mt-2 text-sm text-neutral-500">No confirmed price today.</p>
+          {/* A prefetch would render the target, and a render is a paid search. */}
+          <Link href={comparePath} prefetch={false} className="mt-2 inline-block text-sm font-medium text-[#1F7A6F] hover:text-[#2A9D8F]">
+            See what Pick did find
+          </Link>
+        </div>
       </li>
     );
   }
   const position = row.position ? POSITION_COPY[row.position] : null;
   return (
     <li className="flex flex-col rounded-2xl border border-black/10 bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.03)] transition-shadow hover:shadow-md">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="font-semibold leading-snug text-neutral-900">{row.entry.name}</h3>
-        {position && (
-          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${position.tone}`}>
-            {position.label}
-          </span>
-        )}
+      <div className="flex gap-4">
+        <Photo row={row} />
+        <div className="min-w-0 flex-1">
+          {position && (
+            <span className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${position.tone}`}>
+              {position.label}
+            </span>
+          )}
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-4xl font-bold tracking-tight text-neutral-900">{dollars(row.today.price)}</span>
+            {row.crossedOut !== null && (
+              <span className="text-lg text-neutral-400 line-through decoration-neutral-400">{dollars(row.crossedOut)}</span>
+            )}
+          </div>
+          <h3 className="mt-1 text-sm font-medium leading-snug text-neutral-600 line-clamp-2">{row.entry.name}</h3>
+          <p className="mt-1 text-sm text-neutral-600">
+            at{' '}
+            <a
+              href={row.today.clickUrl ?? row.today.url}
+              target="_blank"
+              rel={isAffiliateUrl(row.today.url) ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
+              className="font-medium text-[#1F7A6F] underline decoration-[#2A9D8F]/30 underline-offset-4 hover:text-[#2A9D8F]"
+            >
+              {row.today.store} ↗
+            </a>
+          </p>
+        </div>
       </div>
-
-      <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-4xl font-bold tracking-tight text-neutral-900">{dollars(row.today.price)}</span>
-        {row.crossedOut !== null && (
-          <span className="text-lg text-neutral-400 line-through decoration-neutral-400">{dollars(row.crossedOut)}</span>
-        )}
-      </div>
-      <p className="mt-1 text-sm text-neutral-600">
-        at{' '}
-        <a
-          href={row.today.clickUrl ?? row.today.url}
-          target="_blank"
-          rel={isAffiliateUrl(row.today.url) ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
-          className="font-medium text-[#1F7A6F] underline decoration-[#2A9D8F]/30 underline-offset-4 hover:text-[#2A9D8F]"
-        >
-          {row.today.store} ↗
-        </a>
-      </p>
 
       <RangeBar row={row} />
 

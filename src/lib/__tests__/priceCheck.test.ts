@@ -129,3 +129,27 @@ describe('summarize', () => {
     expect(summarize(rows)).toEqual({ confirmed: 4, ranged: 3, below: 1, within: 1, above: 1, inflatedCrossedOut: 1 });
   });
 });
+
+describe('priceCheckRow photo', () => {
+  const entry = getComparison('sony-wh-1000xm5')!;
+  const withTop = (top: ComparisonRow, rows: ComparisonRow[] = [top]) =>
+    ({ item: { top, topIsVerifiedNew: true, googleTypicalRange: null, rows } }) as unknown as Comparison;
+
+  it("uses the confirmed listing's photo", () => {
+    const top = row({ image: 'https://img.example/a.jpg' });
+    expect(priceCheckRow(entry, withTop(top)).image).toBe('https://img.example/a.jpg');
+  });
+
+  it('falls back to another listing, and to none', () => {
+    const top = row();
+    expect(priceCheckRow(entry, withTop(top, [top, row({ image: 'https://img.example/b.jpg' })])).image).toBe(
+      'https://img.example/b.jpg'
+    );
+    expect(priceCheckRow(entry, withTop(top)).image).toBeNull();
+    expect(priceCheckRow(entry, null).image).toBeNull();
+  });
+
+  it('refuses a photo that is not https', () => {
+    expect(priceCheckRow(entry, withTop(row({ image: 'http://img.example/a.jpg' }))).image).toBeNull();
+  });
+});
