@@ -63,6 +63,20 @@ const nextConfig: NextConfig = {
         destination: "https://pickmarketplace.app/:path*",
         permanent: true,
       },
+      // Short addresses people type or share for the Black Friday price
+      // check. Temporary on purpose: /black-friday can point at next year's
+      // page, and /price-check can become a real index later, without
+      // browsers having memorized the old target.
+      {
+        source: "/black-friday",
+        destination: "/price-check/black-friday",
+        permanent: false,
+      },
+      {
+        source: "/price-check",
+        destination: "/price-check/black-friday",
+        permanent: false,
+      },
     ];
   },
   async headers() {
