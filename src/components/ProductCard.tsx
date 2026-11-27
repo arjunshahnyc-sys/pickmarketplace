@@ -14,6 +14,7 @@ import { formatMinorUnits } from "@/lib/landedCost/money";
 import { shopperPriceFor } from "@/lib/shopperPrice";
 import LandedCostPanel from "./LandedCostPanel";
 import SizeCheckButton from "./SizeCheckButton";
+import { dealNote, type DealCheckResult } from '@/lib/blackFridayDeal';
 import type { SizeCheckResult } from "@/lib/sizeSearch";
 import { overlaysFor } from "@/lib/cardOverlays";
 import { IMAGE_BOX_CLASS } from "@/lib/cardLayout";
@@ -57,6 +58,8 @@ interface ProductCardProps {
   destinationCountry?: string;
   /** The size check's answer when the page already ran it for this card. */
   sizeResult?: SizeCheckResult;
+  /** Set when the page's Black Friday check found this card to be a deal. */
+  dealResult?: DealCheckResult;
 }
 
 function ProductCard({
@@ -71,6 +74,7 @@ function ProductCard({
   fxPending = false,
   destinationCountry,
   sizeResult,
+  dealResult,
 }: ProductCardProps) {
   // Use props first, fallback to product properties
   const showLowestPrice = isLowestInGroup ?? product.isLowestInGroup;
@@ -204,8 +208,21 @@ function ProductCard({
             max-width leaves the Save button's column (top-right) alone at
             every breakpoint, down to a 130px phone image box; the savings
             tag is two short lines (label over amount) for the same reason. */}
-        {(overlays.savings || overlays.tag) && (
+        {(overlays.savings || overlays.tag || dealResult?.deal) && (
           <div className="absolute top-2 left-2 z-[1] flex max-w-[calc(100%-2.75rem)] flex-col items-start gap-1">
+            {dealResult?.deal && (
+              // Black Friday deal (lib/blackFridayDeal.ts): the price is
+              // below what Google says this usually sells for, or, when
+              // Google gives no usual price, the store marks it down 20% or
+              // more. The tooltip says which. Black, like the sale banner.
+              <span
+                className="flex max-w-full items-center gap-1.5 rounded-lg bg-[#07110F] px-2 py-1 text-[11px] font-semibold uppercase leading-tight tracking-wide text-white shadow-sm max-sm:px-1.5 max-sm:text-[10px]"
+                title={dealNote(dealResult)}
+              >
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#8DEBDD]" aria-hidden="true" />
+                Black Friday deal
+              </span>
+            )}
             {overlays.savings?.kind === 'same-item' && (
               // Lowest-price tag: this exact product, cheapest of its listings.
               // The saving is measured against what stores typically charge

@@ -24,6 +24,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { isCommissionExcluded } from './affiliate';
 import { collapse, registrableDomain, splitSellerSuffix } from './trust/identity';
 import { resolveMerchant } from './trust/registry';
+import { parseTypicalRange } from './blackFridayDeal';
 import { isSizeKind, isValidSize, type SizeKind } from './sizeSearch';
 import type { Product } from './types';
 
@@ -186,6 +187,64 @@ export function verifySizeCheckParams(search: URLSearchParams): SizeCheckParams 
   return p;
 }
 
+// ─── Signed deal-check URLs ────────────────────────────────────────────────
+//
+// /api/deal-check answers whether a result is a Black Friday deal
+// (lib/blackFridayDeal.ts). The card's price rides in the signed link, so
+// the verdict is about the price Pick showed and nobody can ask about a
+// made-up one.
+
+export interface DealCheckParams {
+  pid: string;
+  retailer: string;
+  market: string;
+  /** The card's price, as printed in the link ("169.99"). */
+  price: string;
+  /** The card's title: the lookup must be about this product. */
+  title: string;
+}
+
+function signDealCheck(p: DealCheckParams, secret: string): string {
+  return createHmac('sha256', secret)
+    .update(['deal-check', p.pid, p.retailer, p.market, p.price, p.title].join('\n'))
+    .digest('base64url')
+    .slice(0, 22);
+}
+
+/** The /api/deal-check link for a product; undefined when it has no product id, is not priced in US dollars, or nothing can sign. */
+export function buildDealCheckUrl(product: Product): string | undefined {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret || !product.googleProductId || !product.name) return undefined;
+  if ((product.currency ?? 'USD') !== 'USD' || !(product.price > 0)) return undefined;
+  const p: DealCheckParams = {
+    pid: product.googleProductId,
+    retailer: product.retailer,
+    market: product.sourceMarket ?? 'US',
+    price: String(product.price),
+    title: product.name,
+  };
+  const qs = new URLSearchParams({ pid: p.pid, r: p.retailer, m: p.market, p: p.price, t: p.title, s: signDealCheck(p, secret) });
+  return `/api/deal-check?${qs.toString()}`;
+}
+
+/** Parses and verifies an /api/deal-check query. Null on anything missing or tampered. */
+export function verifyDealCheckParams(search: URLSearchParams): DealCheckParams | null {
+  const secret = process.env.AUTH_SECRET;
+  const pid = search.get('pid');
+  const retailer = search.get('r');
+  const market = search.get('m');
+  const price = search.get('p');
+  const title = search.get('t');
+  const sig = search.get('s');
+  if (!secret || !pid || !retailer || !market || !price || !title || !sig) return null;
+  if (!(Number(price) > 0)) return null;
+  const p: DealCheckParams = { pid, retailer, market, price, title };
+  const expected = Buffer.from(signDealCheck(p, secret));
+  const given = Buffer.from(sig);
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+  return p;
+}
+
 // ─── Signed product-page URLs ──────────────────────────────────────────────
 //
 // /item is Pick's own page for one result: photos, the store's price and
@@ -325,6 +384,8 @@ export interface ProductInfo {
 export interface ProductLookup {
   offers: MerchantOffer[];
   info: ProductInfo | null;
+  /** The range Google says the product typically sells for, when it gives one. */
+  typicalRange?: [number, number] | null;
 }
 
 const TTL_OK = 6 * 60 * 60 * 1000;
@@ -339,7 +400,10 @@ const SITE_SEARCH_TIMEOUT_MS = 4000;
 
 // Anchored on globalThis for the same reason as the rate limiter: Next
 // bundles each route with its own copy of a module-level Map.
-type OfferCache = Map<string, { offers: MerchantOffer[] | null; info?: ProductInfo | null; ts: number }>;
+type OfferCache = Map<
+  string,
+  { offers: MerchantOffer[] | null; info?: ProductInfo | null; typicalRange?: [number, number] | null; ts: number }
+>;
 /** `failed` = the search itself errored (retry soon); url null = searched, no match. */
 type SiteCache = Map<string, { url: string | null; failed: boolean; ts: number }>;
 const globalStore = globalThis as unknown as {
@@ -382,7 +446,12 @@ async function fetchOffers(pid: string, market: string): Promise<ProductLookup |
     }
     const data = await response.json();
     const offers: unknown[] = Array.isArray(data?.offers) ? data.offers : [];
-    const product = (data?.product ?? {}) as { title?: unknown; description?: unknown; images?: unknown };
+    const product = (data?.product ?? {}) as {
+      title?: unknown;
+      description?: unknown;
+      images?: unknown;
+      typicalPriceRange?: unknown;
+    };
     const info: ProductInfo | null =
       typeof product.title === 'string' && product.title.trim()
         ? {
@@ -417,7 +486,7 @@ async function fetchOffers(pid: string, market: string): Promise<ProductLookup |
           ]
         : [];
     });
-    return { offers: parsed, info };
+    return { offers: parsed, info, typicalRange: parseTypicalRange(product.typicalPriceRange) };
   } catch (error) {
     console.error('[Serper] product lookup failed:', error instanceof Error ? error.message : String(error));
     return 'retry';
@@ -571,10 +640,12 @@ export async function lookupProduct(
     let found = await fetchOffers(pid, market);
     if (found === 'retry' && options.retry) found = await fetchOffers(pid, market);
     if (found === 'retry') found = null;
-    entry = { offers: found?.offers ?? null, info: found?.info ?? null, ts: now };
+    entry = { offers: found?.offers ?? null, info: found?.info ?? null, typicalRange: found?.typicalRange ?? null, ts: now };
     remember(cache, key, entry);
   }
-  return entry.offers ? { offers: entry.offers, info: entry.info ?? null } : null;
+  return entry.offers
+    ? { offers: entry.offers, info: entry.info ?? null, typicalRange: entry.typicalRange ?? null }
+    : null;
 }
 
 export async function resolveMerchantUrl(

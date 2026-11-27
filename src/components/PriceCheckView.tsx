@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ArrowRight, Search } from 'lucide-react';
 import { HeroHeadline } from '@/components/HeroHeadline';
 import { isAffiliateUrl } from '@/lib/affiliate';
 import { COMPARISON_CATEGORY_LABELS } from '@/lib/comparisons';
@@ -244,6 +245,38 @@ export function PriceCheckView({ event, rows, summary, checkedAt, checkedLabel, 
             confirm at a verified store today, the price that store crossed out, and what Google says the product
             usually sells for.
           </p>
+
+          {/* Search anything (2026-11-26, owner). A plain GET form to the
+              landing page, which runs the search for ?q= and, in the Black
+              Friday window, marks the deals among the results
+              (lib/blackFridayDeal.ts). No script needed. */}
+          <form action="/" method="get" role="search" className="mt-8 max-w-2xl">
+            <label htmlFor="price-check-search" className="mb-2 block text-sm font-medium text-white/75">
+              Not on this list? Search any product. Black Friday deals are marked.
+            </label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" aria-hidden="true" />
+              <input
+                id="price-check-search"
+                name="q"
+                type="search"
+                required
+                enterKeyHint="search"
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="off"
+                placeholder="Search a product"
+                className="h-14 w-full rounded-full bg-white pl-12 pr-16 text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#8DEBDD]"
+              />
+              <button
+                type="submit"
+                aria-label="Search"
+                className="absolute right-1.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#2A9D8F] text-white transition hover:bg-[#238B7E]"
+              >
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+          </form>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-3">
             <Stat value={`${summary.confirmed} of ${rows.length}`} label="products with a price Pick could confirm today" />

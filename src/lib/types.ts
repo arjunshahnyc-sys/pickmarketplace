@@ -77,6 +77,12 @@ export interface Product {
    */
   sizeCheck?: { url: string; size: string };
   /**
+   * Signed /api/deal-check link, attached by performLiveSearch only while
+   * the Black Friday window is open and only to verified stores' US
+   * dollar listings (lib/blackFridayDeal.ts).
+   */
+  dealCheck?: string;
+  /**
    * Signed link to Pick's own page for this result (/item), attached by
    * performLiveSearch. The card links here when present; the page then
    * links on to the store.

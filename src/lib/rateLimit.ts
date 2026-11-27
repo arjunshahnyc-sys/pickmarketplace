@@ -41,6 +41,10 @@ export const RATE_LIMITS = {
   // search checks its first 8 cards by itself, so the ceiling leaves room
   // for three size searches a minute plus a few taps.
   sizeCheck: { name: 'sizeCheck', limit: 30, windowMs: 60 * 1000 },
+  // Black Friday deal checks (/api/deal-check): the same paid lookup. A
+  // search asks about up to 18 cards by itself (most are unbilled misses),
+  // so this is four searches a minute.
+  dealCheck: { name: 'dealCheck', limit: 72, windowMs: 60 * 1000 },
   // Pick's own product page (/api/item): one paid lookup per product
   // opened. Over the limit the page still shows what the card knew and
   // the button to the store.

@@ -5,7 +5,9 @@
 
 import { searchGoogleShoppingAPI, buildRetailerDeepLinks, type FeedMarket } from './scrapers';
 import { toAffiliateUrl } from './affiliate';
-import { buildClickUrl, buildItemUrl, buildSizeCheckUrl } from './outbound';
+import { buildClickUrl, buildDealCheckUrl, buildItemUrl, buildSizeCheckUrl } from './outbound';
+import { getRetailerTrust } from './retailerTrust';
+import { isBlackFridayWindow } from './season';
 import { deriveFacets, type FacetGroup } from './facets/deriveFacets';
 import { BUDGET_PAUSED_MESSAGE, spendingPaused } from './searchBudget';
 import { namesAnotherSize, withSize, type SizeKind } from './sizeSearch';
@@ -112,6 +114,7 @@ export async function performLiveSearch(
   // (keying on the title alone hid a $12.99 T.J.Maxx CeraVe behind
   // Walmart's $17.97 in a 2026-09-22 capture), and the same title in two
   // markets is two offers in two currencies.
+  const blackFriday = isBlackFridayWindow(new Date());
   const seen = new Set<string>();
   const uniqueResults = allResults
     // A size search drops the few listings whose title commits to some
@@ -132,9 +135,17 @@ export async function performLiveSearch(
     // clickUrl is built from the raw link (its fallback), before wrapping.
     .map((product) => {
       const sizeCheckUrl = size ? buildSizeCheckUrl(product, size.kind, size.size) : undefined;
+      // Black Friday deal check: only in the window, and only for verified
+      // stores. Marketplaces (eBay, Poshmark, Whatnot) are resale listings:
+      // on a live "airpods pro" search they took 14 of the 18 checks.
+      const dealCheckUrl =
+        blackFriday && getRetailerTrust(product.retailer, { market: product.sourceMarket }).level === 'verified'
+          ? buildDealCheckUrl(product)
+          : undefined;
       return {
       ...product,
       ...(size && sizeCheckUrl ? { sizeCheck: { url: sizeCheckUrl, size: size.size } } : {}),
+      ...(dealCheckUrl ? { dealCheck: dealCheckUrl } : {}),
       itemUrl: buildItemUrl(product, size, q),
       clickUrl: buildClickUrl(product),
       url: toAffiliateUrl(product.url, {

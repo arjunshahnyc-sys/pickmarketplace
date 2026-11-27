@@ -44,6 +44,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { addSearch } from '@/lib/searchHistory';
 import SizePicker from '@/components/SizePicker';
 import SpinningBag from '@/components/SpinningBag';
+import { AUTO_DEAL_CHECKS, MAX_DEAL_ATTEMPTS, type DealCheckResult } from '@/lib/blackFridayDeal';
 import {
   lastSearchKey,
   readLastSearch,
@@ -173,6 +174,12 @@ export default function Home() {
   const [sizeVerdicts, setSizeVerdicts] = useState<Record<string, SizeCheckResult>>({});
   const [autoCheck, setAutoCheck] = useState<{ key: string; phase: 'pending' | 'checking' | 'done' } | null>(null);
   const autoCheckKey = useRef<string | null>(null);
+  // Black Friday deals (lib/blackFridayDeal.ts): while the window is open
+  // the search response carries a deal-check link on recognized stores'
+  // listings, and the first few cards are checked without being asked.
+  // Answers by product id; `dealChecked` is the result set they belong to.
+  const [dealVerdicts, setDealVerdicts] = useState<Record<string, DealCheckResult>>({});
+  const dealChecked = useRef<unknown>(null);
 
   // Compare selection: no mode, every card carries a checkbox; the hook
   // owns the picks, the drawer's announcement, the modal, and Escape.
@@ -470,6 +477,40 @@ export default function Home() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCheck, isLoading, filteredResults]);
+
+  // The automatic Black Friday check: once per result set, down the cards
+  // that carry a deal-check link in the order the shopper sees them, a few
+  // at a time, until enough lookups have answered (see AUTO_DEAL_CHECKS).
+  useEffect(() => {
+    if (isLoading || filteredResults.length === 0 || dealChecked.current === results) return;
+    const targets = filteredResults.filter((p) => p.dealCheck && p.id).slice(0, MAX_DEAL_ATTEMPTS);
+    dealChecked.current = results;
+    setDealVerdicts({});
+    if (targets.length === 0) return;
+    const forResults = results;
+    const ask = async (p: (typeof targets)[number]): Promise<DealCheckResult | null> => {
+      try {
+        const response = await fetch(p.dealCheck!);
+        return response.ok ? ((await response.json()) as DealCheckResult) : null;
+      } catch {
+        return null;
+      }
+    };
+    (async () => {
+      let answered = 0;
+      let next = 0;
+      while (answered < AUTO_DEAL_CHECKS && next < targets.length) {
+        const wave = targets.slice(next, next + (AUTO_DEAL_CHECKS - answered));
+        next += wave.length;
+        const results = await Promise.all(wave.map(ask));
+        // A newer search landed meanwhile: these answers are not its.
+        if (dealChecked.current !== forResults) return;
+        answered += results.filter((r) => r?.checked).length;
+        const deals = wave.flatMap((p, i) => (results[i]?.deal ? [[p.id!, results[i]!] as const] : []));
+        if (deals.length > 0) setDealVerdicts((v) => ({ ...v, ...Object.fromEntries(deals) }));
+      }
+    })();
+  }, [isLoading, filteredResults, results]);
 
   const wrongSizeCount = useMemo(
     () => results.filter((p: Product) => sizeVerdicts[p.id ?? '']?.status === 'other-size').length,
@@ -791,6 +832,7 @@ export default function Home() {
                           fxPending={fxStatus === 'loading'}
                           destinationCountry={destination.country}
                           sizeResult={sizeVerdicts[product.id ?? '']}
+                          dealResult={dealVerdicts[product.id ?? '']}
                         />
                       </div>
                     ))}
