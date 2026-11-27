@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAffiliateUrl } from "@/lib/affiliate";
-import type { HomeDeals } from "@/lib/blackFridayDeal";
+import type { HomeDeal, HomeDeals } from "@/lib/blackFridayDeal";
 import { realDeals } from "@/lib/priceCheck";
 import { loadPriceCheck } from "@/lib/priceCheckData";
 import { isBlackFridayWindow } from "@/lib/season";
@@ -20,7 +20,19 @@ const SHOWN = 4;
 // The first ask of the day waits on 27 searches.
 export const maxDuration = 120;
 
-const EMPTY: HomeDeals = { deals: [], total: 0 };
+const EMPTY: HomeDeals = { hero: null, deals: [], total: 0 };
+
+/**
+ * The deal the first fold shows. It is the page's opening example, so it is
+ * the deepest deal that tells the whole story (a store sticker to compare
+ * with) and whose seller is certain: an offer listed as "Walmart" can be a
+ * third-party seller on walmart.com, so Walmart offers are passed over when
+ * anything else qualifies.
+ */
+function pickHero(deals: HomeDeal[]): HomeDeal | null {
+  const certain = deals.filter((d) => !/walmart/i.test(d.store));
+  return certain.find((d) => d.crossedOut !== null) ?? certain[0] ?? deals[0] ?? null;
+}
 
 export async function GET() {
   if (!isBlackFridayWindow(new Date())) {
@@ -28,19 +40,25 @@ export async function GET() {
   }
   try {
     const { rows } = await loadPriceCheck("black-friday");
-    const all = realDeals(rows).filter((r) => r.image);
-    const body: HomeDeals = {
-      total: all.length,
-      deals: all.slice(0, SHOWN).map((r) => ({
+    const all: HomeDeal[] = realDeals(rows)
+      .filter((r) => r.image)
+      .map((r) => ({
         slug: r.entry.slug,
         name: r.entry.name,
         price: r.today!.price,
         usualLow: r.googleTypicalRange![0],
+        usualHigh: r.googleTypicalRange![1],
+        crossedOut: r.crossedOut,
         store: r.today!.store,
         image: r.image!,
         href: r.today!.clickUrl ?? r.today!.url,
         sponsored: isAffiliateUrl(r.today!.url),
-      })),
+      }));
+    const hero = pickHero(all);
+    const body: HomeDeals = {
+      hero,
+      total: all.length,
+      deals: all.filter((d) => d !== hero).slice(0, SHOWN),
     };
     return NextResponse.json(body, {
       headers: { "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400" },

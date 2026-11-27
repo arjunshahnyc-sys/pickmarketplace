@@ -27,7 +27,7 @@ import Header from '@/components/Header';
 import { TrustedBy } from '@/components/TrustedBy';
 import { HeroHeadline } from '@/components/HeroHeadline';
 import { HolidayGiftLine, HolidaySnow } from '@/components/HolidayTheme';
-import { BlackFridayBand, BlackFridayPill } from '@/components/BlackFridayFeature';
+import { BlackFridayBand, BlackFridayHero, BlackFridayPill } from '@/components/BlackFridayFeature';
 import { PopularComparisons } from '@/components/PopularComparisons';
 import { GlobalMarketplaceSection } from '@/components/GlobalMarketplaceSection';
 import ComparisonResult, { type ComparisonResultData } from '@/components/ComparisonResult';
@@ -641,7 +641,9 @@ export default function Home() {
                 transition={reduceMotion ? { duration: 0 } : { duration: 0.8, ease: 'easeOut', delay: 0.2 }}
                 className="lg:col-span-6"
               >
-                <ComparisonResult data={HERO_COMPARISON} />
+                {/* In the Black Friday window: one real deal from today's price
+                    check; otherwise the standing example. */}
+                <BlackFridayHero fallback={<ComparisonResult data={HERO_COMPARISON} />} />
               </motion.div>
             )}
           </div>

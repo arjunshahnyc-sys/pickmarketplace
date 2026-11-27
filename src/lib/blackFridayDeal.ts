@@ -139,6 +139,10 @@ export interface HomeDeal {
   price: number;
   /** The bottom of Google's typical range. */
   usualLow: number;
+  /** The top of that range. */
+  usualHigh: number;
+  /** The store's own crossed-out price, when it shows one above the price. */
+  crossedOut: number | null;
   store: string;
   image: string;
   /** The store's page for it (the /api/out link when there is one). */
@@ -148,6 +152,9 @@ export interface HomeDeal {
 }
 
 export interface HomeDeals {
+  /** The one deal the landing page's first fold shows; null when there is none. */
+  hero: HomeDeal | null;
+  /** The deals in the band under it, without the hero. */
   deals: HomeDeal[];
   /** How many products are below their usual range in all. */
   total: number;

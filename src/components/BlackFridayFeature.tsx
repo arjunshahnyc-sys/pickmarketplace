@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { HomeDeal, HomeDeals } from '@/lib/blackFridayDeal';
@@ -51,6 +51,17 @@ export function BlackFridayPill() {
   );
 }
 
+// One request per page view, shared by the first fold's card and the band.
+// Null for anything that is not a usable answer.
+let homeDeals: Promise<HomeDeals | null> | null = null;
+function loadHomeDeals(): Promise<HomeDeals | null> {
+  homeDeals ??= fetch('/api/black-friday-deals')
+    .then((r) => (r.ok ? (r.json() as Promise<HomeDeals>) : null))
+    .then((d) => (d && Array.isArray(d.deals) ? d : null))
+    .catch(() => null);
+  return homeDeals;
+}
+
 const money = (n: number) => `$${Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(2)}`;
 
 function DealTile({ deal }: { deal: HomeDeal }) {
@@ -89,12 +100,9 @@ export function BlackFridayBand() {
     // Nothing is asked for outside the window: the band is hidden then.
     if (!isBlackFridayWindow(new Date())) return;
     let live = true;
-    fetch('/api/black-friday-deals')
-      .then((r) => (r.ok ? (r.json() as Promise<HomeDeals>) : null))
-      .then((d) => {
-        if (live && d && Array.isArray(d.deals) && d.deals.length > 0) setData(d);
-      })
-      .catch(() => {});
+    loadHomeDeals().then((d) => {
+      if (live && d && (d.deals.length > 0 || d.hero)) setData(d);
+    });
     return () => {
       live = false;
     };
@@ -149,5 +157,99 @@ export function BlackFridayBand() {
         </Link>
       </div>
     </section>
+  );
+}
+
+/**
+ * The first fold's proof card. In the Black Friday window it is one real
+ * deal from today's price check (2026-11-27, owner: a Black Friday deal in
+ * place of the Sony example); the rest of the year, or when there is no
+ * deal to show, it is `fallback`, the standing example.
+ *
+ * The server always renders the fallback (the window is the visitor's
+ * clock). In the window, CSS keeps that fallback invisible but in place
+ * (.black-friday-waits, globals.css) until the deals have answered, so the
+ * example is not seen flashing by before the deal replaces it. No answer
+ * within a few seconds (the day's first visitor waits on the searches)
+ * shows the example after all.
+ */
+const HERO_WAIT_MS = 4000;
+
+export function BlackFridayHero({ fallback }: { fallback: ReactNode }) {
+  // null: not answered yet (and, outside the window, never asked).
+  const [state, setState] = useState<HomeDeals | 'none' | null>(null);
+  useEffect(() => {
+    if (!isBlackFridayWindow(new Date())) return;
+    let live = true;
+    const giveUp = new Promise<null>((resolve) => setTimeout(() => resolve(null), HERO_WAIT_MS));
+    Promise.race([loadHomeDeals(), giveUp]).then((d) => {
+      if (live) setState(d && d.hero ? d : 'none');
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  if (state === null) return <div className="black-friday-waits">{fallback}</div>;
+  if (state === 'none') return <>{fallback}</>;
+  const deal = state.hero!;
+  const below = deal.usualLow - deal.price;
+  return (
+    <div className="rounded-2xl border border-black/10 bg-white/80 p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur-sm md:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#07110F] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#8DEBDD]" aria-hidden="true" />
+          Black Friday deal
+        </span>
+        <span className="text-xs text-neutral-500">Checked today</span>
+      </div>
+
+      <a
+        href={deal.href}
+        target="_blank"
+        rel={deal.sponsored ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
+        className="group block"
+      >
+        <span className="block aspect-[2/1] overflow-hidden rounded-xl bg-gray-100 p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={deal.image}
+            alt=""
+            width={480}
+            height={240}
+            className="h-full w-full object-contain mix-blend-multiply transition-transform duration-200 group-hover:scale-[1.03]"
+          />
+        </span>
+        <span className="mt-4 block text-lg font-semibold leading-snug text-neutral-900">{deal.name}</span>
+        <span className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-5xl font-bold tracking-tight tabular-nums text-[#14524B]">{money(deal.price)}</span>
+          {deal.crossedOut !== null && (
+            <span className="text-xl text-neutral-400 line-through decoration-neutral-400">{money(deal.crossedOut)}</span>
+          )}
+          <span className="text-sm font-medium text-[#1F7A6F]">at {deal.store} ↗</span>
+        </span>
+      </a>
+
+      <div className="mt-4 border-t border-black/10 pt-3">
+        <p className="text-sm text-neutral-700">
+          <span className="text-2xl font-bold tabular-nums text-[#14524B]">{money(below)} below</span>{' '}
+          what it usually sells for
+        </p>
+        <p className="mt-1 text-xs text-neutral-500">
+          Usually {money(deal.usualLow)} to {money(deal.usualHigh)}, per Google.
+          {deal.crossedOut !== null && ` The store crossed out ${money(deal.crossedOut)}.`}
+        </p>
+        {state.total > 1 && (
+          <Link
+            href={HREF}
+            prefetch={false}
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1F7A6F] hover:text-[#14524B]"
+          >
+            See all {state.total} deals
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }

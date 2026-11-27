@@ -518,6 +518,11 @@ html[data-sale="black-friday"] .black-friday-only {
 html[data-sale="black-friday"] .holiday-gift-line {
   display: none;
 }
+/* The first fold's example card while the day's deals are being fetched
+   (BlackFridayHero): in place, not seen. */
+html[data-sale="black-friday"] .black-friday-waits {
+  visibility: hidden;
+}
 
 /* Gift wrap on the header in season: wrapping-paper stripes (wide pale teal,
    thin red, thin gold) on the diagonal instead of plain white. Kept faint so
