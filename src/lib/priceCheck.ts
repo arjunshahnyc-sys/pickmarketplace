@@ -137,3 +137,14 @@ export function summarize(rows: PriceCheckRow[]): PriceCheckSummary {
     inflatedCrossedOut: rows.filter((r) => r.crossedOutAboveTypical).length,
   };
 }
+
+/**
+ * The real deals among the rows: a confirmed price below Google's typical
+ * range. Deepest first, measured as the share below the bottom of the range.
+ */
+export function realDeals(rows: PriceCheckRow[]): PriceCheckRow[] {
+  const depth = (r: PriceCheckRow) => (r.googleTypicalRange![0] - r.today!.price) / r.googleTypicalRange![0];
+  return rows
+    .filter((r) => r.position === 'below' && r.today && r.googleTypicalRange)
+    .sort((a, b) => depth(b) - depth(a));
+}

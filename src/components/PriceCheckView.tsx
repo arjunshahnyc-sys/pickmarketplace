@@ -200,6 +200,8 @@ function Stat({ value, label }: { value: string; label: string }) {
 export interface PriceCheckViewProps {
   event: PriceCheckEvent;
   rows: PriceCheckRow[];
+  /** The rows below their usual range, deepest first: the section the page leads with. */
+  deals: PriceCheckRow[];
   summary: PriceCheckSummary;
   /** When the prices were checked, ISO 8601, and the same as display text. */
   checkedAt: string;
@@ -209,7 +211,7 @@ export interface PriceCheckViewProps {
   refreshHours: number;
 }
 
-export function PriceCheckView({ event, rows, summary, checkedAt, checkedLabel, eventDayLabel, refreshHours }: PriceCheckViewProps) {
+export function PriceCheckView({ event, rows, deals, summary, checkedAt, checkedLabel, eventDayLabel, refreshHours }: PriceCheckViewProps) {
   return (
     <>
       {/* The banner */}
@@ -292,6 +294,27 @@ export function PriceCheckView({ event, rows, summary, checkedAt, checkedLabel, 
       </section>
 
       <main id="main-content" className="mx-auto max-w-5xl px-6 pb-24 pt-12">
+        {/* The real deals first (2026-11-27, owner): the products priced below
+            what they usually sell for. They also stay in their category
+            below, so each category still counts all of its products. */}
+        {deals.length > 0 && (
+          <section aria-labelledby="real-deals" className="mb-14">
+            <div className="mb-5 border-b border-black/10 pb-3">
+              <h2 id="real-deals" className="text-3xl font-black uppercase tracking-tight text-neutral-900 md:text-5xl">
+                {event.name.replace(/ (\d{4})$/, ' deals $1')}
+              </h2>
+              <p className="mt-2 text-neutral-600">
+                {deals.length} of {summary.confirmed} are priced below what they usually sell for today.
+              </p>
+            </div>
+            <ul className="grid gap-4 md:grid-cols-2">
+              {deals.map((row) => (
+                <ProductCard key={row.entry.slug} row={row} />
+              ))}
+            </ul>
+          </section>
+        )}
+
         {PRICE_CHECK_CATEGORIES.map((category) => {
           const group = rows.filter((r) => r.entry.category === category);
           // Confirmed prices first; the order within each half is the catalog's.

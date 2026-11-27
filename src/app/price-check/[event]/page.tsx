@@ -2,13 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { buildComparison, formatCheckedDate } from '@/lib/comparisonPage';
-import type { ComparisonEntry } from '@/lib/comparisons';
-import { resolveExactItem } from '@/lib/exactOffers';
+import { formatCheckedDate } from '@/lib/comparisonPage';
 import { PriceCheckView } from '@/components/PriceCheckView';
-import { getPriceCheckEvent, priceCheckProducts, priceCheckRow, summarize, type PriceCheckRow } from '@/lib/priceCheck';
-import { refreshSearchBudget } from '@/lib/searchBudget';
-import { performLiveSearch } from '@/lib/searchService';
+import { getPriceCheckEvent, priceCheckProducts, realDeals, summarize } from '@/lib/priceCheck';
+import { loadPriceCheck } from '@/lib/priceCheckData';
 
 // A price check for a sale event (/price-check/black-friday): for each
 // electronics and appliance product in the comparison catalog, the lowest
@@ -24,8 +21,10 @@ import { performLiveSearch } from '@/lib/searchService';
 // from the cache for a day, and links to it never prefetch. Unknown events
 // 404 before any search runs.
 const REVALIDATE_HOURS = 24;
-// Must be a literal (statically analyzable): one day, see REVALIDATE_HOURS.
-export const revalidate = 86400;
+// The page itself is rebuilt hourly, which is free: the prices under it are
+// the day's shared data (lib/priceCheckData.ts, REVALIDATE_HOURS). Must be
+// a literal (statically analyzable).
+export const revalidate = 3600;
 // 27 products, each waiting on a search and up to three lookups.
 export const maxDuration = 120;
 
@@ -48,52 +47,16 @@ export async function generateMetadata({ params }: { params: Promise<{ event: st
   };
 }
 
-const CONCURRENCY = 5;
-
-/** Each product's row, a few at a time; a product whose search fails gets a row with no price. */
-async function loadRows(products: ComparisonEntry[], now: Date): Promise<{ rows: PriceCheckRow[]; failed: number }> {
-  await refreshSearchBudget();
-  const rows: PriceCheckRow[] = new Array(products.length);
-  let failed = 0;
-  let next = 0;
-  const worker = async () => {
-    while (next < products.length) {
-      const index = next++;
-      const entry = products[index];
-      try {
-        const data = await performLiveSearch(entry.query);
-        if (data.results.length === 0) {
-          failed++;
-          rows[index] = priceCheckRow(entry, null);
-          continue;
-        }
-        const exact = await resolveExactItem(entry, data);
-        rows[index] = priceCheckRow(entry, buildComparison(data, entry.query, now, undefined, exact));
-      } catch (error) {
-        console.error(`[price-check] ${entry.slug} failed:`, error instanceof Error ? error.message : String(error));
-        failed++;
-        rows[index] = priceCheckRow(entry, null);
-      }
-    }
-  };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  return { rows, failed };
-}
-
 export default async function PriceCheckPage({ params }: { params: Promise<{ event: string }> }) {
   const { event: slug } = await params;
   const event = getPriceCheckEvent(slug);
   // Before any paid search: an unknown event is a 404, not 27 queries.
   if (!event) notFound();
 
-  const products = priceCheckProducts();
-  const now = new Date();
-  const { rows, failed } = await loadRows(products, now);
-  // An outage would otherwise cache a page of blanks for a day. Throwing
+  // The day's rows, shared with the landing page's band
+  // (lib/priceCheckData.ts). It throws when most searches failed, which
   // keeps the last good page (or, on a first render, retries next visit).
-  if (failed > products.length / 2) {
-    throw new Error(`Price check: ${failed} of ${products.length} searches failed, keeping last good page`);
-  }
+  const { rows, checkedAt } = await loadPriceCheck(event.slug);
 
   return (
     <div className="relative z-10 texture-bg min-h-screen">
@@ -101,9 +64,10 @@ export default async function PriceCheckPage({ params }: { params: Promise<{ eve
       <PriceCheckView
         event={event}
         rows={rows}
+        deals={realDeals(rows)}
         summary={summarize(rows)}
-        checkedAt={now.toISOString()}
-        checkedLabel={formatCheckedDate(now.toISOString())}
+        checkedAt={checkedAt}
+        checkedLabel={formatCheckedDate(checkedAt)}
         eventDayLabel={formatCheckedDate(`${event.date}T12:00:00Z`)}
         refreshHours={REVALIDATE_HOURS}
       />

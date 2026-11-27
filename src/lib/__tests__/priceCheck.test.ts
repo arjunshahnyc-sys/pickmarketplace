@@ -7,6 +7,7 @@ import {
   PRICE_CHECK_CATEGORIES,
   priceCheckProducts,
   priceCheckRow,
+  realDeals,
   summarize,
   typicalPosition,
 } from '../priceCheck';
@@ -151,5 +152,18 @@ describe('priceCheckRow photo', () => {
 
   it('refuses a photo that is not https', () => {
     expect(priceCheckRow(entry, withTop(row({ image: 'http://img.example/a.jpg' }))).image).toBeNull();
+  });
+});
+
+describe('realDeals', () => {
+  const entry = getComparison('sony-wh-1000xm5')!;
+  const at = (price: number, range: [number, number] | null) =>
+    priceCheckRow(entry, {
+      item: { top: row({ price, originalPrice: null }), topIsVerifiedNew: true, googleTypicalRange: range, rows: [] },
+    } as unknown as Comparison);
+
+  it('keeps only prices below the usual range, deepest first', () => {
+    const rows = [at(190, [198, 400]), at(300, [198, 400]), at(99, [198, 400]), at(50, null), priceCheckRow(entry, null)];
+    expect(realDeals(rows).map((r) => r.today!.price)).toEqual([99, 190]);
   });
 });

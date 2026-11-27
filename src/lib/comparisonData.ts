@@ -47,7 +47,7 @@ const KEY = [DATA_VERSION, process.env.NEXT_PUBLIC_AFFILIATE_LINK_WRAPPER ?? 'un
 // noisy, could state a different price from its page or none at all. Giving
 // each function a fixed text makes the key depend only on the name below,
 // the key parts and the arguments, in every route and across deployments.
-function withFixedKeyText<F extends (...args: never[]) => unknown>(name: string, fn: F): F {
+export function withFixedKeyText<F extends (...args: never[]) => unknown>(name: string, fn: F): F {
   Object.defineProperty(fn, 'toString', { value: () => name });
   return fn;
 }

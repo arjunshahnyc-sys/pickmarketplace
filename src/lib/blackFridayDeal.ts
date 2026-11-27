@@ -127,3 +127,28 @@ export function dealNote(result: DealCheckResult): string {
   }
   return '';
 }
+
+/**
+ * One real deal from the price check page, as the landing page's band shows
+ * it (/api/black-friday-deals): a product whose lowest confirmed price today
+ * is below the range Google says it usually sells for.
+ */
+export interface HomeDeal {
+  slug: string;
+  name: string;
+  price: number;
+  /** The bottom of Google's typical range. */
+  usualLow: number;
+  store: string;
+  image: string;
+  /** The store's page for it (the /api/out link when there is one). */
+  href: string;
+  /** Whether that link earns a commission, for rel="sponsored". */
+  sponsored: boolean;
+}
+
+export interface HomeDeals {
+  deals: HomeDeal[];
+  /** How many products are below their usual range in all. */
+  total: number;
+}
